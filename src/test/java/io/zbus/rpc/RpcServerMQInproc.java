@@ -9,8 +9,7 @@ public class RpcServerMQInproc {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {  
 		  
-		RpcProcessor p = new RpcProcessor();
-		p.setUrlPrefix("/");  
+		RpcProcessor p = new RpcProcessor(); 
 		p.mount("/example", InterfaceExampleImpl.class);  
 		
 		
@@ -19,7 +18,7 @@ public class RpcServerMQInproc {
 		config.setVerbose(false);
 		MqServer mqServer = new MqServer(config);  
 		
-		RpcServer server = new RpcServer(p);   
+		MqRpcServer server = new MqRpcServer(p);   
 		server.setMqServer(mqServer); //InProc MqServer
 		server.setMq("MyRpc");        //Choose MQ to group Service physically, RPC incognito
 		

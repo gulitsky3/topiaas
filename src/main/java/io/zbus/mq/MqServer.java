@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.handler.ssl.SslContext;
 import io.zbus.kit.ConfigKit;
 import io.zbus.mq.MqServerConfig.ServerConfig;
+import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Ssl;
 import io.zbus.transport.http.HttpWsServer; 
 
@@ -22,6 +23,8 @@ public class MqServer extends HttpWsServer {
 	private MonitorServerAdaptor monitorServerAdaptor;
 	
 	private final MqServerConfig config; 
+	
+	private RpcProcessor rpcProcessor;
 	
 	public MqServer(MqServerConfig config) {  
 		this.config = config;
@@ -55,10 +58,32 @@ public class MqServer extends HttpWsServer {
 	} 
 	public MqServer(String configFile){
 		this(new MqServerConfig(configFile));
+	} 
+	
+	public MqServer(int port) {
+		this(new MqServerConfig("0.0.0.0", port));
+	}
+	
+	public RpcProcessor getRpcProcessor() {
+		return rpcProcessor;
+	}
+	
+	public void setRpcProcessor(RpcProcessor rpcProcessor) {
+		this.rpcProcessor = rpcProcessor;
+		if(this.publicServerAdaptor != null) {
+			this.publicServerAdaptor.setRpcProcessor(rpcProcessor);
+		}
+		if(this.privateServerAdaptor != null) {
+			this.privateServerAdaptor.setRpcProcessor(rpcProcessor);
+		}
 	}
 	
 	public MqServerAdaptor getServerAdaptor() {
 		return publicServerAdaptor;
+	}
+	
+	public void setVerbose(boolean value) {
+		this.config.setVerbose(value);
 	}
 	
 	public void start() {

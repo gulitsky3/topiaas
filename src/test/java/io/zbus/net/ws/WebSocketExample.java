@@ -10,7 +10,7 @@ public class WebSocketExample {
  
 	public static void main(String[] args) throws Exception {  
 		
-		WebsocketClient ws = new WebsocketClient("localhost:15555"); 
+		WebsocketClient ws = new WebsocketClient("wss://zbus.io"); 
 		ws.onText = data -> {
 			 System.out.println(data);
 			 ws.close();
@@ -27,7 +27,7 @@ public class WebSocketExample {
 			
 			//for MQ
 			message.setHeader("cmd", "pub");
-			message.setHeader("mq", "MyRpc");
+			message.setHeader("mq", "MyMQ");
 			message.setHeader("ack", false); 
 			
 			ws.sendMessage(message);

@@ -1,4 +1,4 @@
-package io.zbus.rpc.server;
+package io.zbus.rpc;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -13,11 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
-import io.zbus.kit.StrKit;
 import io.zbus.mq.MqClient;
 import io.zbus.mq.MqServer;
 import io.zbus.mq.Protocol;
-import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 
 public class MqRpcServer implements Closeable {
@@ -45,6 +43,10 @@ public class MqRpcServer implements Closeable {
 		this.processor = processor;
 	}
 	
+	public MqRpcServer() {
+		
+	}
+	
 	public void setProcessor(RpcProcessor processor) {
 		this.processor = processor;
 	}
@@ -56,7 +58,7 @@ public class MqRpcServer implements Closeable {
 		} 
 	}
 	
-	public void start() {
+	public void start() {  
 		if(runner == null) {
 			runner = Executors.newFixedThreadPool(poolSize);
 		} 
@@ -64,24 +66,7 @@ public class MqRpcServer implements Closeable {
 			MqClient client = startClient();
 			clients.add(client);
 		}
-	}
-	
-	public void syncUrlToServer() {
-		if(clients.isEmpty()) return;
-		
-		Message req = new Message();
-		req.setHeader(Protocol.CMD, Protocol.BIND); // Bind URL
-		req.setHeader(Protocol.MQ, mq);
-		req.setHeader(Protocol.CLEAR_BIND, true); 
-		req.setBody(processor.urlEntryList(mq)); 
-		
-		try {
-			Message res = clients.get(0).invoke(req);
-			logger.info("Sync URL binds to server: "+ JsonKit.toJSONString(res));
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e); 
-		}   
-	}
+	} 
 
 	protected MqClient startClient() {
 		MqClient client = null;
@@ -102,16 +87,16 @@ public class MqRpcServer implements Closeable {
 		}
 		final MqClient mqClient = client;
 		mqClient.heartbeat(heartbeatInterval, TimeUnit.SECONDS);
-
+		
+		final String urlPrefix = HttpKit.joinPath("/", this.mq);
 		mqClient.addMqHandler(mq, channel, request -> {
 			String source = (String)request.getHeader(Protocol.SOURCE);
 			String id = (String)request.getHeader(Protocol.ID); 
 			
 			String url = request.getUrl();
-			if(url != null) {
-				String prefix = processor.getUrlPrefix(); 
-				if(!StrKit.isEmpty(prefix) && url.startsWith(prefix)) {
-					url = url.substring(prefix.length());
+			if(url != null) { 
+				if(url.startsWith(urlPrefix)) {
+					url = url.substring(urlPrefix.length());
 					url = HttpKit.joinPath("/", url); 
 					request.setUrl(url);
 				}
@@ -146,16 +131,7 @@ public class MqRpcServer implements Closeable {
 			req.setHeader(Protocol.MQ, mq);
 			req.setHeader(Protocol.CHANNEL, channel); 
 			res = mqClient.invoke(req); 
-			logger.info(JsonKit.toJSONString(res));
-			
-			req = new Message();
-			req.setHeader(Protocol.CMD, Protocol.BIND); // Bind URL
-			req.setHeader(Protocol.MQ, mq);
-			req.setHeader(Protocol.CLEAR_BIND, true); 
-			req.setBody(processor.urlEntryList(mq));
-			res = mqClient.invoke(req); 
-			
-			logger.info(JsonKit.toJSONString(res));
+			logger.info(JsonKit.toJSONString(res)); 
 		});
 
 		mqClient.connect();

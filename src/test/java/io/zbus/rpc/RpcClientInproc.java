@@ -2,6 +2,8 @@ package io.zbus.rpc;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.zbus.mq.MqServer;
+import io.zbus.mq.MqServerConfig;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
 import io.zbus.transport.inproc.InprocClient;
@@ -13,8 +15,9 @@ public class RpcClientInproc {
 		RpcProcessor p = new RpcProcessor();
 		p.mount("example", InterfaceExampleImpl.class);
 		
-		RpcServer server = new RpcServer(p);    
-		server.start(); 
+		MqServerConfig config = new MqServerConfig();
+		MqServer server = new MqServer(config);
+		server.setRpcProcessor(p);
 		
 		InprocClient rpc = new InprocClient(server.getServerAdaptor());
 		

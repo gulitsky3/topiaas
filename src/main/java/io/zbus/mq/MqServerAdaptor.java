@@ -2,8 +2,8 @@ package io.zbus.mq;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,14 +11,13 @@ import org.slf4j.LoggerFactory;
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
 import io.zbus.kit.FileKit;
-import io.zbus.kit.JsonKit;
+import io.zbus.kit.HttpKit;
+import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.model.MessageQueue;
 import io.zbus.mq.model.Subscription;
-import io.zbus.mq.plugin.DefaultUrlFilter;
-import io.zbus.mq.plugin.UrlEntry;
-import io.zbus.mq.plugin.UrlFilter;
+import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
 import io.zbus.transport.Session;
@@ -31,9 +30,9 @@ public class MqServerAdaptor extends ServerAdaptor {
 	private MessageQueueManager mqManager; 
 	private RequestAuth requestAuth; 
 	private Map<String, CommandHandler> commandTable; 
-	private boolean verbose = true; 
+	private boolean verbose = true;  
 	
-	private UrlFilter urlFilter;
+	private RpcProcessor rpcProcessor;
 	
 	public MqServerAdaptor(MqServerConfig config) {
 		subscriptionManager = new SubscriptionManager();  
@@ -43,12 +42,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		mqManager.mqDir = config.mqDiskDir; 
 		verbose = config.verbose;
 		
-		mqManager.loadQueueTable();
-		
-		urlFilter = config.getUrlFilter();
-		if(urlFilter == null) {
-			urlFilter = new DefaultUrlFilter(mqManager);
-		}
+		mqManager.loadQueueTable(); 
 		
 		commandTable = new HashMap<>();
 		commandTable.put(Protocol.PUB, pubHandler);
@@ -57,8 +51,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		commandTable.put(Protocol.ROUTE, routeHandler);
 		commandTable.put(Protocol.CREATE, createHandler); 
 		commandTable.put(Protocol.REMOVE, removeHandler); 
-		commandTable.put(Protocol.QUERY, queryHandler); 
-		commandTable.put(Protocol.BIND, bindHandler); 
+		commandTable.put(Protocol.QUERY, queryHandler);  
 		commandTable.put(Protocol.PING, pingHandler); 
 	} 
 	
@@ -69,8 +62,8 @@ public class MqServerAdaptor extends ServerAdaptor {
 		copy.mqManager = mqManager;
 		copy.requestAuth = requestAuth;
 		copy.commandTable = commandTable;
-		copy.verbose = verbose;
-		copy.urlFilter = urlFilter;
+		copy.verbose = verbose;  
+		copy.rpcProcessor = rpcProcessor;
 		return copy;
 	}
 	
@@ -91,9 +84,9 @@ public class MqServerAdaptor extends ServerAdaptor {
 		if (req == null) {
 			reply(req, 400, "json format required", sess); 
 			return;
-		} 
-		
+		}   
 		String cmd = req.getHeader(Protocol.CMD); 
+		
 		if(Protocol.PING.equals(cmd)) {
 			return;
 		}
@@ -117,16 +110,15 @@ public class MqServerAdaptor extends ServerAdaptor {
 				reply(req, 403, authResult.message, sess); 
 				return; 
 			}
+		}   
+		
+		if(cmd == null) {
+			//Filter on URL of request
+			boolean handled = urlFilter(req, sess);
+			if(handled) return;
 		} 
 		
-		attachInfo(req, sess); 
-		
-		//Filter on URL of request
-		Message res = urlFilter.doFilter(req);
-		if(res != null) {
-			reply(req, res, sess); 
-			return; 
-		}  
+		attachInfo(req, sess);  
 		
 		cmd = req.removeHeader(Protocol.CMD); 
 		if (cmd == null) {
@@ -148,7 +140,53 @@ public class MqServerAdaptor extends ServerAdaptor {
 			return; 
 		}
 	}   
-	 
+	
+	private boolean urlFilter(Message req, Session sess) { 
+		String url = req.getUrl();
+		if(url == null) return false;   
+		
+		if(rpcProcessor != null) {
+			if(rpcProcessor.matchUrl(url)) {
+				Message res = new Message();
+				rpcProcessor.process(req, res);
+				sess.write(res); 
+				return true;
+			} 
+		} 
+		
+		//Parse Url to find MQ to handle the message
+		UrlInfo info = HttpKit.parseUrl(url); 
+		if(info.pathList.size()==0) {  
+			for(Entry<String, String> e : info.queryParamMap.entrySet()) {
+				String key = e.getKey();
+				Object value = e.getValue();
+				if(key.equals("body")) {
+					req.setBody(value);
+					continue;
+				}
+				req.setHeader(key.toLowerCase(), value);
+			}    
+		}
+		
+		String mq = req.getHeader(Protocol.MQ); 
+		if(mq == null) { 
+			if(info.pathList.size() > 0) {
+				mq = info.pathList.get(0); 
+				req.setHeader(Protocol.MQ, mq);
+			}
+		}  
+		//Assumed to be RPC
+		if(req.getHeader(Protocol.CMD) == null) { // RPC assumed
+			req.setHeader(Protocol.CMD, Protocol.PUB);
+			req.setHeader(Protocol.ACK, false); //ACK should be disabled
+		}  
+		
+		return false;
+	} 
+	
+	public void setRpcProcessor(RpcProcessor rpcProcessor) {
+		this.rpcProcessor = rpcProcessor;
+	}
 	
 	private CommandHandler createHandler = (req, sess) -> { 
 		String mqName = (String)req.getHeader(Protocol.MQ);
@@ -197,29 +235,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 			msg = String.format("OK, REMOVE (mq=%s)", mqName); 
 		}
 		reply(req, 200, msg, sess);
-	}; 
-	
-	private CommandHandler bindHandler = (req, sess) -> { 
-		String mqName = (String)req.getHeader(Protocol.MQ);
-		if(mqName == null) {
-			reply(req, 400, "bind command, missing mq field", sess);
-			return;
-		}
-		
-		Object body = req.getBody();
-		if(body == null) {
-			reply(req, 400, "bind command, missing url entry list data in body", sess);
-			return;
-		}
-		
-		Boolean clearBind = req.getHeaderBool(Protocol.CLEAR_BIND); 
-		boolean clear = clearBind == null? true : clearBind;
-		List<UrlEntry> entries = JsonKit.convertList(body, UrlEntry.class);
-		urlFilter.updateUrlEntry(mqName, entries, clear); 
-		
-		String msg = String.format("OK, BIND URL (mq=%s)", mqName);
-		reply(req, 200, msg, sess);
-	}; 
+	};  
 	
 	private CommandHandler pingHandler = (req, sess) -> { 
 		//ignore

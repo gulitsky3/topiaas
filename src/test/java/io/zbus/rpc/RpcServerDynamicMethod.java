@@ -3,6 +3,8 @@ package io.zbus.rpc;
 import java.util.Arrays;
 import java.util.Map;
 
+import io.zbus.mq.MqServer;
+
 
 public class RpcServerDynamicMethod {
 
@@ -20,9 +22,8 @@ public class RpcServerDynamicMethod {
 		RpcProcessor p = new RpcProcessor();
 		p.mount(spec, service);  
 	
-		
-		RpcServer server = new RpcServer(p);   
-		server.setPort(8080);
-		server.start();
+		MqServer server = new MqServer(15555);
+		server.setRpcProcessor(p);
+		server.start();  
 	}
 }

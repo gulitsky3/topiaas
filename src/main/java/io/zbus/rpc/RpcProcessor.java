@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
-import io.zbus.mq.plugin.UrlEntry;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
@@ -29,13 +28,10 @@ import io.zbus.transport.http.Http.FileForm;
 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
-	private Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance  
+	private Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance   
 	
-	private String urlPrefix="";  //Global URL prefix
-	
-	private boolean docEnabled = true; 
-	private String docUrlPrefix = "doc"; //Under global
-	
+	private boolean docEnabled = true;  
+	private String docUrlPrefix = "/doc"; 
 	 
 	private boolean stackTraceEnabled = true;   
 	
@@ -295,6 +291,28 @@ public class RpcProcessor {
 		return false;
 	}
 	
+	public boolean matchUrl(String url) {
+		int length = 0;
+		Entry<String, MethodInstance> matched = null;
+		for(Entry<String, MethodInstance> e : urlPath2MethodTable.entrySet()) {
+			String key = e.getKey();
+			if(url.startsWith(key)) {
+				if(key.length() > length) {
+					length = key.length();
+					matched = e; 
+				}
+			}
+		}  
+		if(matched == null) return false;
+		if(length == 1) { //root
+			UrlInfo info = HttpKit.parseUrl(url);
+			if(info.pathList.size()>0) { 
+				return false; // root / should not with parameters
+			}
+		} 
+		return true;
+	}
+	
 	private MethodTarget findMethodByUrl(Message req, Message response) {  
 		String url = req.getUrl();  
 		int length = 0;
@@ -309,8 +327,16 @@ public class RpcProcessor {
 			}
 		}  
 		if(matched == null) {
-			reply(response, 404, String.format("Url=%s Not Found", url)); 
+			reply(response, 404, String.format("URL=%s Not Found", url)); 
 			return null;
+		}
+		
+		if(length == 1) { //root
+			UrlInfo info = HttpKit.parseUrl(url);
+			if(info.pathList.size()>0) {
+				reply(response, 404, String.format("URL=%s Not Found", url)); 
+				return null; // root / should not with parameters
+			}
 		}
 		
 		String urlPathMatched = matched.getKey();
@@ -357,7 +383,10 @@ public class RpcProcessor {
 		}  
 		
 		MethodTarget target = findMethodByUrl(req, response); 
-		if(target == null) return;   
+		if(target == null) {
+			reply(response, 404, String.format("URL=%s Not Found", url));
+			return;   
+		}
 		
 		Object[] params = target.params; 
 		MethodInstance mi = target.methodInstance;
@@ -429,9 +458,14 @@ public class RpcProcessor {
 		}  
 	}
 	
-	public RpcProcessor mountDoc() { 
+	public RpcProcessor mountDoc() {
+		return mountDoc("/"); //global urlprefix, be aware of the difference between docUrlPrefix and global urlPrefix
+	}
+	
+	public RpcProcessor mountDoc(String urlPrefix) { 
 		if(!this.docEnabled) return this;
 		DocRender render = new DocRender(this); 
+		render.setUrlPrefix(urlPrefix);
 		mount(docUrlPrefix, render, false, false, false);
 		return this;
 	}   
@@ -467,15 +501,6 @@ public class RpcProcessor {
 	public RpcProcessor setDocEnabled(boolean docEnabled) {
 		this.docEnabled = docEnabled;
 		return this;
-	} 
-
-	public String getDocModule() {
-		return docUrlPrefix;
-	}
-
-	public RpcProcessor setDocModule(String docModule) {
-		this.docUrlPrefix = docModule;
-		return this;
 	}  
 	
 	@SuppressWarnings("unchecked")
@@ -489,16 +514,7 @@ public class RpcProcessor {
 				mount(e.getKey(), svc);
 			}
 		}
-	}
-	
-	public RpcProcessor setUrlPrefix(String urlPrefix) {
-		this.urlPrefix = urlPrefix;
-		return this;
-	} 
-	
-	public String getUrlPrefix() {
-		return urlPrefix;
-	} 
+	}   
 	
 	public String getDocUrlPrefix() {
 		return docUrlPrefix;
@@ -517,20 +533,7 @@ public class RpcProcessor {
 			res.add(mi.info); 
 		} 
 		return res;
-	}
-	
-	public List<UrlEntry> urlEntryList(String mq){
-		List<RpcMethod> methods = rpcMethodList();
-		
-		List<UrlEntry> entries = new ArrayList<>();
-		for(RpcMethod method : methods) {
-			UrlEntry e = new UrlEntry(); 
-			e.url = HttpKit.joinPath(urlPrefix, method.urlPath);
-			e.mq = mq;
-			entries.add(e);
-		} 
-		return entries;
-	}
+	} 
 	
 	public static class MethodInstance {
 		public RpcMethod info = new RpcMethod();    

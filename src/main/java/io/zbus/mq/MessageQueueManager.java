@@ -20,7 +20,7 @@ public class MessageQueueManager {
 	public String mqDir = "/tmp/zbus";
 	public String dbConnectionString;
 	
-	private Map<String, MessageQueue> mqTable = new ConcurrentHashMap<>();
+	private Map<String, MessageQueue> mqTable = new ConcurrentHashMap<>(); //lower cased
 	
 	public void loadQueueTable() {
 		logger.info("Loading MQ from disk ..."); 
@@ -31,11 +31,11 @@ public class MessageQueueManager {
 			}
 		});
 		
-		if (mqDirs != null && mqDirs.length > 0) {
+		if(mqDirs != null && mqDirs.length > 0) {
 			for (File dir : mqDirs) { 
 				try {
 					MessageQueue mq = new DiskQueue(dir.getName(), new File(this.mqDir));
-					mqTable.put(dir.getName(), mq);
+					mqTable.put(dir.getName().toLowerCase(), mq);
 					logger.info("MQ({}) loaded", dir.getName()); 
 				} catch (IOException e) {
 					logger.error(e.getMessage(), e);
@@ -47,7 +47,7 @@ public class MessageQueueManager {
 	
 	public MessageQueue get(String mqName) {
 		if(mqName == null) mqName = "";
-		return mqTable.get(mqName);
+		return mqTable.get(mqName.toLowerCase());
 	} 
 	
 	public MessageQueue saveQueue(String mqName, String channel) throws IOException { 
@@ -70,12 +70,12 @@ public class MessageQueueManager {
 		
 		if(mqName == null) {
 			throw new IllegalArgumentException("Missing mqName");
-		}
+		} 
 		if(mqType == null) {
 			mqType = Protocol.MEMORY;
 		}
 		
-		MessageQueue mq = mqTable.get(mqName); 
+		MessageQueue mq = mqTable.get(mqName.toLowerCase()); 
 		if(mq == null) {
 			if(Protocol.MEMORY.equals(mqType)) {
 				mq = new MemoryQueue(mqName);
@@ -86,7 +86,7 @@ public class MessageQueueManager {
 			} else {
 				throw new IllegalArgumentException("mqType(" + mqType + ") Not Support");
 			}  
-			mqTable.put(mqName, mq);
+			mqTable.put(mqName.toLowerCase(), mq);
 		}
 		
 		mq.setMask(mqMask); 
@@ -106,16 +106,16 @@ public class MessageQueueManager {
 	 * @param mq name of mq
 	 * @param channel channel of mq
 	 */ 
-	public void removeQueue(String mq, String channel) throws IOException {
+	public void removeQueue(String mq, String channel) throws IOException { 
 		if(channel == null) {
-			MessageQueue q = mqTable.remove(mq);
+			MessageQueue q = mqTable.remove(mq.toLowerCase());
 			if(q != null) {
 				q.destroy();
 			}
 			return;
 		}
 		
-		MessageQueue q = mqTable.get(mq);
+		MessageQueue q = mqTable.get(mq.toLowerCase());
 		if(q != null) {
 			q.removeChannel(channel);
 		}

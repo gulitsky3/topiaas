@@ -11,7 +11,6 @@ import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
-import io.zbus.mq.plugin.UrlFilter;
 
 public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;
@@ -22,8 +21,7 @@ public class MqServerConfig extends XmlConfig {
 	public int packageSizeLimit = 1024 * 1024 * 64; // 64M
 	public String mqDiskDir = "/tmp/zbus"; 
 	public String mqDbUrl;  
-	public boolean verbose = true; 
-	public UrlFilter urlFilter;  //null to use default
+	public boolean verbose = true;  
 	
 	public MqServerConfig() { 
 		
@@ -143,17 +141,7 @@ public class MqServerConfig extends XmlConfig {
 
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
-	}  
-
-	public UrlFilter getUrlFilter() {
-		return urlFilter;
-	}
-
-	public void setUrlFilter(UrlFilter urlFilter) {
-		this.urlFilter = urlFilter;
-	}
-
-
+	}   
 
 	public static class ServerConfig{
 		public String address;

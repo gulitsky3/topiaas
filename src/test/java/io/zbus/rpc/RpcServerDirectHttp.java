@@ -59,8 +59,8 @@ public class RpcServerDirectHttp {
 		p.mount("", RpcServerDirectHttp.class); 
 		p.mount("static", resource);
 		
-		RpcServer server = new RpcServer(p);       
-		server.setPort(8080);
+		MqRpcServer server = new MqRpcServer(p);       
+		server.setAddress("localhost:15555");
 		server.start();
 	}
 }
