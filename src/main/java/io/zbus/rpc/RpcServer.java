@@ -18,11 +18,11 @@ import io.zbus.mq.MqServer;
 import io.zbus.mq.Protocol;
 import io.zbus.transport.Message;
 
-public class MqRpcServer implements Closeable {
-	private static final Logger logger = LoggerFactory.getLogger(MqRpcServer.class);
+public class RpcServer implements Closeable {
+	private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
-	private MqServer mqServer; //Only for InprocClient
-	private String address;
+	private MqServer mqServer; //InProc or Embedded
+	private String mqServerAddress;
 	private String mq;
 	private String mqType = Protocol.MEMORY;
 	private String channel;
@@ -35,20 +35,24 @@ public class MqRpcServer implements Closeable {
 	private int poolSize = 64;
 
 	private List<MqClient> clients = new ArrayList<>();
-	private RpcProcessor processor;
+	private RpcProcessor rpcProcessor;
 	
 	private ExecutorService runner;
 
-	public MqRpcServer(RpcProcessor processor) {
-		this.processor = processor;
+	public RpcServer(RpcProcessor processor) {
+		this.rpcProcessor = processor;
 	}
 	
-	public MqRpcServer() {
+	public RpcServer() {
 		
 	}
 	
-	public void setProcessor(RpcProcessor processor) {
-		this.processor = processor;
+	public RpcProcessor getRpcProcessor() {
+		return rpcProcessor;
+	}
+	
+	public void setRpcProcessor(RpcProcessor processor) {
+		this.rpcProcessor = processor;
 	}
 
 	@Override
@@ -62,6 +66,26 @@ public class MqRpcServer implements Closeable {
 		if(runner == null) {
 			runner = Executors.newFixedThreadPool(poolSize);
 		} 
+		if(this.mq != null) {
+			this.rpcProcessor.setRootUrl(HttpKit.joinPath("/", this.mq));
+			this.rpcProcessor.mountDoc();
+		}
+		if(mqServer != null) {  
+			if(!mqServer.isStarted()) {
+				mqServer.start();
+			} 
+		}  
+		
+		//embedded in MqServer
+		if(mqServer != null && mq == null) { 
+			mqServer.setRpcProcessor(rpcProcessor);
+			if(!mqServer.isStarted()) {
+				mqServer.start();
+			}
+			return;
+		}  
+		
+		//Inproc or remote MqServer
 		for(int i=0;i<clientCount;i++) {
 			MqClient client = startClient();
 			clients.add(client);
@@ -72,8 +96,8 @@ public class MqRpcServer implements Closeable {
 		MqClient client = null;
 		if (mqServer != null) {
 			client = new MqClient(mqServer);
-		} else if (address != null) {
-			client = new MqClient(address);
+		} else if (mqServerAddress != null) {
+			client = new MqClient(mqServerAddress);
 		} else {
 			throw new IllegalStateException("Can not create MqClient, missing address or mqServer?");
 		}
@@ -104,7 +128,7 @@ public class MqRpcServer implements Closeable {
 			
 			runner.submit(()->{
 				Message response = new Message(); 
-				processor.process(request, response);   
+				rpcProcessor.process(request, response);   
 				if(response.getStatus() == null) {
 					response.setStatus(200);
 				}
@@ -147,12 +171,12 @@ public class MqRpcServer implements Closeable {
 		this.mqServer = mqServer;
 	}
 
-	public String getAddress() {
-		return address;
+	public String getMqServerAddress() {
+		return mqServerAddress;
 	}
 
-	public void setAddress(String address) {
-		this.address = address;
+	public void setMqServerAddress(String address) {
+		this.mqServerAddress = address;
 	}
 
 	public String getMq() {

@@ -84,9 +84,18 @@ public class HttpKit {
 		String mimeType = resource.substring(idx+1);
 		return MIME_TYPES.get(mimeType); 
 	}
+	
+	public static boolean isText(String contentType) { 
+		if(contentType == null) return false;
+		if(contentType.startsWith("text")) return true;
+		if(contentType.startsWith("application/json")) return true;
+		if(contentType.startsWith("application/javascript")) return true;
+		return false;
+	}
 	 
 	static { 
 		MIME_TYPES.put("js", "application/javascript"); 
+		MIME_TYPES.put("json", "application/json"); 
 		MIME_TYPES.put("css", "text/css"); 
 		MIME_TYPES.put("htm", "text/html"); 
 		MIME_TYPES.put("html", "text/html"); 

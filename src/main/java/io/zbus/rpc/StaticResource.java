@@ -42,7 +42,11 @@ public class StaticResource {
 		res.setStatus(200); 
 		try {
 			byte[] data = fileKit.loadFileBytes(file);
-			res.setBody(data);
+			if(HttpKit.isText(contentType)) {
+				res.setBody(new String(data, "utf8")); //TODO
+			} else {
+				res.setBody(data);
+			}
 		} catch (IOException e) {
 			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");

@@ -31,7 +31,8 @@ public class RpcProcessor {
 	private Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance   
 	
 	private boolean docEnabled = true;  
-	private String docUrlPrefix = "/doc"; 
+	private String docUrl = "/doc"; 
+	private String rootUrl = "/"; 
 	 
 	private boolean stackTraceEnabled = true;   
 	
@@ -457,16 +458,12 @@ public class RpcProcessor {
 			response.setStatus(500); 
 		}  
 	}
-	
-	public RpcProcessor mountDoc() {
-		return mountDoc("/"); //global urlprefix, be aware of the difference between docUrlPrefix and global urlPrefix
-	}
-	
-	public RpcProcessor mountDoc(String urlPrefix) { 
+	 
+	public RpcProcessor mountDoc() { 
 		if(!this.docEnabled) return this;
 		DocRender render = new DocRender(this); 
-		render.setUrlPrefix(urlPrefix);
-		mount(docUrlPrefix, render, false, false, false);
+		render.setRootUrl(rootUrl);
+		mount(docUrl, render, false, false, false);
 		return this;
 	}   
 
@@ -516,12 +513,20 @@ public class RpcProcessor {
 		}
 	}   
 	
-	public String getDocUrlPrefix() {
-		return docUrlPrefix;
+	public String getDocUrl() {
+		return docUrl;
 	}
 
-	public void setDocUrlPrefix(String docUrlPrefix) {
-		this.docUrlPrefix = docUrlPrefix;
+	public void setDocUrl(String docUrl) {
+		this.docUrl = docUrl;
+	}  
+
+	public String getRootUrl() {
+		return rootUrl;
+	}
+
+	public void setRootUrl(String rootUrl) {
+		this.rootUrl = rootUrl;
 	}
 
 	public List<RpcMethod> rpcMethodList() { 

@@ -1,7 +1,6 @@
 package io.zbus.rpc;
 
 import io.zbus.mq.MqServer;
-import io.zbus.mq.MqServerConfig;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 
 public class RpcServerMQInproc {
@@ -10,23 +9,20 @@ public class RpcServerMQInproc {
 	public static void main(String[] args) throws Exception {  
 		  
 		RpcProcessor p = new RpcProcessor(); 
-		p.mount("/example", InterfaceExampleImpl.class);  
+		p.mount("/", InterfaceExampleImpl.class);  
 		
 		
-		//Serve RPC via MQ Server InProc
-		MqServerConfig config = new MqServerConfig("0.0.0.0", 15555);  
-		config.setVerbose(false);
-		MqServer mqServer = new MqServer(config);  
+		//Serve RPC via MQ Server InProc 
+		MqServer mqServer = new MqServer(15555);   
 		
-		MqRpcServer server = new MqRpcServer(p);   
-		server.setMqServer(mqServer); //InProc MqServer
-		server.setMq("MyRpc");        //Choose MQ to group Service physically, RPC incognito
-		
-		//MQ authentication, no need to configure if use HTTP direct RPC
+		RpcServer rpc = new RpcServer(p);   
+		rpc.setMqServer(mqServer); //InProc MqServer
+		rpc.setMq("MyRpc");        //Choose MQ to group Service physically
+		 
 		//server.setAuthEnabled(true);
 		//server.setApiKey("2ba912a8-4a8d-49d2-1a22-198fd285cb06");
 		//server.setSecretKey("461277322-943d-4b2f-b9b6-3f860d746ffd"); 
 		
-		server.start();
+		rpc.start();
 	} 
 }

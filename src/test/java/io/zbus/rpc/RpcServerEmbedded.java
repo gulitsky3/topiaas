@@ -8,8 +8,7 @@ import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 
 public class RpcServerEmbedded {  
-	
-	@RequestMapping("/")
+	  
 	public Message home() { 
 		Message res = new Message();
 		res.setStatus(200);
@@ -29,17 +28,18 @@ public class RpcServerEmbedded {
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {   
-		RpcProcessor p = new RpcProcessor();  
-		p.mount("/", RpcServerEmbedded.class);    
-		p.mountDoc();
+		RpcProcessor p = new RpcProcessor();   
+		p.setDocUrl("/");
+		p.mount("/", RpcServerEmbedded.class);     
 		
 		StaticResource resource = new StaticResource(); 
 		resource.setBasePath("\\tmp"); 
 		p.mount("/static", resource);
 		
 		//Serve RPC embedded in MqServer 
-		MqServer mqServer = new MqServer(15555);   
-		mqServer.setRpcProcessor(p);
-		mqServer.start();
+		MqServer mqServer = new MqServer(15555);    
+		RpcServer rpcServer = new RpcServer(p);
+		rpcServer.setMqServer(mqServer); 
+		rpcServer.start();
 	} 
 }

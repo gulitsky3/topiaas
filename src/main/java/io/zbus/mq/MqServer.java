@@ -64,6 +64,10 @@ public class MqServer extends HttpWsServer {
 		this(new MqServerConfig("0.0.0.0", port));
 	}
 	
+	public MqServer() {
+		this(new MqServerConfig());
+	}
+	
 	public RpcProcessor getRpcProcessor() {
 		return rpcProcessor;
 	}
@@ -76,6 +80,7 @@ public class MqServer extends HttpWsServer {
 		if(this.privateServerAdaptor != null) {
 			this.privateServerAdaptor.setRpcProcessor(rpcProcessor);
 		}
+		this.rpcProcessor.mountDoc(); //TODO remove mountDoc
 	}
 	
 	public MqServerAdaptor getServerAdaptor() {

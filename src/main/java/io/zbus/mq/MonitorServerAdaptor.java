@@ -18,6 +18,7 @@ public class MonitorServerAdaptor extends ServerAdaptor {
 			 RpcAuthFilter authFilter = new RpcAuthFilter(config.monitorServer.auth);
 			 processor.setAuthFilter(authFilter);
 		 }
+		 processor = new RpcProcessor();
 		 processor.mount("/", new MonitorService());
 		 StaticResource staticResource = new StaticResource();
 		 staticResource.setCacheEnabled(false); //TODO turn if off in production
