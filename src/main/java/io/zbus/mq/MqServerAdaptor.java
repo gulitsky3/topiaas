@@ -20,8 +20,9 @@ import io.zbus.mq.commands.RemoveHandler;
 import io.zbus.mq.commands.RouteHandler;
 import io.zbus.mq.commands.SubHandler;
 import io.zbus.mq.commands.TakeHandler;
-import io.zbus.mq.plugin.DefaultUrlMqRouter;
-import io.zbus.mq.plugin.UrlMqRouter;
+import io.zbus.mq.plugin.DefaultUrlRouter;
+import io.zbus.mq.plugin.IpFilter;
+import io.zbus.mq.plugin.UrlRouter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
@@ -41,13 +42,14 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	private MessageDispatcher messageDispatcher;
 	private MessageQueueManager mqManager; 
 	private RequestAuth requestAuth; 
-	private Map<String, CommandHandler> commandTable = new HashMap<>();
-	private boolean verbose = true;  
+	private Map<String, CommandHandler> commandTable = new HashMap<>(); 
 	
 	private RpcProcessor rpcProcessor;
 	private MqServerConfig config;
 	
-	private UrlMqRouter urlMqRouter;
+	private UrlRouter urlRouter;
+	private IpFilter sessionFilter;
+	
 	private FileKit fileKit;
 	
 	public MqServerAdaptor(MqServerConfig config) { 
@@ -56,16 +58,15 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		subscriptionManager = new SubscriptionManager(mqManager);  
 		
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
-		mqManager.mqDir = config.mqDiskDir; 
-		verbose = config.verbose;
+		mqManager.mqDir = config.mqDiskDir;  
 		
 		fileKit = new FileKit(config.fileCacheEnabled);
 		mqManager.loadQueueTable();    
 		
-		urlMqRouter = config.getUrlMqRouter();
+		urlRouter = config.getUrlMqRouter();
 		
-		if(urlMqRouter == null) {
-			urlMqRouter = new DefaultUrlMqRouter();
+		if(urlRouter == null) {
+			urlRouter = new DefaultUrlRouter();
 		} 
 		
 		commandTable.put(Protocol.PUB, new PubHandler(messageDispatcher, mqManager));
@@ -96,6 +97,17 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			request.setHeader(Protocol.ID, StrKit.uuid());
 		}
 	}
+	
+	@Override
+	public void sessionCreated(Session sess) throws IOException { 
+		if(sessionFilter != null) {
+			if(!sessionFilter.doFilter(sess)) {
+				sess.close();
+				return;
+			}
+		}
+		super.sessionCreated(sess);
+	}
 	 
 	@Override
 	public void onMessage(Object msg, Session sess) throws IOException {
@@ -110,7 +122,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			return;
 		}
 		
-		if(verbose) { 
+		if(config.verbose) { 
 			logger.info(sess.remoteAddress() + ":" + req); 
 		}
 		
@@ -164,7 +176,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		String url = req.getUrl();
 		if(url == null) return false;   
 		
-		if(config.urlMatchLocalRpcFirst) {
+		if(config.urlMatchLocalFirst) {
 			if(rpcProcessor != null) {
 				if(rpcProcessor.matchUrl(url)) {
 					Message res = new Message();
@@ -175,7 +187,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			} 
 		}
 		
-		String mq = urlMqRouter.match(mqManager, url); 
+		String mq = urlRouter.match(mqManager, url); 
 		if(mq != null) {
 			req.setHeader(Protocol.MQ, mq);
 			//Assumed to be RPC
@@ -188,7 +200,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			return false;
 		} 
 		
-		if(!config.urlMatchLocalRpcFirst) {
+		if(!config.urlMatchLocalFirst) {
 			if(rpcProcessor != null) {
 				if(rpcProcessor.matchUrl(url)) {
 					Message res = new Message();
@@ -199,15 +211,23 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			} 
 		} 
 		
-		Message res = fileKit.loadResource("static/index.html");
-		
-		if(res.getStatus() != 200) {
+		Message res = null;
+		if("/".equals(url)) { 
+			res = fileKit.loadResource("static/index.html"); 
+			if(res.getStatus() != 200) {
+				res = new Message();
+				res.setStatus(200);
+				res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+				res.setBody("<h1> Welcome to zbus</h1>"); 
+			} 
+			 
+		} else {
 			res = new Message();
-			res.setStatus(200);
+			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-			res.setBody("<h1> Welcome to zbus</h1>"); 
-		} 
-		sess.write(res); 
+			res.setBody(String.format("URL=%s Not Found", url));
+		}
+		sess.write(res);
 		return true; 
 	}
 	

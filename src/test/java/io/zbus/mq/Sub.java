@@ -37,7 +37,7 @@ public class Sub {
 			sub.setHeader("mq", mq); 
 			sub.setHeader("channel", channel);
 			sub.setHeader("window", 1);
-			sub.setHeader("filter", "abc");
+			//sub.setHeader("filter", "abc");
 			
 			client.invoke(sub, data->{
 				System.out.println(data);

@@ -1,14 +1,15 @@
-package io.zbus.rpc;
+package io.zbus.rpc.inproc;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.zbus.mq.MqServer;
 import io.zbus.mq.MqServerConfig;
+import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
 import io.zbus.transport.inproc.InprocClient;
 
-public class RpcClientInproc {
+public class RpcInproc {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {

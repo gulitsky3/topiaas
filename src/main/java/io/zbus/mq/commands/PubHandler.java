@@ -6,12 +6,15 @@ import io.zbus.mq.MessageDispatcher;
 import io.zbus.mq.MessageQueueManager;
 import io.zbus.mq.Protocol;
 import io.zbus.mq.model.MessageQueue;
+import io.zbus.mq.plugin.MqMessageInterceptor;
 import io.zbus.transport.Message;
 import io.zbus.transport.Session;
 
 public class PubHandler implements CommandHandler { 
 	private final MessageDispatcher messageDispatcher;
 	private final MessageQueueManager mqManager; 
+	
+	private MqMessageInterceptor beforePub;
 	
 	public PubHandler(MessageDispatcher messageDispatcher, MessageQueueManager mqManager) {
 		this.messageDispatcher = messageDispatcher;
@@ -31,6 +34,9 @@ public class PubHandler implements CommandHandler {
 			MsgKit.reply(req, 404, "MQ(" + mqName + ") Not Found", sess);
 			return; 
 		} 
+		if(beforePub != null) {
+			if(!beforePub.intercept(req)) return;
+		}
 		
 		mq.write(req); 
 		Boolean ack = req.getHeaderBool(Protocol.ACK); 
@@ -40,5 +46,13 @@ public class PubHandler implements CommandHandler {
 		}
 		
 		messageDispatcher.dispatch(mq); 
-	} 
+	}
+
+	public MqMessageInterceptor getBeforePub() {
+		return beforePub;
+	}
+
+	public void setBeforePub(MqMessageInterceptor beforePub) {
+		this.beforePub = beforePub;
+	}  
 }
