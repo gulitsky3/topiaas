@@ -151,7 +151,7 @@
 		</plugins>
 	</build>
 
-	<!-- mvn clean deploy -P release -Dgpg.passphrase= -->
+	<!-- mvn clean deploy -P release -->
 	<profiles>
 		<profile>
 			<id>release</id>
