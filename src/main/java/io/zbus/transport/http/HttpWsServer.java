@@ -143,8 +143,7 @@ public class HttpWsServer extends Server {
 				out.add(frame);  
 				return;
 			} 
-			
-			
+						
 			//2) HTTP mode  
 			FullHttpMessage httpMessage = null;  
 			
@@ -184,7 +183,7 @@ public class HttpWsServer extends Server {
 			
 			byte[] body = Http.body(msg); 
 			httpMessage.headers().set(Http.CONTENT_LENGTH, body.length);
-			httpMessage.content().writeBytes(Http.body(msg)); 
+			httpMessage.content().writeBytes(body); 
 			out.add(httpMessage);
 		}
 		
