@@ -11,7 +11,7 @@ import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
-import io.zbus.proxy.HttpProxyConfig;
+import io.zbus.proxy.http.HttpProxyConfig;
 
 public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;

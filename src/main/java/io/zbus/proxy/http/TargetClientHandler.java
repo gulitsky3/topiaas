@@ -9,11 +9,11 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
  *  Borrowed from Netty Example
  *
  */
-public class HttpClientHandler extends ChannelInboundHandlerAdapter {
+public class TargetClientHandler extends ChannelInboundHandlerAdapter {
 
     private final Channel inboundChannel;
 
-    public HttpClientHandler(Channel inboundChannel) {
+    public TargetClientHandler(Channel inboundChannel) {
         this.inboundChannel = inboundChannel;
     }
 
@@ -38,12 +38,13 @@ public class HttpClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        HttpFrontendHandler.closeOnFlush(inboundChannel);
+    	HttpProxyHandler.closeOnFlush(inboundChannel);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
-        HttpFrontendHandler.closeOnFlush(ctx.channel());
-    }
+        HttpProxyHandler.closeOnFlush(ctx.channel());
+    } 
+
 }

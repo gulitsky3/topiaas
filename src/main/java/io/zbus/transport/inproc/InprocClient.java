@@ -84,6 +84,10 @@ public class InprocClient extends AbastractClient implements Session {
 		return "Inproc-"+id;
 	}
 	
+	@Override
+	public Object channelContext() { 
+		return null;
+	}
  
 	@Override
 	public void write(Object msg) {  //Session received message  

@@ -9,6 +9,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpRequest;
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
 import io.zbus.kit.FileKit;
@@ -25,6 +27,7 @@ import io.zbus.mq.commands.TakeHandler;
 import io.zbus.mq.plugin.Filter;
 import io.zbus.mq.plugin.IpFilter;
 import io.zbus.mq.plugin.UrlRouteFilter;
+import io.zbus.proxy.http.HttpProxyHandler;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
@@ -52,6 +55,8 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	
 	protected List<Filter> filterList = new ArrayList<>();
 	
+	protected HttpProxyHandler httpProxyHandler; 
+	
 	public MqServerAdaptor(MqServerConfig config) { 
 		this.config = config;
 		mqManager = new MqManager();
@@ -71,7 +76,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		commandTable.put(Protocol.CREATE, new CreateHandler(mqManager)); 
 		commandTable.put(Protocol.REMOVE, new RemoveHandler(mqManager)); 
 		commandTable.put(Protocol.QUERY, new QueryHandler(mqManager));  
-		commandTable.put(Protocol.PING, (req, sess)->{}); 
+		commandTable.put(Protocol.PING, (req, sess)->{});  
 	} 
 	
 	protected MqServerAdaptor(MqServerAdaptor that) {
@@ -127,7 +132,14 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	}
 	 
 	@Override
-	public void onMessage(Object msg, Session sess) throws IOException {
+	public void onMessage(Object msg, Session sess) throws IOException { 
+		if(httpProxyHandler != null) {
+			if(msg instanceof HttpRequest) {
+				httpProxyHandler.onMessage(msg, sess);
+				return;
+			}
+		}
+		
 		Message req = (Message)msg;    
 		Message res = new Message(); 
 		if (req == null) {
@@ -207,6 +219,16 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		super.cleanSession(sess); 
 		
 		subscriptionManager.removeByClientId(sessId);
+		
+		//HTTP proxy: clean outbound channel
+		Channel outboundChannel = HttpProxyHandler.outboundChannel(sess);
+		if(outboundChannel != null) {
+			HttpProxyHandler.closeOnFlush(outboundChannel);
+		}
+	}
+	
+	public void setHttpProxyHandler(HttpProxyHandler httpProxyHandler) {
+		this.httpProxyHandler = httpProxyHandler;
 	}
 
 	public void setRequestAuth(RequestAuth requestAuth) {

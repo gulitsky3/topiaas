@@ -68,6 +68,7 @@ import io.zbus.transport.http.Http.FormData;
  *
  */
 public class HttpWsServer extends Server { 
+	private DecodeFilter decodeFilter;
 	public HttpWsServer() {
 		CorsConfig corsConfig = CorsConfigBuilder
 				.forAnyOrigin()
@@ -92,12 +93,20 @@ public class HttpWsServer extends Server {
 				//p.add(new ChunkedWriteHandler());
 				p.add(new CorsHandler(corsConfig));
 			} 
-			p.add(new HttpWsServerCodec());  
+			HttpWsServerCodec handler = new HttpWsServerCodec();
+			handler.setDecodeFilter(decodeFilter);
+			p.add(handler);  
 		}); 
+	}
+	
+	public void setDecodeFilter(DecodeFilter decodeFilter) {
+		this.decodeFilter = decodeFilter;
 	}
 	
 	public static class HttpWsServerCodec extends MessageToMessageCodec<Object, Object> {
 		private static final Logger logger = LoggerFactory.getLogger(HttpWsServerCodec.class); 
+		private DecodeFilter decodeFilter;
+		
 		private WebSocketServerHandshaker handshaker;
 	
 		//File upload
@@ -190,6 +199,10 @@ public class HttpWsServer extends Server {
 			//2) HTTP mode
 			if(!(obj instanceof io.netty.handler.codec.http.HttpMessage)){
 				throw new IllegalArgumentException("HttpMessage object required: " + obj);
+			}
+			
+			if(decodeFilter != null) {
+				if(decodeFilter.decode(ctx, obj, out)) return; //filter out some http message
 			}
 			 
 			io.netty.handler.codec.http.HttpMessage httpMsg = (io.netty.handler.codec.http.HttpMessage) obj;   
@@ -384,6 +397,9 @@ public class HttpWsServer extends Server {
 			} else {
 				return "ws://" + location;
 			}
+		} 
+		public void setDecodeFilter(DecodeFilter decodeFilter) {
+			this.decodeFilter = decodeFilter;
 		}
 	}
 }

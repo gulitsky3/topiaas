@@ -49,15 +49,17 @@
 		<allowedRequestHeaders>Origin, X-Request-With, X-Requested-With, Content-Type, Accept, Token</allowedRequestHeaders>
 		<exposeHeaders></exposeHeaders>
 	</cors>
-	<!-- 
 	
+	
+	<!-- HTTP 代理
 	<httpProxy>
 		<proxy>
-			<location>/nginx</location>
-			<backend>http://111.230.136.74:15555/nginx</backend>
+			<urlPrefix>/test</urlPrefix>
+			<urlRewrite>/not-found</urlRewrite>
+			<backend>http://localhost:15555</backend>
 		</proxy>
 	</httpProxy>
-	-->
+ 	--> 
 	 
  	
  	<staticFileDir cached="false">../static</staticFileDir>     
