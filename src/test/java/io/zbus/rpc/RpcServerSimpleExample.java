@@ -47,7 +47,6 @@ public class RpcServerSimpleExample {
 		res.setBody("<h1>test body</h1>");
 		return res;
 	} 
-	
 	 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {     

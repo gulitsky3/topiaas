@@ -61,6 +61,29 @@ public class StrKit {
 		return res;
 	}
 	
+	
+	public static List<String> getArrayValue(String value, String key){
+		String delim = "[&]";  
+		List<String> valueArray = new ArrayList<>(); 
+		
+		String[] kvs = value.split(delim);
+		for(String kv : kvs){
+			kv = kv.trim();
+			if(kv.equals("")) continue;
+			String[] bb = kv.split("=");
+			String k="",v="";
+			if(bb.length > 0){
+				k = bb[0].trim();
+			}
+			if(bb.length > 1){
+				v = bb[1].trim();
+			}
+			if(!k.equals(key)) continue;
+			valueArray.add(v);
+		}
+		return valueArray;
+	}
+	
 	public static Integer getInt(Map<String, String> map, String key) {
 		String value = map.get(key);
 		if(value == null) return null;

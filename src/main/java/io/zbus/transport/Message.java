@@ -24,7 +24,9 @@ package io.zbus.transport;
  
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,6 +36,7 @@ import com.alibaba.fastjson.JSONObject;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
+import io.zbus.kit.StrKit;
 /**
  * Message takes format of standard HTTP:
  * <p> key-value headers  
@@ -161,6 +164,14 @@ public class Message {
 		}
 		String value = urlInfo.queryParamMap.get(key);
 		return value;
+	}
+	
+	public List<String> getParamArray(String key) {
+		if(url == null) return new ArrayList<>();
+		if(urlInfo == null) {
+			urlInfo = HttpKit.parseUrl(url);
+		}
+		return StrKit.getArrayValue(urlInfo.queryParamString, key); 
 	}
 	
 	public <T> T getParam(String key, Class<T> clazz){ 
