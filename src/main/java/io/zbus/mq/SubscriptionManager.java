@@ -19,9 +19,9 @@ public class SubscriptionManager {
 	private Map<String, Subscription> clientId2Subscription = new ConcurrentHashMap<>();
 	private Map<String, List<Subscription>> channel2Subscription = new ConcurrentHashMap<>();
 	
-	private MessageQueueManager messageQueueManager;
+	private MqManager messageQueueManager;
 	
-	public SubscriptionManager(MessageQueueManager messageQueueManager) {
+	public SubscriptionManager(MqManager messageQueueManager) {
 		this.messageQueueManager = messageQueueManager;
 	}
 	

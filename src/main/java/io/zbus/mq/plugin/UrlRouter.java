@@ -1,6 +1,6 @@
 package io.zbus.mq.plugin;
 
-import io.zbus.mq.MessageQueueManager;
+import io.zbus.mq.MqManager;
 
 /**
  * 
@@ -16,5 +16,5 @@ public interface UrlRouter {
 	 * @param sess where message from
 	 * @return mq name of matched from URL
 	 */
-	String match(MessageQueueManager mqManager, String url);
+	String match(MqManager mqManager, String url);
 }

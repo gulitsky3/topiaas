@@ -1,9 +1,9 @@
 package io.zbus.mq.plugin;
 
-import io.zbus.mq.MessageQueueManager;
+import io.zbus.mq.MqManager;
 
 public class DefaultUrlRouter implements UrlRouter { 
-	public String match(MessageQueueManager mqManager, String url) {
+	public String match(MqManager mqManager, String url) {
 		int length = 0; 
 		String matched = null;
 		for(String mq : mqManager.mqNames()) { 

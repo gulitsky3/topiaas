@@ -22,12 +22,12 @@ import io.zbus.transport.http.Http;
 
 public class MonitorServerAdaptor extends ServerAdaptor { 
 	private RpcProcessor rpcProcessor = new RpcProcessor();
-	private MessageQueueManager mqManager;
+	private MqManager mqManager;
 	protected SubscriptionManager subManager;
 	
 	private RequestAuth requestAuth;  
 	
-	public MonitorServerAdaptor(MqServerConfig config, MessageQueueManager mqManager, SubscriptionManager subManager) {
+	public MonitorServerAdaptor(MqServerConfig config, MqManager mqManager, SubscriptionManager subManager) {
 		if (config.monitorServer != null && config.monitorServer.auth != null) {
 			requestAuth = config.monitorServer.auth; 
 		} 

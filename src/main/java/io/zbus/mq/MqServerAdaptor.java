@@ -40,7 +40,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	private static final Logger logger = LoggerFactory.getLogger(MqServerAdaptor.class); 
 	private SubscriptionManager subscriptionManager;
 	private MessageDispatcher messageDispatcher;
-	private MessageQueueManager mqManager; 
+	private MqManager mqManager; 
 	private RequestAuth requestAuth; 
 	private Map<String, CommandHandler> commandTable = new HashMap<>(); 
 	
@@ -54,7 +54,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	
 	public MqServerAdaptor(MqServerConfig config) { 
 		this.config = config;
-		mqManager = new MessageQueueManager();
+		mqManager = new MqManager();
 		subscriptionManager = new SubscriptionManager(mqManager);  
 		
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
@@ -251,7 +251,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		return subscriptionManager;
 	}
 
-	public MessageQueueManager getMqManager() {
+	public MqManager getMqManager() {
 		return mqManager;
 	}  
 	

@@ -2,7 +2,7 @@ package io.zbus.mq.commands;
 
 import java.io.IOException;
 
-import io.zbus.mq.MessageQueueManager;
+import io.zbus.mq.MqManager;
 import io.zbus.mq.Protocol;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.model.MessageQueue;
@@ -10,9 +10,9 @@ import io.zbus.transport.Message;
 import io.zbus.transport.Session;
 
 public class QueryHandler implements CommandHandler {  
-	private final MessageQueueManager mqManager; 
+	private final MqManager mqManager; 
 	
-	public QueryHandler(MessageQueueManager mqManager) { 
+	public QueryHandler(MqManager mqManager) { 
 		this.mqManager = mqManager;
 	}
 	
