@@ -42,6 +42,7 @@ public class RpcServer implements Closeable {
 	private ExecutorService runner;
 	
 	private boolean routeDisabled = false;
+	private Boolean started = false;
 
 	public RpcServer(RpcProcessor processor) {
 		this.rpcProcessor = processor;
@@ -64,9 +65,14 @@ public class RpcServer implements Closeable {
 		for(MqClient client : clients) {
 			client.close();
 		} 
+		started = false;
 	}
 	
 	public void start() {  
+		synchronized(started) {
+			if(started) return;
+			started = true;
+		}
 		if(runner == null) {
 			runner = Executors.newFixedThreadPool(poolSize);
 		} 

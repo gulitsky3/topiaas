@@ -15,9 +15,8 @@ import io.zbus.rpc.annotation.Route;
 public class Spring {   
 	
 	@SuppressWarnings("resource")
-	public static void run(String xmlConfig) { 
-		
-		ApplicationContext ctx = new ClassPathXmlApplicationContext(xmlConfig);   
+	public static void run(String xmlConfig) {  
+		ApplicationContext ctx = new ClassPathXmlApplicationContext(xmlConfig);    
 		RpcProcessor rpcProcessor = null;
 		try {
 			rpcProcessor = ctx.getBean(RpcProcessor.class);

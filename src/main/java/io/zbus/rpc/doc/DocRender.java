@@ -29,6 +29,11 @@ public class DocRender {
 		this.rootUrl = rootUrl;
 	}
 	
+	@Route(path="/apiList", docEnabled=false)
+	public List<RpcMethod> apiList() {  
+		return this.rpcProcessor.rpcMethodList();
+	} 
+	
 	@Route(path="/", docEnabled=false)
 	public Message index() throws IOException { 
 		Message result = new Message(); 
