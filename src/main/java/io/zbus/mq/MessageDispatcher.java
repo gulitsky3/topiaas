@@ -58,8 +58,7 @@ public class MessageDispatcher {
 				}
 				boolean windowOpen = false;
 				while (index < max) {
-					Subscription sub = subs.get((int) (index % N));
-					loadbalanceTable.put(channel, ++index); 
+					Subscription sub = subs.get((int) (index % N)); 
 					
 					if(sub.window != null && sub.window <= 0) { 
 						continue;
@@ -88,6 +87,7 @@ public class MessageDispatcher {
 						sess.write(message);  
 						message = null;
 					}
+					loadbalanceTable.put(channel, ++index); 
 				} 
 				if(!windowOpen) break;
 			}  
