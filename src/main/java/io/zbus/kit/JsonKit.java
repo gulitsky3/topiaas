@@ -52,7 +52,7 @@ public class JsonKit {
 		}
 	} 
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static <T> T convert(Object json, Class<T> clazz) { 
 		if(json == null){ 
 			return null;
@@ -60,6 +60,9 @@ public class JsonKit {
 		if(clazz.isAssignableFrom(json.getClass())){ 
 			return (T)json;
 		} 
+		if (JSONObject.class.isAssignableFrom(clazz) && json instanceof Map) {
+			return (T)new JSONObject((Map)json);
+		}
 		String jsonString = null;
 		if(json instanceof String) {
 			jsonString = (String)json;
