@@ -143,7 +143,9 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		}
 		
 		if(config.verbose) { 
-			logger.info(sess.remoteAddress() + ":" + req); 
+			String type = "<Request>";
+			if(Protocol.ROUTE.equals(cmd)) type = "<Response>";
+			logger.info(type + " " + sess.remoteAddress() + ": " + req); 
 		}  
 		
 		if(cmd == null) { //Special case for favicon
@@ -168,7 +170,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			if(!next) {
 				res.setHeader(Message.ID, req.getHeader(Message.ID));
 				if(config.verbose) { 
-					logger.info(sess.remoteAddress() + ":" + res); 
+					logger.info("<Response> " + sess.remoteAddress() + ": " + res); 
 				}  
 				sess.write(res);
 				return;

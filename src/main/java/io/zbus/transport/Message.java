@@ -185,9 +185,27 @@ public class Message {
 		json.put("url", this.url);
 		json.put("method", this.method);
 		json.put("headers", this.headers);
-		json.put("body", this.body);
 		
-		return toJSONString(true);
+		Object body = null;
+		final int maxBodyLengthPrint = 10240;
+		if(this.body instanceof String) {
+			String s = (String)this.body;
+			if(s.length() > maxBodyLengthPrint) {
+				body = s.substring(0, maxBodyLengthPrint) + " ...";
+			}
+		} else if(this.body instanceof byte[]){
+			body = "<binary data>";
+		} else {
+			String s = JsonKit.toJSONString(this.body);
+			if(s.length() < maxBodyLengthPrint) {
+				body = this.body;
+			} else {
+				body = "<json object too large> " + s.substring(0, maxBodyLengthPrint) + " ....";
+			}
+		}
+		json.put("body", body);
+		
+		return JSON.toJSONString(json, true);
 	}
 	
 	public String toJSONString() {
