@@ -16,6 +16,7 @@ import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsKit;
+import io.zbus.kit.StrKit;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http; 
@@ -23,7 +24,7 @@ import io.zbus.transport.http.Http;
 
 @Route(exclude = true)
 public class JavascriptInvoker {
-	private static final Logger logger = LoggerFactory.getLogger(JavascriptInvoker.class);
+	private static final Logger logger = LoggerFactory.getLogger(JavascriptInvoker.class); 
 	
 	ScriptEngineManager factory = new ScriptEngineManager();
 	ScriptEngine engine = factory.getEngineByName("javascript"); 
@@ -31,7 +32,10 @@ public class JavascriptInvoker {
 	private Map<String, Object> context = new HashMap<>(); 
 	private FileKit fileKit = new FileKit(false);
 	private String basePath = "."; 
-	private String urlPrefix = ""; 
+	private String urlPrefix = "";  
+	private String filterJsFile = "filter.js";
+	private String filterFunc = "doFilter";
+	
 	private String initJsFile = null; 
 	 
 	private File absoluteBasePath = new File(basePath).getAbsoluteFile();  
@@ -50,6 +54,11 @@ public class JavascriptInvoker {
 	
 	public void init() {
 		if(initJsFile == null) return;  
+		try {
+			loadScript(initJsFile);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
 	}
 	
 	@Route("/cache")
@@ -57,9 +66,15 @@ public class JavascriptInvoker {
 		fileKit.setCacheEnabled(cacheEnabled);
 	}
 
-	@Route(path="/", ignoreResult=true)
-	public void entry() throws Exception {  
-		callJs("filter.js", "doFilter"); 
+	@Route(path="/", ignoreResult=true) //request and response all handled by js
+	public void handle() throws Exception {  
+		
+		if(StrKit.isEmpty(filterJsFile)) {
+			invoke(); //direct invoke
+			return;
+		}  
+		
+		callJs(filterJsFile, filterFunc); 
 	}
 	
 	public void invoke() throws Exception { 
@@ -156,5 +171,13 @@ public class JavascriptInvoker {
 	
 	public void setInitJsFile(String initJsFile) {
 		this.initJsFile = initJsFile;
+	}
+	
+	public void setFilterJsFile(String filterJsFile) {
+		this.filterJsFile = filterJsFile;
+	}
+	
+	public void setFilterFunc(String filterFunc) {
+		this.filterFunc = filterFunc;
 	}
 } 
