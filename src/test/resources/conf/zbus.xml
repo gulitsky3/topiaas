@@ -40,20 +40,7 @@
 			</add>  
 		</auth>  
 		-->  
-	</monitor> 
-	
-	<!-- in development feature -->
-	<ipAcl> <!-- IP access control list -->
-		<mq name="*" > <!-- any -->
-			<allow>10.0.0.1</allow>
-			<deny>111.1.2.4</deny>
-		</mq>  
-		<mq name="/a/b/c" > <!-- any -->
-			<allow>10.0.0.1</allow>
-			<deny>111.1.2.4</deny>
-		</mq>  
-	</ipAcl>
- 	
+	</monitor>  
  	
 	<!-- MQ location configure -->
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   

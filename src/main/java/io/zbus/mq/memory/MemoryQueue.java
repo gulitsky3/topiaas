@@ -1,6 +1,7 @@
 package io.zbus.mq.memory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.zbus.mq.Protocol;
@@ -33,7 +34,7 @@ public class MemoryQueue extends AbstractMessageQueue{
 		info.type = type();
 		info.mask = getMask();
 		info.messageDepth = size(); 
-		info.channelCount = channels().size(); 
+		info.channelList = new ArrayList<>(channels().values()); 
 		info.createdAt = createdAt;
 		info.creator = creator;
 		return info;

@@ -39,6 +39,7 @@ public class SubHandler implements CommandHandler {
 		if(sub == null) {
 			sub = new Subscription();
 			sub.clientId = sess.id(); 
+			sub.clientAddress = sess.remoteAddress();
 			sub.mq = mqName;
 			sub.channel = channelName; 
 			sub.window = window;

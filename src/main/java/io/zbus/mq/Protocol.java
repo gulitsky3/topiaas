@@ -1,4 +1,9 @@
 package io.zbus.mq;
+ 
+import java.util.ArrayList;
+import java.util.List;
+
+import io.zbus.mq.model.Subscription;
 
 public interface Protocol {  
 	//Parameter keys(Message main key-value pairs)
@@ -48,8 +53,8 @@ public interface Protocol {
 		public String name; 
 		public Integer mask; 
 		public long messageDepth;
-		public String type;
-		public int channelCount;
+		public String type; 
+		public List<ChannelInfo> channelList = new ArrayList<>();
 		public int consumerCount;
 		public String creator;
 		public Long createdAt; 
@@ -60,6 +65,6 @@ public interface Protocol {
 		public Integer mask;  
 		public String filter;
 		public long offset;
-	}
-	
+		public List<Subscription> subscriptions = new ArrayList<>();
+	}  
 }

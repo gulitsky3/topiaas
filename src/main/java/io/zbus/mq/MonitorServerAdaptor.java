@@ -1,9 +1,12 @@
 package io.zbus.mq;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.zbus.kit.FileKit;
+import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.Protocol.MqInfo;
+import io.zbus.mq.model.MessageQueue;
 import io.zbus.mq.plugin.MonitorUrlRouter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
@@ -12,11 +15,14 @@ import io.zbus.transport.Message;
 
 public class MonitorServerAdaptor extends MqServerAdaptor {  
 	
+	private SubscriptionManager subscriptionManager;
 	public MonitorServerAdaptor(MqServerAdaptor mqServerAdaptor) {
 		super(mqServerAdaptor);
 		if (config.monitorServer != null && config.monitorServer.auth != null) {
 			requestAuth = config.monitorServer.auth; 
 		}  
+		
+		this.subscriptionManager = mqServerAdaptor.subscriptionManager;
 		
 		this.rpcProcessor = new RpcProcessor();
 		StaticResource staticResource = new StaticResource();
@@ -41,7 +47,32 @@ public class MonitorServerAdaptor extends MqServerAdaptor {
 		
 		@Route("/")
 		public List<MqInfo> home() {  
-			return mqManager.mqInfoList();
+			List<MqInfo> res = mqManager.mqInfoList();
+			for(MqInfo mqInfo : res) {
+				for(ChannelInfo channelInfo : mqInfo.channelList) {
+					channelInfo.subscriptions = subscriptionManager.getSubscriptionList(mqInfo.name, channelInfo.name);
+					if(channelInfo.subscriptions == null) {
+						channelInfo.subscriptions = new ArrayList<>();
+					}
+				} 
+			}
+			
+			return res;
+		}  
+		 
+		public MqInfo info(String mq, String channel) {  
+			MessageQueue q = mqManager.get(mq);
+			if(q == null) {
+				return null;
+			}
+			MqInfo res = q.info();
+			for(ChannelInfo channelInfo : res.channelList) {
+				channelInfo.subscriptions = subscriptionManager.getSubscriptionList(mq, channel);
+				if(channelInfo.subscriptions == null) {
+					channelInfo.subscriptions = new ArrayList<>();
+				}
+			} 
+			return res;  
 		}  
 	} 
 }

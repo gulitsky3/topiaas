@@ -147,15 +147,18 @@ public class RpcServer implements Closeable {
 			req.setHeader(Protocol.MQ_MASK, mqMask);
 			req.setHeader(Protocol.MQ_TYPE, mqType);
 			req.setHeader(Protocol.CHANNEL, channel); 
-			Message res = mqClient.invoke(req);
-			logger.info(JsonKit.toJSONString(res));
-
-			req = new Message();
-			req.setHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
-			req.setHeader(Protocol.MQ, mq);
-			req.setHeader(Protocol.CHANNEL, channel); 
-			res = mqClient.invoke(req); 
-			logger.info(JsonKit.toJSONString(res)); 
+			mqClient.invoke(req, res -> { 
+				logger.info(JsonKit.toJSONString(res));
+				
+				Message subMessage = new Message();
+				subMessage.setHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
+				subMessage.setHeader(Protocol.MQ, mq);
+				subMessage.setHeader(Protocol.CHANNEL, channel); 
+				mqClient.invoke(subMessage, data -> {
+					logger.info(JsonKit.toJSONString(data)); 
+				});  
+			}); 
+			
 		});
 
 		mqClient.connect();
