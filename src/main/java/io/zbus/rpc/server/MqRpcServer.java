@@ -67,6 +67,16 @@ public class MqRpcServer implements Closeable {
 			String source = (String)request.getHeader(Protocol.SOURCE);
 			String id = (String)request.getHeader(Protocol.ID); 
 			
+			String url = request.getUrl();
+			if(request.getUrl() != null) {
+				String prefix = "/"+mq;
+				if(url.startsWith(prefix)) {
+					url = url.substring(prefix.length());
+					if(!url.startsWith("/")) url = "/"+url;
+					request.setUrl(url);
+				}
+			}
+			
 			Message response = processor.process(request);
 			
 			if(response.getStatus() == null) {

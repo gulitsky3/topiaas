@@ -16,7 +16,7 @@ public class Sub {
 		MqClient client = new MqClient(server);    
 		client.heartbeat(30, TimeUnit.SECONDS);
 		
-		final String mq = "DiskQ", channel = "MyChannel";
+		final String mq = "MyMQ", channel = "MyChannel";
 		AtomicInteger count = new AtomicInteger(0);  
 		client.addMqHandler(mq, channel, data->{
 			if(count.getAndIncrement() % 10000 == 0) {

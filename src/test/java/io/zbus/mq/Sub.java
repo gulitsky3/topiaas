@@ -21,7 +21,7 @@ public class Sub {
 		final String mq = "MyMQ", channel = "MyChannel", mqType = Protocol.MEMORY;
 		
 		AtomicInteger count = new AtomicInteger(0);  
-		client.addMqHandler(mq, channel, data->{
+		client.addMqHandler(mq, channel, data->{ 
 			if(count.getAndIncrement() % 10000 == 0) {
 				System.out.println(data); 
 			} 

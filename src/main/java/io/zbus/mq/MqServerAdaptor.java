@@ -3,7 +3,6 @@ package io.zbus.mq;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
 import io.zbus.kit.HttpKit;
+import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.model.MessageQueue;
@@ -62,7 +62,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		
 		attachInfo(req, sess);
 		
-		handleUrlMessage(req); //TODO should remove
+		handleRpcUrl(req);
 		
 		String cmd = (String)req.removeHeader(Protocol.CMD); 
 		
@@ -93,18 +93,20 @@ public class MqServerAdaptor extends ServerAdaptor {
 		}
 	}   
 	
-	private void handleUrlMessage(Message msg) {
+	private void handleRpcUrl(Message msg) {
 		String url = msg.getUrl();
 		if (url == null || "/".equals(url)) {
 			return;
+		}  
+		
+		if(msg.getHeader(Protocol.MQ) ==  null) {
+			UrlInfo info = HttpKit.parseUrl(url);
+			if(info.path.size() > 0) {
+				String mq = info.path.get(0);
+				msg.addHeader(Protocol.MQ, mq);
+			}
 		}
-		if (msg.getBody() != null)
-			return;
-
-		Map<String, Object> kv = HttpKit.parseRpcUrl(url, true); 
-		for(Entry<String, Object> e : kv.entrySet()) {
-			msg.addHeader(e.getKey(), e.getValue());
-		}
+		
 		if(msg.getHeader(Protocol.CMD) == null) { // RPC assumed
 			msg.addHeader(Protocol.CMD, Protocol.PUB);
 			msg.addHeader(Protocol.ACK, false); //ACK should be disabled

@@ -155,20 +155,11 @@ public abstract class AbastractClient implements Closeable {
 		if (id != null) {
 			AbastractClient.RequestContext ctx = callbackTable.remove(id);
 			if (ctx != null) { // 1) Request-Response invocation
-				Integer status = response.getStatus();
-				if (status != null && status != 200) {
-					if (ctx.onError != null) {
-						ctx.onError.handle(new InvokeException((String) response.getBody()));
-					} else {
-						logger.error(JsonKit.toJSONString(response));
-					}
+				if (ctx.onData != null) {
+					ctx.onData.handle(response);
 				} else {
-					if (ctx.onData != null) {
-						ctx.onData.handle(response);
-					} else {
-						logger.warn("Missing handler for: " + response);
-					}
-				}
+					logger.warn("Missing handler for: " + response);
+				} 
 				return true;
 			}
 		}

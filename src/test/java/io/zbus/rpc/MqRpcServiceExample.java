@@ -7,23 +7,14 @@ public class MqRpcServiceExample {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {  
-		RpcServer b = new RpcServer(); 
+		RpcServer server = new RpcServer();  
 		
-		FileService resource = new FileService();
-		//resource.setBasePath("");
-		//resource.setCacheEnabled(false); 
-		
-		InterfaceExample example = new InterfaceExampleImpl();
-		
-		b.setStackTraceEnabled(false);
-		//b.setAutoLoadService(true);
-		//b.setMethodPageModule("m");
-		b.addModule("example", example); 
-		b.addModule("static", resource);
+		InterfaceExample example = new InterfaceExampleImpl(); 
+		server.addModule("/", example);  
 		
 		//connect to zbus
-		b.setAddress("localhost:15555");
-		b.setMq("MyRpc");
-		b.start();
+		server.setAddress("localhost:15555");
+		server.setMq("MyRpc");
+		server.start();
 	} 
 }

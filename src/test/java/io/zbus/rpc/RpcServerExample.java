@@ -10,10 +10,10 @@ public class RpcServerExample {
 	public static void main(String[] args) throws Exception {
 		RpcServer b = new RpcServer();    
 		
-		InterfaceExample example = new InterfaceExampleImpl();
+		InterfaceExample example = new InterfaceExampleImpl(); 
+		b.setStackTraceEnabled(false);  
 		
-		b.setStackTraceEnabled(false); 
-		b.addModule("/", example);  
+		b.addModule("/", example);   
 		
 		b.setPort(8080);
 		b.start();

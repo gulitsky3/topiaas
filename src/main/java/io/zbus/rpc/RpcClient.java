@@ -4,6 +4,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Client;
@@ -44,10 +46,9 @@ public class RpcClient extends Client {
 			throw new RpcException(e.getMessage(), e.getCause());
 		}
 	}  
-	
-	
+	 
 	@SuppressWarnings("unchecked")
-	public <T> T createProxy(Class<T> clazz, String module){  
+	public <T> T createProxy(String module, Class<T> clazz){  
 		Constructor<RpcInvocationHandler> rpcInvokerCtor;
 		try {
 			rpcInvokerCtor = RpcInvocationHandler.class.getConstructor(new Class[] {RpcClient.class, String.class }); 
@@ -78,10 +79,14 @@ public class RpcClient extends Client {
 			Object value = handleLocalMethod(proxy, method, args);
 			if (value != REMOTE_METHOD_CALL) return value; 
 			 
+			
+			Map<String, Object> data = new HashMap<>();
+			data.put(Protocol.MODULE, module);
+			data.put(Protocol.METHOD, method.getName());  
+			data.put(Protocol.PARAMS, args);
+			
 			Message request = new Message();
-			request.addHeader(Protocol.MODULE, module);
-			request.addHeader(Protocol.METHOD, method.getName());  
-			request.addHeader(Protocol.PARAMS, args);
+			request.setBody(data); //use body
 			
 			Message resp = rpc.invoke(request);
 			return parseResult(resp, method.getReturnType());
