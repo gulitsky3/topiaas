@@ -23,11 +23,15 @@
 package io.zbus.transport;
  
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 import java.util.TreeMap;
 
 import com.alibaba.fastjson.JSON;
@@ -36,6 +40,7 @@ import com.alibaba.fastjson.annotation.JSONField;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
+import io.zbus.transport.http.Http.FormData;
 import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 /**
@@ -328,11 +333,55 @@ public class Message {
 	public void setRequestCookie(String key, String value) {
 		this.setCookie(key, value);
 	}
-	public void setResponseCookie(String key, String value) {
+	public void setResponseCookie(String name, String value) {
+		this.setResponseCookie(name, value, null, null, null, null, null, null);
+	}
+	public void setResponseCookie(String name, String value, Boolean httpOnly) {
+		this.setResponseCookie(name, value, null, null, null, null, null, httpOnly);
+	}
+	public void setResponseCookie(String name, String value, Boolean secure, Boolean httpOnly) {
+		this.setResponseCookie(name, value, null, null, null, null, secure, httpOnly);
+	}
+	
+	public void setResponseCookie(
+		String name, 
+		String value,
+		String domain,
+		String path,
+		Date expires, 
+		Integer maxAgeSeconds, 
+		Boolean secure, 
+		Boolean httpOnly
+	) {
 		Map<String, String> m = responseCookies();
-		m.put(key, value);  
+		m.put("Name", name);
+		m.put("Value", value);
+		
+		if (domain != null) {
+			m.put("Domain", domain);
+		}
+		if (path == null) {
+			path = "/";
+		}
+		m.put("Path", path);
+		
+		if (expires != null) {
+			DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US);
+			df.setTimeZone(TimeZone.getTimeZone("GMT"));
+			String gmtStr = df.format(expires);
+			m.put("Expires", gmtStr);
+		}
+		if (maxAgeSeconds != null) {
+			m.put("Max-Age", String.valueOf(maxAgeSeconds));
+		}
+		if (secure != null) {
+			m.put("Secure", String.valueOf(secure));
+		}
+		if (httpOnly != null) {
+			m.put("HttpOnly", String.valueOf(httpOnly));
+		}
 		calculateResponseCookieHeader();
-	}  
+	}
 	
 	private void calculateCookieHeader() {
 		if(cookies == null) return;
@@ -349,17 +398,43 @@ public class Message {
 	
 	private void calculateResponseCookieHeader() {
 		if(responseCookies == null) return;
-		List<String> cookieList = new ArrayList<>();
-		for(Entry<String, String> e : responseCookies.entrySet()) {
-			String key = e.getKey();
-			String val = e.getValue();
-			cookieList.add(String.format("%s=%s", key, val));
+		String Name = responseCookies.get("Name");
+		if (Name == null || Name.trim().length() == 0) {
+			return;
+		}
+		String Value = responseCookies.get("Value");
+		String Expires = responseCookies.get("Expires");
+		String MaxAge = responseCookies.get("Max-Age");
+		String Domain = responseCookies.get("Domain");
+		String Path = responseCookies.get("Path");
+		String Secure = responseCookies.get("Secure");
+		String HttpOnly = responseCookies.get("HttpOnly");
+//		String SameSite = responseCookies.get("SameSite");
+		
+		List<String> cookieAttrs = new ArrayList<>();
+		cookieAttrs.add(Name+"="+Value);
+		if (Expires != null) {
+			cookieAttrs.add("Expires="+Expires);
+		}
+		if (MaxAge != null) {
+			cookieAttrs.add("Max-Age="+MaxAge);
+		}
+		if (Domain != null) {
+			cookieAttrs.add("Domain="+Domain);
+		}
+		if (Path != null) {
+			cookieAttrs.add("Path="+Path);
+		}
+		if ("true".equals(Secure))	 {
+			cookieAttrs.add("Secure");
+		}
+		if ("true".equals(HttpOnly))	 {
+			cookieAttrs.add("HttpOnly");
 		}
 		
-		String cookieString = String.join("; ", cookieList);
+		String cookieString = String.join("; ", cookieAttrs);
 		setHeader("Set-Cookie", cookieString);
 	}
-	
 	
 	@JSONField(deserialize=false, serialize=false)
 	public void setCookies(Map<String, String> cookies) {
@@ -502,4 +577,58 @@ public class Message {
 		 
 		return JsonKit.toJSONString(json, prettyFormat);
 	} 
+	
+	public Map<String, Object> getMergedParams() {
+		// Headers
+		Map<String, Object> headerParams = this.getHeaders();
+		// Body(JSONObject、FormData(Attrs, Files)、QueryString)
+		Object body = this.getBody();
+		Map<String, Object> bodyParams = new HashMap<>();
+		if (body instanceof FormData) {// Body FormData、QueryString
+			FormData fd = (FormData) body;
+			if (fd.attributes != null) {
+				bodyParams.putAll(fd.attributes);
+			}
+			if (fd.files != null) {
+				bodyParams.putAll(fd.files);
+			}
+		} else {// Body JSONObject
+			try {
+				JSONObject bodyObj = JsonKit.convert(body, JSONObject.class);
+				if (bodyObj != null) {
+					bodyParams.putAll(bodyObj);
+				}
+			} catch (Throwable e) {
+				// ignore
+			}
+		}
+		// Url(QueryString、PathParam)
+		UrlInfo urlInfo = HttpKit.parseUrl(this.getUrl());
+		Map<String, Object> queryParams = new HashMap<>();
+		if (urlInfo != null && urlInfo.queryParamMap != null) {
+			queryParams.putAll(urlInfo.queryParamMap);
+		}
+		Map<String, String> pathParams = this.getPathParams();
+		// Cookies
+		Map<String, String> cookieParams = this.getCookies();
+		
+		// 计算params
+		Map<String, Object> params = new HashMap<String, Object>();
+		// params 包括以下这些（相同参数名的时候，后面可以覆盖前面）
+		if (headerParams != null)
+			params.putAll(headerParams);// Headers
+		if (bodyParams != null) {
+			params.putAll(bodyParams);// Body
+			params.put("body", bodyParams);
+		}
+		if (queryParams != null)
+			params.putAll(queryParams);// Url QueryString
+		if (pathParams != null)
+			params.putAll(pathParams);// Url PathVariable
+		if (cookieParams != null)
+			params.putAll(cookieParams);// Cookies (安全性要求更高，所以它的优先级最高)
+		
+		return params;
+	}
+	
 }

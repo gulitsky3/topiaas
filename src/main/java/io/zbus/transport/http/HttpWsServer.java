@@ -1,7 +1,6 @@
 package io.zbus.transport.http;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -296,7 +295,7 @@ public class HttpWsServer extends Server {
 				String url = req.uri();
 				try {
 					url = URLDecoder.decode(req.uri(), "UTF-8");
-				} catch (UnsupportedEncodingException e) {
+				} catch (Throwable e) {
 					//ignore
 				}
 				msg.setUrl(url);

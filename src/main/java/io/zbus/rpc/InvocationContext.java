@@ -18,4 +18,13 @@ public class InvocationContext {
 		InvocationContext.request.set(request);
 		InvocationContext.response.set(response);
 	}
+	
+	public static void setRequest(Message request) {
+		InvocationContext.request.set(request);
+	}
+	
+	public static void setResponse(Message response) {
+		InvocationContext.response.set(response);
+	}
+	
 }
