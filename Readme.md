@@ -32,7 +32,7 @@ Maven
 	</dependency>
 
 
-## MQ Protocol
+## Protocol
 
 [MQ Protocol](./doc/MqProtocol.md)
 
