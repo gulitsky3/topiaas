@@ -1,0 +1,15 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">  
+	
+	<bean id="client" class="io.zbus.rpc.RpcClient">
+		<constructor-arg type="java.lang.String" value="localhost:15555"/>  
+	</bean>
+	
+	<bean factory-bean="client" factory-method="createProxy">
+		<constructor-arg type="java.lang.String" value="/example"/> 
+		<constructor-arg type="java.lang.Class" value="io.zbus.rpc.biz.InterfaceExample"/> 
+	</bean> 
+	
+</beans>

@@ -3,7 +3,7 @@ package io.zbus.mq.commands;
 import java.io.IOException;
 
 import io.zbus.mq.MessageDispatcher;
-import io.zbus.mq.MessageQueueManager;
+import io.zbus.mq.MqManager;
 import io.zbus.mq.Protocol;
 import io.zbus.mq.SubscriptionManager;
 import io.zbus.mq.model.MessageQueue;
@@ -13,10 +13,10 @@ import io.zbus.transport.Session;
 
 public class SubHandler implements CommandHandler { 
 	private final MessageDispatcher messageDispatcher;
-	private final MessageQueueManager mqManager; 
+	private final MqManager mqManager; 
 	private final SubscriptionManager subscriptionManager;
 	
-	public SubHandler(MessageDispatcher messageDispatcher, MessageQueueManager mqManager, SubscriptionManager subscriptionManager) {
+	public SubHandler(MessageDispatcher messageDispatcher, MqManager mqManager, SubscriptionManager subscriptionManager) {
 		this.messageDispatcher = messageDispatcher;
 		this.mqManager = mqManager;
 		this.subscriptionManager = subscriptionManager;

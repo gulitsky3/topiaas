@@ -21,8 +21,8 @@ import io.zbus.mq.memory.MemoryQueue;
 import io.zbus.mq.model.Channel;
 import io.zbus.mq.model.MessageQueue;
 
-public class MessageQueueManager {  
-	private static final Logger logger = LoggerFactory.getLogger(MessageQueueManager.class);
+public class MqManager {  
+	private static final Logger logger = LoggerFactory.getLogger(MqManager.class);
 	public String mqDir = "/tmp/zbus";
 	public String dbConnectionString;
 	
@@ -75,7 +75,7 @@ public class MessageQueueManager {
 	 * @return created/updated mq
 	 * @throws IOException 
 	 */
-	public MessageQueue saveQueue(
+	public synchronized MessageQueue saveQueue(
 			String mqName, String mqType, Integer mqMask, 
 			String channel, Long channelOffset, Integer channelMask,
 			String creator

@@ -61,7 +61,7 @@ public class MqServer extends HttpWsServer {
 		
 		monitorServerConfig = config.monitorServer;
 		if(monitorServerConfig != null) {
-			monitorServerAdaptor = new MonitorServerAdaptor(this.config, adaptor.getMqManager(), adaptor.getSubscriptionManager()); 
+			monitorServerAdaptor = new MonitorServerAdaptor(adaptor); 
 		}
 	} 
 	public MqServer(String configFile){

@@ -3,6 +3,9 @@ package io.zbus.rpc;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.zbus.mq.MqServer;
+import io.zbus.mq.MqServerConfig;
+import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 
@@ -15,7 +18,8 @@ public class RpcServerSimpleExample {
 	@RequestMapping(path="/abc") //default path could be changed
 	public Object json() {
 		Map<String, Object> value = new HashMap<>();
-		value.put("key", System.currentTimeMillis());
+		value.put("key1", System.currentTimeMillis());
+		value.put("key2", System.currentTimeMillis());
 		return value;
 	}
 	 
@@ -31,13 +35,31 @@ public class RpcServerSimpleExample {
 		
 		return res;
 	}  
+	
+	public Map<String, Object> p(@Param("name") String name, @Param("age")int age) {
+		Map<String, Object> value = new HashMap<>();
+		value.put("key1", name);
+		value.put("key2", age);
+		return value;
+	}
 	 
+	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {   
 		RpcProcessor p = new RpcProcessor();    
 		p.mount("/", RpcServerSimpleExample.class);     
 		
-		RpcServer rpcServer = RpcServerBuilder.embedded();
-		rpcServer.setRpcProcessor(p);
+		
+		//based on MqServer
+		MqServerConfig config = new MqServerConfig();
+		config.setPublicServer("0.0.0.0:15555");
+		config.setMonitorServer("0.0.0.0:25555");
+		config.setVerbose(true); 
+		MqServer mqServer = new MqServer(config); 
+		mqServer.setRpcProcessor(p); 
+		
+		RpcServer rpcServer = new RpcServer(); 
+		rpcServer.setMqServer(mqServer); //embedded in MqServer
+		rpcServer.setRpcProcessor(p); 
 		rpcServer.start();  
 	} 
 	 

@@ -1,6 +1,7 @@
 package io.zbus.rpc;
 
 import io.zbus.mq.MqServer;
+import io.zbus.mq.MqServerConfig;
 
 public class RpcServerBuilder {   
 	/**
@@ -8,8 +9,12 @@ public class RpcServerBuilder {
 	 * @return
 	 */
 	public static RpcServer embedded() {
-		//Serve RPC embedded in MqServer 
-		MqServer mqServer = new MqServer(15555);  
+		//Serve RPC embedded in MqServer  
+		
+		MqServerConfig config = new MqServerConfig();
+		config.setPublicServer("0.0.0.0:15555");
+		config.setMonitorServer("0.0.0.0:25555");
+		MqServer mqServer = new MqServer(config);  
 		mqServer.setVerbose(false);
 		
 		RpcServer rpcServer = new RpcServer(); 

@@ -1,10 +1,10 @@
 package io.zbus.rpc;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import io.zbus.kit.FileKit;
+import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
@@ -37,6 +37,13 @@ public class RpcServerFullExamples {
 		
 		return res;
 	}  
+	
+	public Map<String, Object> p(@Param("name") String name, @Param("age")int age) {
+		Map<String, Object> value = new HashMap<>();
+		value.put("key1", name);
+		value.put("key2", age);
+		return value;
+	} 
 	
 	
 	@RequestMapping("/showUpload")
@@ -77,8 +84,9 @@ public class RpcServerFullExamples {
 		RpcMethod spec = new RpcMethod(); 
 		spec.urlPath = "/dynamic/func1";
 		spec.method = "func1";
-		spec.paramTypes = Arrays.asList(String.class.getName(), Integer.class.getName());
-		spec.paramNames = Arrays.asList("name", "age");
+		spec.addParam(String.class, "name");
+		spec.addParam(Integer.class, "age"); 
+		
 		spec.returnType = Map.class.getName(); 
 		p.mount(spec, new GenericService());   
 		

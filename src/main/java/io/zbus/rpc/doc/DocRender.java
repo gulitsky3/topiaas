@@ -8,6 +8,7 @@ import java.util.Map;
 import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
 import io.zbus.rpc.RpcMethod;
+import io.zbus.rpc.RpcMethod.MethodParam;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
@@ -22,6 +23,7 @@ public class DocRender {
 		this.rpcProcessor = rpcProcessor;  
 	}   
 	
+	@RequestMapping(exclude=true)
 	public void setRootUrl(String rootUrl) {
 		this.rootUrl = rootUrl;
 	}
@@ -65,26 +67,17 @@ public class DocRender {
 		String methodLink = HttpKit.joinPath(rootUrl, m.getUrlPath()); 
 		String method = m.method;
 		String paramList = "";
-		int size = m.paramNames.size();
-		if(size < m.paramTypes.size()) {
-			size = m.paramTypes.size();
-		}
+		int size = m.params.size(); 
 		for(int i=0;i<size;i++) { 
-			if(i<m.paramTypes.size()) { 
-				paramList += m.paramTypes.get(i);
-			}
-			if(i<m.paramNames.size()) { 
-				if(i<m.paramTypes.size()) paramList += " ";
-				paramList += m.paramNames.get(i) ;
-			}
-			paramList += ", ";
+			MethodParam p = m.params.get(i);
+			paramList += p.type; 
+			if(p.name != null)  paramList += " " + p.name;  
+			paramList += ", "; 
 		} 
 		if(paramList.length() > 0) {
 			paramList = paramList.substring(0, paramList.length()-2);
-		}    
-		
-		return String.format(fmt, methodLink, methodLink, m.returnType, methodLink, method,
-				paramList);
+		}     
+		return String.format(fmt, methodLink, methodLink, m.returnType, methodLink, method, paramList);
 	} 
 	
 	

@@ -11,5 +11,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 public @interface Param {
 	String value() default "";         //Name of parameter
+	String name() default "";          //Alias to value
+	
 	String defaultValue() default "";  //Default value of parameter 
 }

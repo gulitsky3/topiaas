@@ -1,6 +1,6 @@
 package io.zbus.mq.commands;
 
-import io.zbus.mq.MessageQueueManager;
+import io.zbus.mq.MqManager;
 import io.zbus.mq.Protocol;
 import io.zbus.mq.model.MessageQueue;
 import io.zbus.transport.Message;
@@ -23,7 +23,7 @@ public class MsgKit {
 		sess.write(res); 
 	}
 	
-	public static boolean validateRequest(MessageQueueManager mqManager, Message req, Session sess) {
+	public static boolean validateRequest(MqManager mqManager, Message req, Session sess) {
 		String mqName = (String)req.getHeader(Protocol.MQ);
 		String channelName = (String)req.getHeader(Protocol.CHANNEL);
 		if(mqName == null) {
