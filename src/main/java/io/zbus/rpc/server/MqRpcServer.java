@@ -21,7 +21,7 @@ import io.zbus.transport.http.HttpMessage;
 public class MqRpcServer implements Closeable {
 	private static final Logger logger = LoggerFactory.getLogger(MqRpcServer.class);
 
-	private MqServer mqServer;
+	private MqServer mqServer; //Only for InprocClient
 	private String address;
 	private String mq;
 	private String mqType = Protocol.MEMORY;
@@ -66,7 +66,7 @@ public class MqRpcServer implements Closeable {
 		mqClient.heartbeat(heartbeatInterval, TimeUnit.SECONDS);
 
 		mqClient.addListener(mq, channel, request -> {
-			String sender = (String)request.get(Protocol.SENDER);
+			String source = (String)request.get(Protocol.SOURCE);
 			String id = (String)request.get(Protocol.ID); 
 			
 			Map<String, Object> response = processor.process(request);
@@ -86,7 +86,7 @@ public class MqRpcServer implements Closeable {
 				response.put(Protocol.STATUS, 200);
 			}
 			response.put(Protocol.CMD, Protocol.ROUTE);
-			response.put(Protocol.RECVER, sender);
+			response.put(Protocol.TARGET, source);
 			response.put(Protocol.ID, id);
 
 			mqClient.sendMessage(response);

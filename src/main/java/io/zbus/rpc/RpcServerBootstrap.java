@@ -36,6 +36,7 @@ public class RpcServerBootstrap implements Closeable {
 	
 	//RPC over MQ
 	private String mq;
+	private String mqType;
 	private String channel;         //Default to MQ
 	private String mqServerAddress; //Support MQ based RPC
 	private Integer mqClientCount;
@@ -58,6 +59,11 @@ public class RpcServerBootstrap implements Closeable {
 	
 	public RpcServerBootstrap setMq(String mq){ 
 		this.mq = mq;
+		return this;
+	}    
+	
+	public RpcServerBootstrap setMqType(String mqType){ 
+		this.mqType = mqType;
 		return this;
 	}    
 	
@@ -188,6 +194,9 @@ public class RpcServerBootstrap implements Closeable {
 			this.mqRpcServer = new MqRpcServer(this.processor);
 			mqRpcServer.setAddress(mqServerAddress);
 			mqRpcServer.setMq(this.mq);
+			if(this.mqType != null) {
+				mqRpcServer.setMqType(mqType);
+			}
 			if(this.channel != null) {
 				mqRpcServer.setChannel(this.channel);
 			}

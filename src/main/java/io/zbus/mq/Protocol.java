@@ -27,8 +27,8 @@ public interface Protocol {
 	public static final String TOPIC          = "topic";     //Topic filter message on Channel
 	public static final String OFFSET         = "offset";
 	public static final String CHECKSUM       = "checksum";  //Offset checksum
-	public static final String SENDER         = "sender"; 
-	public static final String RECVER         = "recver"; 
+	public static final String SOURCE         = "source"; 
+	public static final String TARGET         = "target"; 
 	public static final String MQ_TYPE        = "mqType";  
 	public static final String MQ_MASK        = "mqMask"; 
 	public static final String MQ_SIZE        = "mqSize";

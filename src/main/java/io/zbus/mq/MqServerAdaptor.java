@@ -46,8 +46,8 @@ public class MqServerAdaptor extends ServerAdaptor {
 		commandTable.put(Protocol.PING, pingHandler); 
 	}
 	
-	protected void attachInfo(Map<String, Object> request, Session sender) {
-		request.put(Protocol.SENDER, sender.id());
+	protected void attachInfo(Map<String, Object> request, Session sess) {
+		request.put(Protocol.SOURCE, sess.id());
 		if(request.get(Protocol.ID) == null) {
 			request.put(Protocol.ID, StrKit.uuid());
 		}
@@ -282,8 +282,8 @@ public class MqServerAdaptor extends ServerAdaptor {
 	};
 	
 	private CommandHandler routeHandler = (req, sess) -> {  
-		String recver = (String)req.remove(Protocol.RECVER);
-		req.remove(Protocol.SENDER); 
+		String recver = (String)req.remove(Protocol.TARGET);
+		req.remove(Protocol.SOURCE); 
 		
 		Session target = sessionTable.get(recver); 
 		if(target != null) {
