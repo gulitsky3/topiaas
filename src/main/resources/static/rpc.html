@@ -40,6 +40,10 @@ tr { display: table-row;  vertical-align: inherit; border-color: inherit; }
 
 const rpc = new RpcClient(null, '{{urlPrefix}}'); 
 
+function handleMethodLinkClick(link, urlPath) {
+	window.location.href = link;
+}
+
 </script> 
 
 <div> 

@@ -327,7 +327,6 @@ public class Message {
 		Map<String, String> m = cookies();
 		return m.get(key); 
 	} 
-	
 	public void setCookie(String key, String value) {
 		Map<String, String> m = cookies();
 		m.put(key, value);  
@@ -581,6 +580,7 @@ public class Message {
 		return JsonKit.toJSONString(json, prettyFormat);
 	} 
 	
+	@JSONField(serialize=false, deserialize=false)
 	public Map<String, Object> getMergedParams() {
 		// Headers
 		Map<String, Object> headerParams = this.getHeaders();

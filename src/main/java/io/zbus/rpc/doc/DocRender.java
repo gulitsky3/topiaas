@@ -97,8 +97,9 @@ public class DocRender {
 		} 
 		if(paramList.length() > 0) {
 			paramList = paramList.substring(0, paramList.length()-2);
-		}     
-		return String.format(fmt, methodLink, methodLink, m.returnType, methodLink, method, paramList);
+		}
+		String methodLinkJs = "javascript:handleMethodLinkClick('"+methodLink+"', '"+m.getUrlPath()+"')";
+		return String.format(fmt, methodLinkJs, methodLink, m.returnType, methodLinkJs, method, paramList);
 	}
 
 	public String getDocFile() {

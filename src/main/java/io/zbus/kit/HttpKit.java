@@ -82,6 +82,7 @@ public class HttpKit {
 	public static UrlInfo parseUrl(String url){
 		UrlInfo info = new UrlInfo();
 		if("/".equals(url) || StrKit.isEmpty(url)){
+			info.urlPath = url;
 			return info;
 		} 
     	String path = url;
