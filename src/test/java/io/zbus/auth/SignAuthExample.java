@@ -1,8 +1,6 @@
 package io.zbus.auth;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import com.alibaba.fastjson.JSON;
 
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
@@ -15,16 +13,11 @@ public class SignAuthExample {
 		RequestSign sign = new DefaultSign();
 		
 		Message req = new Message();
-		for(int i=0;i<10;i++) {
-			req.setHeader("key"+i, new Random().nextInt());
-		}
-		
-		Map<String, Object> f = new HashMap<>();
-		for(int i=0;i<10;i++) {
-			f.put("key"+i, new Random().nextInt());
-		}
-		Object[] params = new Object[] {f};
-		req.setBody(params);
+		req.setHeader("cmd", "pub"); 
+		req.setHeader("mq", "MyRpc"); 
+		req.setHeader("ack", false); 
+		 
+		req.setBody(new Object[] {1,2});
 		
 		String apiKey = "2ba912a8-4a8d-49d2-1a22-198fd285cb06";
 		String secretKey = "461277322-943d-4b2f-b9b6-3f860d746ffd";
@@ -37,5 +30,7 @@ public class SignAuthExample {
 		AuthResult res = auth.auth(req2);
 		
 		System.out.println(res.success); 
+		
+		System.out.println(JSON.toJSONString(false));
 	}
 }
