@@ -59,7 +59,7 @@ public class MessageDispatcher {
 				boolean windowOpen = false;
 				while (index < max) {
 					Subscription sub = subs.get((int) (index % N)); 
-					
+					loadbalanceTable.put(channel, ++index); 
 					if(sub.window != null && sub.window <= 0) { 
 						continue;
 					} 
@@ -75,8 +75,8 @@ public class MessageDispatcher {
 					}
 					if(message == null) return;
 					
-					String filter = (String) message.getHeader(Protocol.TOPIC);
-					if (sub.topics.isEmpty() || sub.topics.contains(filter)) {
+					String filter = (String) message.getHeader(Protocol.TAG);
+					if (sub.filters.isEmpty() || sub.filters.contains(filter)) {
 						Session sess = sessionTable.get(sub.clientId);
 						if (sess == null) continue;
 						
@@ -86,8 +86,7 @@ public class MessageDispatcher {
 						}
 						sess.write(message);  
 						message = null;
-					}
-					loadbalanceTable.put(channel, ++index); 
+					} 
 				} 
 				if(!windowOpen) break;
 			}  

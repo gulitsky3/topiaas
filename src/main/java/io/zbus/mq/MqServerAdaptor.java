@@ -29,6 +29,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 	private MessageQueueManager mqManager; 
 	private RequestAuth requestAuth; 
 	private Map<String, CommandHandler> commandTable; 
+	private boolean verbose = true;
 	
 	public MqServerAdaptor(MqServerConfig config) {
 		subscriptionManager = new SubscriptionManager();  
@@ -36,6 +37,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
 		mqManager.mqDir = config.mqDiskDir; 
+		verbose = config.verbose;
 		
 		mqManager.loadQueueTable();
 		
@@ -57,6 +59,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		copy.mqManager = mqManager;
 		copy.requestAuth = requestAuth;
 		copy.commandTable = commandTable;
+		copy.verbose = verbose;
 		return copy;
 	}
 	
@@ -73,8 +76,11 @@ public class MqServerAdaptor extends ServerAdaptor {
 	 
 	@Override
 	public void onMessage(Object msg, Session sess) throws IOException {
-		Message req = (Message)msg;  
-		logger.info("" + req);
+		Message req = (Message)msg;   
+		if(verbose) {
+			logger.info(sess.remoteAddress() + ":" + req);
+		}
+		
 		if (req == null) {
 			reply(req, 400, "json format required", sess); 
 			return;
@@ -284,10 +290,9 @@ public class MqServerAdaptor extends ServerAdaptor {
 			sub.window = window;
 		}  
 		
-		String topic = (String)req.getHeader(Protocol.TOPIC);
-		sub.topics.clear();
-		if(topic != null) {
-			sub.topics.add(topic); //Parse topic
+		String filter = (String)req.getHeader(Protocol.FILTER); 
+		if(filter != null) {
+			sub.setFilter(filter); //Parse topic
 		}    
 		MessageQueue mq = mqManager.get(mqName);
 		messageDispatcher.dispatch(mq, channelName); 

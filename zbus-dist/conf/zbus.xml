@@ -48,5 +48,6 @@
 	<mqDbUrl></mqDbUrl>   
 	<maxSocketCount>102400</maxSocketCount>   
 	<packageSizeLimit>128M</packageSizeLimit>    
+	<verbose>true</verbose> 
 </zbus>
 

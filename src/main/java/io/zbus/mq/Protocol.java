@@ -24,11 +24,12 @@ public interface Protocol {
 	//Parameter keys(for commands)
 	public static final String MQ             = "mq";  
 	public static final String CHANNEL        = "channel";  
-	public static final String TOPIC          = "topic";     //Topic filter message on Channel
+	public static final String FILTER         = "filter";    //Filter on message's tag
+	public static final String TAG            = "tag";       //Tag of message, if filter applied
 	public static final String OFFSET         = "offset";
 	public static final String CHECKSUM       = "checksum";  //Offset checksum
-	public static final String SOURCE         = "source"; 
-	public static final String TARGET         = "target"; 
+	public static final String SOURCE         = "source";    //message's source id(socket)
+	public static final String TARGET         = "target";    //route message's target id(socket)
 	public static final String MQ_TYPE        = "mqType";  
 	public static final String MQ_MASK        = "mqMask";  
 	public static final String CHANNEL_MASK   = "channelMask"; 

@@ -47,6 +47,7 @@
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   
 	<mqDbUrl></mqDbUrl>   
 	<maxSocketCount>102400</maxSocketCount>   
-	<packageSizeLimit>128M</packageSizeLimit>    
+	<packageSizeLimit>128M</packageSizeLimit>   
+	<verbose>true</verbose>  
 </zbus>
 

@@ -29,6 +29,7 @@ public class MqServerConfig extends XmlConfig {
 	public int packageSizeLimit = 1024 * 1024 * 64; // 64M
 	public String mqDiskDir = "/tmp/zbus"; 
 	public String mqDbUrl;  
+	public boolean verbose = true;
 	
 	public MqServerConfig() { 
 	}
@@ -77,6 +78,7 @@ public class MqServerConfig extends XmlConfig {
 		} else {
 			this.packageSizeLimit = Integer.valueOf(size);
 		} 
+		this.verbose = valueOf(xpath.evaluate("/zbus/verbose", doc), true);
 	}
 
 	public ServerConfig getPublicServer() {

@@ -66,7 +66,7 @@ public class DiskQueue extends AbstractMessageQueue {
 	private DiskMessage diskMessage(Message message) {
 		DiskMessage diskMsg = new DiskMessage();
 		diskMsg.id = (String)message.getHeader(Protocol.ID);
-		diskMsg.tag = (String)message.getHeader(Protocol.TOPIC);
+		diskMsg.tag = (String)message.getHeader(Protocol.FILTER);
 		diskMsg.body = JsonKit.toJSONBytes(message, "UTF8");
 		return diskMsg;
 	}
