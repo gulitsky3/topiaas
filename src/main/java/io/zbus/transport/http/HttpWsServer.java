@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,7 +111,7 @@ public class HttpWsServer extends Server {
 	
 		//File upload
 //		private static final HttpDataFactory factory = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE); // Disk if size exceed
-	    private HttpPostRequestDecoder decoder; 
+//	    private HttpPostRequestDecoder decoder;
 	
 	    static {
 	        DiskFileUpload.deleteOnExitTemporaryFile = true; // should delete file // on exit (in normal // exit)
@@ -223,25 +224,22 @@ public class HttpWsServer extends Server {
 			Message msg = decodeHeaders(httpMsg); 
 			String contentType = msg.getHeader(Http.CONTENT_TYPE);
 			if(contentType != null) contentType = contentType.toLowerCase();
-			
-			//Body
-			ByteBuf body = null;
-			if (httpMsg instanceof FullHttpMessage) {
-				FullHttpMessage fullReq = (FullHttpMessage) httpMsg;
-				body = fullReq.content();
-			}
-			
+
 			//Special case for file uploads
 			if(httpMsg instanceof HttpRequest 
-					&& contentType != null 
-					&& (
-					   contentType.startsWith("application/x-www-form-urlencoded") 
-					   || contentType.startsWith("multipart/form-data"))
-					){  
-				HttpRequest req = (HttpRequest) httpMsg;
-				decoder = new HttpPostRequestDecoder(req);
-				handleFormMessage(httpMsg, msg); 
-			}  else { 
+				&& contentType != null
+				&& (
+				   contentType.startsWith("application/x-www-form-urlencoded")
+				   || contentType.startsWith("multipart/form-data"))
+				){
+				handleFormMessage((HttpRequest) httpMsg, msg);
+			}  else {
+				//Body
+				ByteBuf body = null;
+				if (httpMsg instanceof FullHttpMessage) {
+					FullHttpMessage fullReq = (FullHttpMessage) httpMsg;
+					body = fullReq.content();
+				}
 				if (body != null) { 
 					int size = body.readableBytes();
 					if (size > 0) {
@@ -307,29 +305,20 @@ public class HttpWsServer extends Server {
 			return msg;
 		}
 		
-		private void handleFormMessage(io.netty.handler.codec.http.HttpMessage httpMsg, Message uploadMessage) throws IOException{
-			if (httpMsg instanceof HttpContent) { 
-	            HttpContent chunk = (HttpContent) httpMsg;
-	            decoder.offer(chunk); 
-	            try {
-	                while (decoder.hasNext()) {
-	                    InterfaceHttpData data = decoder.next();
-	                    if (data != null) {
-	                        try { 
-	                        	handleFormData(data, uploadMessage);
-	                        } finally {
-	                            data.release();
-	                        }
-	                    }
-	                }
-	            } catch (EndOfDataDecoderException e1) { 
-	            	//ignore
-	            }
-	            
-	            if (chunk instanceof LastHttpContent) {  
-	            	resetUpload();
-	            }
-	        }
+		private void handleFormMessage(HttpRequest httpRequest, Message uploadMessage) throws IOException{
+	    	HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(httpRequest);
+			try {
+				while (decoder.hasNext()) {
+					InterfaceHttpData data = decoder.next();
+					if (data != null) {
+						handleFormData(data, uploadMessage);
+					}
+				}
+			} catch (EndOfDataDecoderException e1) {
+				//ignore
+			} finally {
+				decoder.destroy();
+			}
 		}
 		
 		private void handleFormData(InterfaceHttpData data, Message uploadMessage) throws IOException{
@@ -361,10 +350,10 @@ public class HttpWsServer extends Server {
 			}
 		}
 		
-		private void resetUpload() {  
-	        //decoder.destroy(); //TODO
-	        decoder = null;
-	    }    
+//		private void resetUpload() {
+//	        //decoder.destroy(); //TODO
+//	        decoder = null;
+//	    }
 		
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
