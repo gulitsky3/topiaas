@@ -262,7 +262,7 @@ public class HttpWsServer extends Server {
 	        
 			if (data.getHttpDataType() == HttpDataType.Attribute) {
 	            Attribute attribute = (Attribute) data;
-	            formData.attributes.put(attribute.getName(), attribute.getValue());
+	            formData.addAttribute(attribute.getName(), attribute.getValue()); 
 	            return;
 			}
 			

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -255,7 +256,18 @@ public class Http {
 	}
 	
 	public static class FormData {
-		public Map<String, String> attributes = new HashMap<String, String>();
+		public Map<String, Object> attributes = new HashMap<String, Object>();
 		public Map<String, List<FileUpload>> files = new HashMap<String, List<FileUpload>>();
+		
+		public void addAttribute(String key, Object value) {
+			Object exists = attributes.get(key);
+			if(exists != null) {
+				List<Object> values = new ArrayList<>();
+				values.add(exists);
+				values.add(value);
+				value = values;
+			}
+			attributes.put(key, value);
+		}
 	}
 }
