@@ -9,9 +9,12 @@ import java.util.Map;
 import java.util.Random;
 
 import io.zbus.kit.FileKit;
+import io.zbus.kit.HttpKit;
 import io.zbus.rpc.Doc;
 import io.zbus.rpc.Remote;
 import io.zbus.transport.http.Message;
+import io.zbus.transport.http.Message.FileForm;
+import io.zbus.transport.http.Message.FileUpload;
 
 @Remote
 public class InterfaceExampleImpl implements InterfaceExample{
@@ -130,6 +133,11 @@ public class InterfaceExampleImpl implements InterfaceExample{
 	public void throwException() {
 		throw new RuntimeException("runtime exception from server");
 	}
+	
+	public void throwUserException() throws UserException {
+		throw new UserException("user defined exception");
+	}
+	
 	public void throwNullPointerException(){
 		throw new NullPointerException("null pointer");
 	}
@@ -197,48 +205,78 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		return res;
 	}
 	
+	public String getPath(String urlPath){
+		return urlPath;
+	}
+	
 	public Message file(Message request) {
-		String url = request.getUrl(); // /statci/file/xxx/
-		String[] bb = url.split("[/]");
-		String resource = "";
-		int count = 0;
-		for(int i=0;i<bb.length;i++){
-			if(bb[i].equals("")) continue;
-			count++;
-			if(count<3) continue;
-			resource += bb[i];
-			if(i<bb.length-1) resource+= "/";
-		}
+		String url = request.getUrl(); // /static/resource/app.js 
+		boolean hasTopic = request.getHeader("topic") != null;
+		String resource = HttpKit.rpcUrl(url, hasTopic);
 		
 		Message res = new Message();
 		res.setStatus(200);
 		try {
 			byte[] data = FileKit.loadFileBytes(resource);
-			res.setBody(data);
-			
-			if(resource.endsWith(".js")) {
-				res.setHeader("content-type", "application/javascript");
-			} else if(resource.endsWith(".css")) {
-				res.setHeader("content-type", "text/css");
-			} else if(resource.endsWith(".htm") || resource.endsWith(".html")) {
-				res.setHeader("content-type", "text/html");
-			} else if(resource.endsWith(".svg")){
-				res.setHeader("content-type", "image/svg+xml");
-			} else if(resource.endsWith(".gif")){
-				res.setHeader("content-type", "image/gif");
-			} else if(resource.endsWith(".jpeg")){
-				res.setHeader("content-type", "image/jpeg");
-			} else if(resource.endsWith(".png")){
-				res.setHeader("content-type", "image/png");
-			} else {
-				res.setHeader("content-type", "text/plain");
+			res.setBody(data); 
+			String contentType = HttpKit.contentType(resource);
+			if(contentType == null){
+				contentType = "text/plain";
 			}
+			res.setHeader("content-type", contentType); 
 		} catch (IOException e) {
 			res.setStatus(404);
 			res.setBody(e.getMessage());
 		}
 		return res;
 	} 
+	
+	/**
+	 * 
+	 * Default method(method in URL missing)
+	 * 
+	 * @return page
+	 */
+	public Message index() {  
+		Message res = new Message();
+		res.setStatus(200); 
+		res.setBody("Index page");
+		return res;
+	} 
+	
+	@Override
+	public Message showUpload() { 
+		Message res = new Message();
+		res.setStatus(200);
+		try {
+			byte[] data = FileKit.loadFileBytes("rpc/upload.htm");
+			res.setBody(data);  
+			res.setHeader("content-type", "text/html"); 
+		} catch (IOException e) {
+			res.setStatus(404);
+			res.setBody(e.getMessage());
+		}
+		return res;
+	}
+	
+	@Override
+	public boolean upload(Message request) { 
+		FileForm fileForm = request.getFileForm();
+		if(fileForm == null) return false;
+		System.out.println("Key-Value pairs");
+		for(String key : fileForm.attributes.keySet()){
+			System.out.println(key + "=>" + fileForm.attributes.get(key));
+		}
+		System.out.println("Files");
+		for(String key : fileForm.files.keySet()){
+			List<FileUpload> files = fileForm.files.get(key);
+			for(FileUpload file : files){
+				System.out.println("FileName: " + file.fileName);
+				System.out.println(new String(file.data));
+			}
+		}
+		return true;
+	}
 }
 
 

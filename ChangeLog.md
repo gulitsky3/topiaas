@@ -70,3 +70,32 @@
 ## 0.11.1 notes
 
 - TcpProxy支持多目标配置
+- QueueNak修改依赖JDK8，依赖JDK6
+
+## 0.11.2 notes
+
+- RPC默认返回application/json类型
+- RPC支持错误信息显示开关，可隐藏堆栈信息
+- RPC支持方法列表页面开关，可隐藏展示所有的方法信息
+- 修复timeout类型bug，int=>long
+
+## 0.11.3 notes
+
+- 修复checksum缓存错误
+
+
+## 0.11.4 notes
+
+- RPC增加默认根目录页面配置，增加模块目录页面支持 
+- 消息日志记录接口增加Session上下文， by @云风叶凡
+- 增加对文件上传的消息类型支持, RPC中可以直接获取到FileForm详细上传信息
+
+## 0.11.5 notes
+
+- zbus.js支持RPC默认不填写服务器地址
+- 服务器客户端都支持消息header部分URLEncode/Decode
+- 修复RPC客户端只支持Runtime异常，支持各类异常
+
+
+## TODO lists
+- 删除消费分组crash JVM

@@ -32,13 +32,7 @@ public class ServiceBootstrap implements Closeable{
 	protected RpcProcessor processor = new RpcProcessor(); 
 	protected boolean autoDiscover = false;
 	protected boolean verbose = false;
-	 
-	protected boolean responseTypeInfo = false; 
-	
-	public ServiceBootstrap responseTypeInfo(boolean responseTypeInfo){  
-		this.responseTypeInfo = responseTypeInfo;
-		return this;
-	}   
+	  
 	
 	public ServiceBootstrap port(int port){
 		if(serverConfig == null){
@@ -106,6 +100,32 @@ public class ServiceBootstrap implements Closeable{
 		return this;
 	} 
 	
+	public ServiceBootstrap responseTypeInfo(boolean responseTypeInfo){  
+		processor.getCodec().setResponseTypeInfo(responseTypeInfo);
+		return this;
+	}   
+	
+	public ServiceBootstrap stackTrace(boolean stackTrace) {
+		this.processor.setEnableStackTrace(stackTrace);
+		return this;
+	} 
+	
+	public ServiceBootstrap methodPage(boolean methodPage) {
+		this.processor.setEnableMethodPage(methodPage);
+		return this;
+	} 
+	
+	/**
+	 * If topic(ServiceName) in zbus is missing, should we declare it or not.
+	 * 
+	 * @param declareOnMissing
+	 * @return
+	 */
+	public ServiceBootstrap declareOnMissing(boolean declareOnMissing) {
+		this.consumerConfig.setDeclareOnMissing(declareOnMissing);
+		return this;
+	} 
+	
 	private void validate(){
 		Topic topic = consumerConfig.getTopic();
 		if(topic == null || StrKit.isEmpty(topic.getName())){
@@ -147,8 +167,7 @@ public class ServiceBootstrap implements Closeable{
 		Integer mask = consumerConfig.getTopic().getMask();
 		if(mask == null) {
 			mask = Protocol.MASK_MEMORY ;
-		}   
-		processor.getCodec().setResponseTypeInfo(responseTypeInfo);
+		}    
 		MessageHandler rpcHandler = new RpcMessageHandler(this.processor);
 		   
 		consumerConfig.setTopicMask((mask | Protocol.MASK_RPC) & ~Protocol.MASK_ACK_REQUIRED); 
@@ -166,6 +185,11 @@ public class ServiceBootstrap implements Closeable{
 	
 	public ServiceBootstrap addModule(String module, Object... services){
 		processor.addModule(module, services);
+		return this;
+	}
+	
+	public ServiceBootstrap addModule(String module, Class<?>... clazz){
+		processor.addModule(module, clazz);
 		return this;
 	}
 	
@@ -189,8 +213,8 @@ public class ServiceBootstrap implements Closeable{
 		return this;
 	}
 	
-	public ServiceBootstrap serviceAddress(String tracker){
-		String[] bb = tracker.split("[;, ]");
+	public ServiceBootstrap serviceAddress(String addressList){
+		String[] bb = addressList.split("[;, ]");
 		for(String addr : bb){
 			addr = addr.trim();
 			if("".equals(addr)) continue;

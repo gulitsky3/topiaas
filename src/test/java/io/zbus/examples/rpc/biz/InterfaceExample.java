@@ -54,6 +54,8 @@ public interface InterfaceExample{
 	
 	void throwNullPointerException();
 	
+	void throwUserException() throws UserException;
+	
 	void throwException();
 	
 	void throwUnkownException();
@@ -68,5 +70,11 @@ public interface InterfaceExample{
 	
 	Message redirect();
 	
+	String getPath(String urlPath);
+	
 	Message file(Message request);
+	
+	boolean upload(Message request);
+	
+	Message showUpload();
 }

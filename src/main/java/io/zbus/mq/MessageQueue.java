@@ -224,7 +224,7 @@ abstract class AbstractQueue implements MessageQueue{
 		 
 		
 		Long offset = message.getOffset(); 
-		if(offset != null) { //handle case of pulling message with offset and id
+		if(offset != null) { //handle case of pulling message with offset
 			Message res = null;
 			try{
 				res = group.read(offset);
@@ -321,7 +321,7 @@ abstract class AbstractQueue implements MessageQueue{
 		} 
 		writeMsg.setStatus(200); //status meaning changed to 'consume-status'
 		if(messageLogger != null) {
-			messageLogger.log(writeMsg);
+			messageLogger.log(writeMsg, session);
 		}
 		session.write(writeMsg);  
 	}
