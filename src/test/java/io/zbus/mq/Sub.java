@@ -4,22 +4,16 @@ import java.util.concurrent.TimeUnit;
 
 import io.zbus.transport.Message;
 
-public class Sub { 
-	public static MqClient buildInproClient() {
-		MqServer server = new MqServer(new MqServerConfig());
-		return new MqClient(server);
-	}
-	
+public class Sub {  
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception { 
-		MqClient client = new MqClient("localhost:15555");   
-		//MqClient client = buildInproClient();
+		MqClient client = new MqClient("localhost:15555");    
 		
 		client.heartbeat(30, TimeUnit.SECONDS);
 		
 		final String mq = "MyMQ", channel = "MyChannel", mqType = Protocol.MEMORY;
 		
-		client.addMqHandler(mq, channel, 4, data->{  
+		client.addMqHandler(mq, channel, data->{  
 			System.out.println(data);  
 		});  
 		

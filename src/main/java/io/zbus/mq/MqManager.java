@@ -75,7 +75,7 @@ public class MqManager {
 	 * @return created/updated mq
 	 * @throws IOException 
 	 */
-	public MessageQueue saveQueue(
+	public synchronized MessageQueue saveQueue(
 			String mqName, String mqType, Integer mqMask, 
 			String channel, Long channelOffset, Integer channelMask,
 			String creator
