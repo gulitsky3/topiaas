@@ -1,6 +1,8 @@
 package io.zbus.kit;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,6 +19,21 @@ public class StrKit {
 	public static Map<String, String> kvp(String value){
 		return StrKit.kvp(value, "&");
 	} 
+	
+	public static String[] split(String value, String delim) {
+		if(value == null) return new String[0];
+		String[] bb = value.split(delim);
+		List<String> strs = new ArrayList<>();
+		for(String b : bb) {
+			if(b.isEmpty()) continue;
+			strs.add(b);
+		}
+		return strs.toArray(new String[0]);
+	}
+	
+	public static String[] split(String value) {
+		return split(value, "[ ,;]");
+	}
 
 	public static Map<String, String> kvp(String value, String delim){
 		if(isEmpty(delim)) {

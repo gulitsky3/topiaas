@@ -3,7 +3,6 @@ package io.zbus.rpc;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.zbus.mq.MqServer;
 import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
@@ -53,16 +52,16 @@ public class RpcServerSimpleExample {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {     
 		RpcProcessor p = new RpcProcessor();    
-		p.mount("/", RpcServerSimpleExample.class);      
+		p.mount("/", RpcServerSimpleExample.class);        
 		
 		//p.setBeforeFilter(new MyFilter());
 		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
 		
-		//rpcServer.setMqServerAddress("localhost:15555");
-		//rpcServer.setMq("/");  
-		rpcServer.setMqServer(new MqServer(15555));
+		rpcServer.setMqServerAddress("localhost:15555");
+		rpcServer.setMq("/test");  
+		//rpcServer.setMqServer(new MqServer(15555));
 		rpcServer.start();  
 	}  
 }

@@ -41,6 +41,14 @@
 		</auth>  
 		-->  
 	</monitor>  
+	
+	<!-- 跨域配置 -->
+	<cors>
+		<origin>*</origin>
+		<allowedRequestMethods>GET,POST,PUT,OPTIONS</allowedRequestMethods>
+		<allowedRequestHeaders>Origin, X-Request-With, X-Requested-With, Content-Type, Accept, Token</allowedRequestHeaders>
+		<exposeHeaders></exposeHeaders>
+	</cors>
  	
 	<!-- MQ location configure -->
 	<staticFileDir cached="false">static</staticFileDir>    

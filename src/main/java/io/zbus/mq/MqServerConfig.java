@@ -29,6 +29,8 @@ public class MqServerConfig extends XmlConfig {
 	 
 	public boolean verbose = true;   
 	
+	public CorsConfig cors;
+	
 	public MqServerConfig() { 
 		
 	}
@@ -84,6 +86,20 @@ public class MqServerConfig extends XmlConfig {
 		this.verbose = valueOf(xpath.evaluate("/zbus/verbose", doc), true);
 		this.staticFileDir = valueOf(xpath.evaluate("/zbus/staticFileDir", doc), null);
 		this.staticFileCacheEnabled = valueOf(xpath.evaluate("/zbus/staticFileDir/@cached", doc), false);
+		
+		//CORS
+		String origin = valueOf(xpath.evaluate("/zbus/cors/origin", doc), null);
+		String allowedRequestMethods = valueOf(xpath.evaluate("/zbus/cors/allowedRequestMethods", doc), null);
+		String allowedRequestHeaders = valueOf(xpath.evaluate("/zbus/cors/allowedRequestHeaders", doc), null);
+		String exposeHeaders = valueOf(xpath.evaluate("/zbus/cors/exposeHeaders", doc), null);
+		
+		if(!(origin==null && allowedRequestHeaders == null && allowedRequestMethods == null && exposeHeaders == null)) { 
+			cors = new CorsConfig();
+			cors.setOrigin(origin);
+			cors.setAllowedRequestHeaders(allowedRequestHeaders);
+			cors.setAllowedRequestMethods(allowedRequestMethods);
+			cors.setExposeHeaders(exposeHeaders); 
+		}
 	}
 
 	public ServerConfig getPublicServer() {
@@ -191,8 +207,55 @@ public class MqServerConfig extends XmlConfig {
 
 	public void setStaticFileCacheEnabled(boolean staticFileCacheEnabled) {
 		this.staticFileCacheEnabled = staticFileCacheEnabled;
+	}  
+	
+	public CorsConfig getCors() {
+		return cors;
 	}
 
+	public void setCors(CorsConfig cors) {
+		this.cors = cors;
+	} 
+
+
+	public static class CorsConfig{
+		public String origin;
+		public String allowedRequestMethods;
+		public String allowedRequestHeaders;
+		public String exposeHeaders; 
+
+		public String getOrigin() {
+			return origin;
+		}
+
+		public void setOrigin(String origin) {
+			this.origin = origin;
+		}
+
+		public String getAllowedRequestMethods() {
+			return allowedRequestMethods;
+		}
+
+		public void setAllowedRequestMethods(String allowedRequestMethods) {
+			this.allowedRequestMethods = allowedRequestMethods;
+		}
+
+		public String getAllowedRequestHeaders() {
+			return allowedRequestHeaders;
+		}
+
+		public void setAllowedRequestHeaders(String allowedRequestHeaders) {
+			this.allowedRequestHeaders = allowedRequestHeaders;
+		}
+
+		public String getExposeHeaders() {
+			return exposeHeaders;
+		}
+
+		public void setExposeHeaders(String exposeHeaders) {
+			this.exposeHeaders = exposeHeaders;
+		} 
+	} 
 
 	public static class ServerConfig{
 		public String address;
@@ -248,7 +311,6 @@ public class MqServerConfig extends XmlConfig {
 		public void setAuth(RequestAuth auth) {
 			this.auth = auth;
 		}
-		
 		
 	}
 }
