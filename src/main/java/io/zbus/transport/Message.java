@@ -111,6 +111,10 @@ public class Message {
 		return headers;
 	} 
 	
+	public Map<String, Object> headers() {
+		return headers;
+	} 
+	
 	public void setHeaders(Map<String, Object> headers) {
 		this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); //copy headers 
 		this.headers.putAll(headers); 
