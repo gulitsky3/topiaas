@@ -39,7 +39,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		commandTable.put(Protocol.PUB, pubHandler);
 		commandTable.put(Protocol.SUB, subHandler);
 		commandTable.put(Protocol.TAKE, takeHandler);
-		commandTable.put(Protocol.ROUTE, routHandler);
+		commandTable.put(Protocol.ROUTE, routeHandler);
 		commandTable.put(Protocol.CREATE, createHandler); 
 		commandTable.put(Protocol.REMOVE, removeHandler); 
 		commandTable.put(Protocol.QUERY, queryHandler); 
@@ -66,7 +66,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 			if(httpMessage.getBody() == null){ 
 				json = handleUrlMessage(httpMessage);
 			} else {
-				json = JSONObject.parseObject(httpMessage.getBodyString()); 
+				json = JSONObject.parseObject(httpMessage.bodyString()); 
 			}
 			sessionType = SessionType.HTTP;
 		} else if(msg instanceof JSONObject) {  
@@ -281,8 +281,10 @@ public class MqServerAdaptor extends ServerAdaptor {
 	    messageDispatcher.take(mq, channelName, window, msgId, sess); 
 	};
 	
-	private CommandHandler routHandler = (req, sess) -> {  
-		String recver = req.getString(Protocol.RECVER);
+	private CommandHandler routeHandler = (req, sess) -> {  
+		String recver = (String)req.remove(Protocol.RECVER);
+		req.remove(Protocol.SENDER); 
+		
 		Session target = sessionTable.get(recver); 
 		if(target != null) {
 			messageDispatcher.sendMessage(req, target);

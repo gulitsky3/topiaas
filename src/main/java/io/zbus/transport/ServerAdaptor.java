@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class ServerAdaptor implements IoAdaptor{    
-	private static final Logger log = LoggerFactory.getLogger(ServerAdaptor.class); 
+	private static final Logger logger = LoggerFactory.getLogger(ServerAdaptor.class); 
 	protected Map<String, Session> sessionTable;
 	
 	public ServerAdaptor(){ 
@@ -24,29 +24,29 @@ public abstract class ServerAdaptor implements IoAdaptor{
      
 	@Override
 	public void sessionCreated(Session sess) throws IOException {
-		log.info("Created: " + sess);
+		logger.info("Created: " + sess);
 		sessionTable.put(sess.id(), sess);
 	}
 
 	@Override
 	public void sessionToDestroy(Session sess) throws IOException {
-		log.info("Destroyed: " + sess);
+		logger.info("Destroyed: " + sess);
 		cleanSession(sess);
 	}
  
 	@Override
 	public void onError(Throwable e, Session sess) { 
-		log.info("Error: " + sess, e);
+		logger.info("Error: " + sess, e);
 		try {
 			cleanSession(sess);
 		} catch (IOException ex) {
-			log.error(ex.getMessage(), ex);
+			logger.error(ex.getMessage(), ex);
 		}
 	} 
 
 	@Override
 	public void onIdle(Session sess) throws IOException { 
-		log.info("Idled: " + sess);
+		logger.info("Idled: " + sess);
 		cleanSession(sess);
 	}
 	

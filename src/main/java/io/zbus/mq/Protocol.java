@@ -37,6 +37,7 @@ public interface Protocol {
 	public static final String ACK            = "ack"; 
 	public static final String PAGE           = "page";
 	public static final String PAGE_SIZE      = "pageSize";
+	public static final String BODY_HTTP      = "bodyHttp"; //body  http
 	
 	//Parameter mqType values
 	public static final String MEMORY  = "memory";  

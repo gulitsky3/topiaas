@@ -28,7 +28,7 @@ public class RpcServerAdaptor extends ServerAdaptor {
 			HttpMessage reqMsg = (HttpMessage) msg;
 			request = handleUrlMessage(reqMsg);
 			if (request == null) {
-				request = JsonKit.parseObject(reqMsg.getBodyString());
+				request = JsonKit.parseObject(reqMsg.bodyString());
 			}
 			sessionType = SessionType.HTTP;
 		} else if (msg instanceof byte[]) {

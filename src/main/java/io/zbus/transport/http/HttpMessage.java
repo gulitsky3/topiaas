@@ -242,16 +242,16 @@ public class HttpMessage {
 		return this;
 	}
 	
-	public String getBodyString() {
+	public String bodyString() {
 		if (this.getBody() == null) return null;
 		String encoding = this.getEncoding();
 		if(encoding == null){
 			encoding = DEFAULT_ENCODING;
 		}
-		return getBodyString(encoding);
+		return bodyString(encoding);
 	}
 
-	public String getBodyString(String encoding) {
+	public String bodyString(String encoding) {
 		if (this.getBody() == null) return null;
 		try {
 			return new String(this.getBody(), encoding);
@@ -342,7 +342,7 @@ public class HttpMessage {
 		if (this.body.length > 1024) {
 			return new String(this.body, 0, 1024) + "...";
 		} else {
-			return getBodyString();
+			return bodyString();
 		}
 	}
 	
