@@ -1,4 +1,4 @@
-package io.zbus.rpc.filer;
+package io.zbus.rpc.filter;
 
 import io.zbus.rpc.RpcFilter;
 import io.zbus.rpc.annotation.FilterDef;

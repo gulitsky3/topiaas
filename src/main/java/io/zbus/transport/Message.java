@@ -217,11 +217,12 @@ public class Message {
             if (StrKit.isEmpty(cookie)) {
                 continue;
             } 
-            String[] kv = cookie.split("="); 
-            if (kv.length < 2) {
-                continue;
-            }  
-            ret.put(kv[0].trim(), kv[1].trim()); 
+            int idx = cookie.indexOf("=");
+            String key = cookie.substring(0, idx);
+            String value = cookie.substring(idx+1);
+            if(key != null) key = key.trim();
+            if(value != null) value = value.trim();
+            ret.put(key, value); 
         } 
         return ret;
     }

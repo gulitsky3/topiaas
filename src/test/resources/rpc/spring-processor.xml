@@ -22,6 +22,9 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	
 	<bean id="db" class="io.zbus.rpc.biz.DbExample"/> 
 	<bean id="example" class="io.zbus.rpc.biz.InterfaceExampleImpl"/>   
+	<bean id="userService" class="io.zbus.rpc.auth.UserService.DefaultUserService"/>  
+	
+	
 	<bean id="static" class="io.zbus.rpc.StaticResource" scope="singleton">
     	<property name="basePath" value="static"/>
     	<property name="urlPrefix" value="/static/"/> <!-- 相对路径过滤掉这部分 -->
@@ -29,12 +32,22 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
     </bean>
     
 	<!-- Filter Config -->
-	<bean class="io.zbus.rpc.filer.GlobalBeforeFilter"/>  
-	<bean class="io.zbus.rpc.filer.GlobalExceptionFilter"/>  <!-- global filter can not be excluded --> 
+	<bean class="io.zbus.rpc.filter.GlobalBeforeFilter"/>  
+	<bean class="io.zbus.rpc.filter.GlobalExceptionFilter"/>  <!-- global filter can not be excluded --> 
 	
-	<bean id="adminFilter" class="io.zbus.rpc.filer.AdminLoginFilter"/> 
-	<bean id="loginFilter" class="io.zbus.rpc.filer.LoginFilter"/> 
-	<bean id="loggerFilter" class="io.zbus.rpc.filer.LoggerFilter"/>  
+	<bean id="adminFilter" class="io.zbus.rpc.filter.AdminLoginFilter"/>  
+	<bean id="loggerFilter" class="io.zbus.rpc.filter.LoggerFilter"/>     
+	
+	<bean id="loginFilter" class="io.zbus.rpc.auth.AuthFilter">
+		<property name="userService" ref="userService"/>
+		<property name="secretKey" value="461277322-943d-4b2f-b9b6-3f860d746ffd"/>
+	</bean>  
+	
+	<bean id="loginApi" class="io.zbus.rpc.auth.LoginApi">
+		<property name="userService" ref="userService"/>
+		<property name="expireTimeInSeconds" value="-1"/>
+		<property name="secretKey" value="461277322-943d-4b2f-b9b6-3f860d746ffd"/> <!-- should be the same secretKey as auth filter's -->
+	</bean>  
 	
 	
 	<bean id="rpcProcessor" class="io.zbus.rpc.RpcProcessor" >
@@ -49,6 +62,8 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
                     </list>
                 </entry> 
                 <entry key="/db" value-ref="db"/> 
+                
+                <entry key="/auth" value-ref="loginApi"/> 
             </map>
         </property>
         
