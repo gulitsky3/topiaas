@@ -7,8 +7,7 @@ import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
-
-@Route(value="/")
+ 
 @Filter("login")
 public class RpcServerSimpleExample {    
 	

@@ -20,7 +20,7 @@ public class DocRender {
 	private final RpcProcessor rpcProcessor;   
 	private String rootUrl;
 	private String docFile = "static/rpc.html";
-	private boolean embbedPageResource = false;
+	private boolean embbedPageResource = true;
 	
 	public DocRender(RpcProcessor rpcProcessor) {
 		this.rpcProcessor = rpcProcessor;  

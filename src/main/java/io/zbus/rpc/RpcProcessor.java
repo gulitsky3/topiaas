@@ -50,7 +50,7 @@ public class RpcProcessor {
 	private boolean stackTraceEnabled = true;   
 	private boolean threadContextEnabled = true;
 	
-	private boolean embbedPageResource = false;
+	private boolean embbedPageResource = true;
 	
 	private RpcFilter beforeFilter;
 	private RpcFilter afterFilter; 

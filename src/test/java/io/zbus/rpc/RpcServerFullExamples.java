@@ -13,6 +13,7 @@ import io.zbus.transport.Message;
 public class RpcServerFullExamples {  
 	private FileKit fileKit = new FileKit(false);  
 	
+	
 	//default: /plus/{a}/{b}
 	public int plus(int a, int b) {
 		return a+b;

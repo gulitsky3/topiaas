@@ -33,10 +33,11 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	
 	<bean id="rpcProcessor" class="io.zbus.rpc.RpcProcessor" >
 		<property name="docUrl" value="/doc"/> 
+		
+		
 		<property name="moduleTable">
 			<map> 
-                <entry key="/static" value-ref="static"/>  
-                <entry key="/admin" value-ref="rpcProcessor"/> 
+                <entry key="/static" value-ref="static"/>   
                 <entry key="/example" value-ref="example"/> 
                 <entry key="/db" value-ref="db"/> 
             </map>
