@@ -210,11 +210,17 @@ public class RpcServer implements Closeable {
 		
 		//Doc URL root generated
 		if(processor.isDocEnabled()) {
-			processor.enableDoc();
+			processor.mountDoc();
 		}
 		
 		return this;
 	}     
+	
+	public void syncUrlToServer() {
+		if(mqRpcServer != null) {
+			mqRpcServer.syncUrlToServer();
+		}
+	}
 	
 	@Override
 	public void close() throws IOException {  

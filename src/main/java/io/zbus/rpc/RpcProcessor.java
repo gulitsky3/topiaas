@@ -429,7 +429,8 @@ public class RpcProcessor {
 		}  
 	}
 	
-	public RpcProcessor enableDoc() { 
+	public RpcProcessor mountDoc() { 
+		if(!this.docEnabled) return this;
 		DocRender render = new DocRender(this); 
 		mount(docUrlPrefix, render, false, false, false);
 		return this;
@@ -497,8 +498,16 @@ public class RpcProcessor {
 	
 	public String getUrlPrefix() {
 		return urlPrefix;
-	}
+	} 
 	
+	public String getDocUrlPrefix() {
+		return docUrlPrefix;
+	}
+
+	public void setDocUrlPrefix(String docUrlPrefix) {
+		this.docUrlPrefix = docUrlPrefix;
+	}
+
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();
 		TreeMap<String, MethodInstance> methods = new TreeMap<>(this.urlPath2MethodTable);

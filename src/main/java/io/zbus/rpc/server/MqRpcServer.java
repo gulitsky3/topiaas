@@ -65,6 +65,23 @@ public class MqRpcServer implements Closeable {
 			clients.add(client);
 		}
 	}
+	
+	public void syncUrlToServer() {
+		if(clients.isEmpty()) return;
+		
+		Message req = new Message();
+		req.setHeader(Protocol.CMD, Protocol.BIND); // Bind URL
+		req.setHeader(Protocol.MQ, mq);
+		req.setHeader(Protocol.CLEAR_BIND, true); 
+		req.setBody(processor.urlEntryList(mq)); 
+		
+		try {
+			Message res = clients.get(0).invoke(req);
+			logger.info("Sync URL binds to server: "+ JsonKit.toJSONString(res));
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e); 
+		}   
+	}
 
 	protected MqClient startClient() {
 		MqClient client = null;
