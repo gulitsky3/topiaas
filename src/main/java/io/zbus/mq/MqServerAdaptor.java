@@ -3,7 +3,6 @@ package io.zbus.mq;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +12,7 @@ import com.alibaba.fastjson.JSONObject;
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
 import io.zbus.kit.HttpKit;
-import io.zbus.kit.HttpKit.UrlInfo;
+import io.zbus.kit.StrKit;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.model.MessageQueue;
 import io.zbus.mq.model.Subscription;
@@ -40,10 +39,18 @@ public class MqServerAdaptor extends ServerAdaptor {
 		commandTable.put(Protocol.PUB, pubHandler);
 		commandTable.put(Protocol.SUB, subHandler);
 		commandTable.put(Protocol.TAKE, takeHandler);
+		commandTable.put(Protocol.ROUTE, routHandler);
 		commandTable.put(Protocol.CREATE, createHandler); 
 		commandTable.put(Protocol.REMOVE, removeHandler); 
 		commandTable.put(Protocol.QUERY, queryHandler); 
 		commandTable.put(Protocol.PING, pingHandler); 
+	}
+	
+	protected void attachInfo(Map<String, Object> request, Session sender) {
+		request.put(Protocol.SENDER, sender.id());
+		if(request.get(Protocol.ID) == null) {
+			request.put(Protocol.ID, StrKit.uuid());
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -56,12 +63,8 @@ public class MqServerAdaptor extends ServerAdaptor {
 			sessionType = SessionType.Websocket;
 		} else if (msg instanceof HttpMessage) {
 			HttpMessage httpMessage = (HttpMessage)msg;
-			if(httpMessage.getBody() == null){
-				UrlInfo urlInfo = HttpKit.parseUrl(httpMessage.getUrl());
-				json = new JSONObject();
-				for(Entry<String, String> e : urlInfo.params.entrySet()) {
-					json.put(e.getKey(), e.getValue());
-				}
+			if(httpMessage.getBody() == null){ 
+				json = handleUrlMessage(httpMessage);
 			} else {
 				json = JSONObject.parseObject(httpMessage.getBodyString()); 
 			}
@@ -82,7 +85,11 @@ public class MqServerAdaptor extends ServerAdaptor {
 			reply(json, 400, "json format required", sess); 
 			return;
 		} 
-		String cmd = (String)json.remove(Protocol.CMD);
+		
+		attachInfo(json, sess);
+		
+		String cmd = (String)json.remove(Protocol.CMD); 
+		
 		if (cmd == null) {
 			reply(json, 400, "cmd key required", sess); 
 			return;
@@ -110,6 +117,23 @@ public class MqServerAdaptor extends ServerAdaptor {
 			return; 
 		}
 	}   
+	
+	protected JSONObject handleUrlMessage(HttpMessage msg) {
+		String url = msg.getUrl();
+		if (url == null || "/".equals(url)) {
+			return null;
+		}
+		if (msg.getBody() != null)
+			return null;
+
+		Map<String, Object> kv = HttpKit.parseRpcUrl(url, true); 
+		JSONObject json = new JSONObject(kv);
+		if(json.get(Protocol.CMD) == null) { // RPC assumed
+			json.put(Protocol.CMD, Protocol.PUB);
+			json.put(Protocol.ACK, false); //ACK should be disabled
+		} 
+		return json;
+	}
 	
 	private CommandHandler createHandler = (req, sess) -> { 
 		String mqName = req.getString(Protocol.MQ);
@@ -255,6 +279,26 @@ public class MqServerAdaptor extends ServerAdaptor {
 		if(window == null) window = 1; 
 		
 	    messageDispatcher.take(mq, channelName, window, msgId, sess); 
+	};
+	
+	private CommandHandler routHandler = (req, sess) -> {  
+		String recver = req.getString(Protocol.RECVER);
+		Session target = sessionTable.get(recver); 
+		if(target != null) {
+			messageDispatcher.sendMessage(req, target);
+		} else {
+			logger.warn("Target=" + recver + " Not Found");
+		}
+		
+		Boolean ack = req.getBoolean(Protocol.ACK);  
+		if(ack != null && ack == true) {
+			if(target == null) {
+				reply(req, 404,  "Target=" + recver + " Not Found", sess);
+			} else {
+				reply(req, 200,  "OK", sess);
+			}
+			return;
+		}  
 	};
 	
 	private CommandHandler queryHandler = (req, sess) -> { 

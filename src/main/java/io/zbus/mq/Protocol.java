@@ -15,6 +15,7 @@ public interface Protocol {
 	public static final String PUB    = "pub";      //Publish message
 	public static final String SUB    = "sub";      //Subscribe message stream
 	public static final String TAKE   = "take";     //One-time read message from MQ 
+	public static final String ROUTE  = "route";    //Route message to specified sender client
 	public static final String CREATE = "create";   //Create or Update
 	public static final String REMOVE = "remove";   //Remove MQ/Channel
 	public static final String QUERY  = "query";    //Query MQ/Channel
@@ -27,6 +28,7 @@ public interface Protocol {
 	public static final String OFFSET         = "offset";
 	public static final String CHECKSUM       = "checksum";  //Offset checksum
 	public static final String SENDER         = "sender"; 
+	public static final String RECVER         = "recver"; 
 	public static final String MQ_TYPE        = "mqType";  
 	public static final String MQ_MASK        = "mqMask"; 
 	public static final String MQ_SIZE        = "mqSize";

@@ -143,7 +143,7 @@ class Block implements Closeable {
 		byte[] id = new byte[40];
 		readBuffer.read(id); 
 		int idLen = id[0];
-		if(idLen>0 && idLen < 40){
+		if(idLen>=0 && idLen < 40){
 			data.id = new String(id, 1, idLen);  
 		} else {
 			throw new IllegalStateException("Message.Id invalid length");

@@ -72,8 +72,7 @@ public class MessageDispatcher {
 							Session sess = sessionTable.get(sub.clientId);
 							if (sess == null)
 								continue;
-							message.put(Protocol.CHANNEL, channel);
-							message.put(Protocol.SENDER, sess.id());
+							message.put(Protocol.CHANNEL, channel); 
 							sendMessage(message, sess);
 							break;
 						}
@@ -97,21 +96,12 @@ public class MessageDispatcher {
 	public void take(MessageQueue mq, String channel, int count, String reqMsgId, Session sess) throws IOException { 
 		List<Map<String, Object>> data = mq.read(channel, count);
 		Map<String, Object> message = new HashMap<>();  
-		message.put(Protocol.STATUS, 200);
-		if(count <= 1) {
-			if(data.size() >= 1) { 
-				message = data.get(0); 
-				message.put(Protocol.STATUS, 200);
-			} else {
-				message.put(Protocol.STATUS, 604); //Special status code, no DATA
-			}
-		} else {
-			message.put(Protocol.BODY, data); //batch message format
-		}
+		int status = data.size()>0? 200 : 604;//Special status code, no DATA
+		message.put(Protocol.STATUS, status); 
 		message.put(Protocol.ID, reqMsgId);
 		message.put(Protocol.MQ, mq.name());
-		message.put(Protocol.CHANNEL, channel);
-		message.put(Protocol.SENDER, sess.id());
+		message.put(Protocol.CHANNEL, channel); 
+		message.put(Protocol.BODY, data);
 		sendMessage(message, sess);
 	}
 	

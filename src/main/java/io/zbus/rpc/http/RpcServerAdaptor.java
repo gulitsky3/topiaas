@@ -1,11 +1,9 @@
 package io.zbus.rpc.http;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import io.zbus.kit.HttpKit;
-import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
 import io.zbus.rpc.Protocol;
 import io.zbus.rpc.RpcProcessor;
@@ -89,23 +87,6 @@ public class RpcServerAdaptor extends ServerAdaptor {
 		if (msg.getBody() != null)
 			return null;
 
-		UrlInfo info = HttpKit.parseUrl(url);
-
-		Map<String, Object> req = new HashMap<String, Object>();
-		if (info.path.size() >= 1) {
-			req.put(Protocol.MODULE, info.path.get(0));
-		}
-		if (info.path.size() >= 2) {
-			req.put(Protocol.METHOD, info.path.get(1));
-		}
-
-		if (info.path.size() > 2) {
-			Object[] params = new Object[info.path.size() - 2];
-			req.put(Protocol.PARAMS, params);
-			for (int i = 0; i < info.path.size() - 2; i++) {
-				params[i] = info.path.get(2 + i);
-			}
-		}
-		return req;
+		return HttpKit.parseRpcUrl(url, false); 
 	}
 }
