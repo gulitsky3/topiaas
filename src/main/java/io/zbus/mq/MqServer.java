@@ -193,7 +193,7 @@ public class MqServer extends HttpWsServer {
 					throw new IllegalStateException(e.getMessage(), e.getCause());
 				} 
 			}
-			logger.info("Starting mointor server @" + monitorServerConfig.address);
+			logger.info("Starting monitor server @" + monitorServerConfig.address);
 			this.start(monitorServerConfig.address, monitorServerAdaptor, sslContext); 
 		}   
 	}
