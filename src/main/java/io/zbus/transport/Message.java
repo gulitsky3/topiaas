@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.alibaba.fastjson.JSON;
+
 public class Message {   
 	public static final String ID = "id";
 	
@@ -44,11 +46,16 @@ public class Message {
 	}
 	
 	public Message(Message msg) {
+		replace(msg);
+		this.headers = new HashMap<>(this.headers); //copy headers
+	}
+	
+	public void replace(Message msg) {
 		this.url = msg.url;
 		this.method = msg.method;
 		this.status = msg.status;
 		this.statusText = msg.statusText;
-		this.headers = new HashMap<>(msg.headers);
+		this.headers = msg.headers;
 		this.body = msg.body;
 	}
 	
@@ -129,5 +136,10 @@ public class Message {
 	
 	public void setBody(Object body) { 
 		this.body = body; 
-	}    
+	}  
+	
+	@Override
+	public String toString() {
+		return JSON.toJSONString(this, true); 
+	}
 }

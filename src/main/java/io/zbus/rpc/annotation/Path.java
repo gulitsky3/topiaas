@@ -26,7 +26,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Remote {
-	String id() default ""; 
+public @interface Path {
+	String value() default ""; 
 	boolean exclude() default false; //exclude the method out if set true
 }

@@ -1,8 +1,8 @@
 package io.zbus.rpc.biz.inheritance;
 
-import io.zbus.rpc.annotation.Remote;
+import io.zbus.rpc.annotation.Path;
 
-@Remote
+@Path
 public class SubService2 extends BaseServiceImpl<String> implements SubServiceInterface2 {
 	@Override
 	public boolean save(String t) {

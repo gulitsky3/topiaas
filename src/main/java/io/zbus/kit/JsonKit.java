@@ -53,13 +53,7 @@ public class JsonKit {
 		}
 		if(clazz.isAssignableFrom(json.getClass())){ 
 			return (T)json;
-		}
-		/*
-		if(json instanceof JSONObject){
-			JSONObject jsonObject = (JSONObject)json;
-			return jsonObject.toJavaObject(clazz);
-		}
-		*/
+		} 
 		String jsonString = null;
 		if(json instanceof String) {
 			jsonString = (String)json;
@@ -99,6 +93,11 @@ public class JsonKit {
 			return new String(data);
 		}
 	}
+	
+	public static byte[] toJSONBytes(Object value) { 
+		return toJSONBytes(value, "utf8");
+	} 
+	
 	
 	public static byte[] toJSONBytes(Object value, String encoding) {
 		return toJSONBytes(value, encoding, 

@@ -6,8 +6,7 @@ import java.util.Map;
 import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
 import io.zbus.rpc.annotation.Auth;
-import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.Remote;
+import io.zbus.rpc.annotation.Path;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http; 
 
@@ -28,17 +27,17 @@ public class FileService {
 	private String basePath = ".";
 	private FileKit kit = new FileKit();  
 	
-	@Remote(exclude=true)
+	@Path(exclude=true)
 	public void setCacheEnabled(boolean cache) {
 		kit.setCache(cache);
 	}
 	
-	@Remote(exclude=true)
+	@Path(exclude=true)
 	public void setBasePath(String basePath) {
 		this.basePath = basePath;
 	} 
 
-	public Message file(@Param(raw=true) Map<String, Object> request) {
+	public Message file(Map<String, Object> request) {
 		Message res = new Message(); 
 		
 		Object[] params = (Object[])request.get(Protocol.ARGS);  

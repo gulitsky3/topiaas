@@ -32,7 +32,7 @@ public class DocRender {
 		
 		String doc = "<div>";
 		int rowIdx = 0;
-		TreeMap<String, Map<String, RpcMethod>> methods = new TreeMap<>(this.rpcProcessor.methodInfoTable);
+		TreeMap<String, Map<String, RpcMethod>> methods = new TreeMap<>(); //TODO (this.rpcProcessor.methodInfoTable);
 		Iterator<Entry<String, Map<String, RpcMethod>>> iter = methods.entrySet().iterator();
 		while(iter.hasNext()) {
 			TreeMap<String, RpcMethod> objectMethods = new TreeMap<>(iter.next().getValue()); 

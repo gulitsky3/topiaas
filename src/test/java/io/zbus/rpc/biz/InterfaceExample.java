@@ -58,9 +58,7 @@ public interface InterfaceExample{
 	
 	void throwUnkownException();
 	
-	String nullParam(String nullStr); 
-	
-	String index(String defaultValue);
+	String nullParam(String nullStr);  
 	
 	Message html();
 }

@@ -5,14 +5,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.handler.ssl.SslContext;
-import io.zbus.kit.ClassKit;
-import io.zbus.rpc.annotation.Remote;
 import io.zbus.rpc.server.HttpRpcServer;
 import io.zbus.rpc.server.MqRpcServer;
 import io.zbus.transport.IoAdaptor;
@@ -22,8 +19,7 @@ import io.zbus.transport.Ssl;
 public class RpcServer implements Closeable {  
 	private static final Logger log = LoggerFactory.getLogger(RpcServer.class);
 	
-	private RpcProcessor processor;  
-	private boolean autoLoadService = false; 
+	private RpcProcessor processor;   
 	private RpcStartInterceptor onStart;
 	
 	//RPC over HTTP/WS
@@ -96,12 +92,7 @@ public class RpcServer implements Closeable {
 		this.keyFile = keyFile;
 		return this;
 	}  
-	 
-	public RpcServer setAutoLoadService(boolean autoLoadService) {
-		this.autoLoadService = autoLoadService;
-		return this;
-	}  
-	
+	  
 	public RpcServer setStackTraceEnabled(boolean stackTraceEnabled) {
 		this.processor.setStackTraceEnabled(stackTraceEnabled);
 		return this;
@@ -150,29 +141,14 @@ public class RpcServer implements Closeable {
 
 	private void validate(){ 
 		
-	}
-	
-	protected void initProcessor(){  
-		Set<Class<?>> classes = ClassKit.scan(Remote.class);
-		for(Class<?> clazz : classes){ 
-			try {
-				processor.addModule(clazz.newInstance());
-			} catch (Exception e) { 
-				log.error(e.getMessage(), e);
-			} 
-		}   
-	}
+	} 
 	
 	public RpcProcessor processor() {
 		return this.processor;
 	}
 	 
 	public RpcServer start() throws Exception{
-		validate();  
-		
-		if(autoLoadService){
-			initProcessor();
-		}  
+		validate();   
 		
 		if(onStart != null) {
 			onStart.onStart(processor);
@@ -217,11 +193,7 @@ public class RpcServer implements Closeable {
 		
 		return this;
 	}   
-	 
-	public RpcServer addModule(Object service){
-		processor.addModule(service);
-		return this;
-	}
+	  
 	
 	public RpcServer addModule(String module, Class<?> service){
 		try {
@@ -237,13 +209,7 @@ public class RpcServer implements Closeable {
 		processor.addModule(module, service);
 		return this;
 	}
-	
-	public RpcServer addModule(List<Object> services){
-		for(Object svc : services) {
-			processor.addModule(svc);
-		}
-		return this;
-	}
+	 
 	
 	public RpcServer addModule(String module, List<Object> services){
 		for(Object svc : services) {
@@ -271,8 +237,8 @@ public class RpcServer implements Closeable {
 		return this;
 	}  
 	
-	public RpcServer removeMethod(String module, String method){
-		processor.removeMethod(module, method);
+	public RpcServer removeMethod(String path){
+		processor.removeMethod(path);
 		return this;
 	}  
 	

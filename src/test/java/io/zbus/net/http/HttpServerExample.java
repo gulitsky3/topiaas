@@ -1,6 +1,5 @@
 package io.zbus.net.http;
 
-import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 import io.zbus.transport.Server;
 import io.zbus.transport.http.Http;
@@ -15,7 +14,7 @@ public class HttpServerExample {
 		HttpWsServerAdaptor adaptor = new HttpWsServerAdaptor();
 		
 		adaptor.url("/", (msg, sess) -> {   
-			System.out.println(JsonKit.toJSONString(msg));
+			//System.out.println(JsonKit.toJSONString(msg));
 			Message res = new Message();
 			res.setStatus(200);
 			

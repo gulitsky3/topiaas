@@ -46,6 +46,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
+import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http.FileForm;  
 
@@ -74,27 +75,25 @@ public class HttpWsServerCodec extends MessageToMessageCodec<Object, Object> {
     
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object obj,  List<Object> out) throws Exception {
-		//1) WebSocket mode  
-		if(obj instanceof byte[]){
-			if(handshaker == null){ 
-				log.warn("Handshake not finished");
-				return;
-			}
-			byte[] msg = (byte[])obj;
-			ByteBuf buf = Unpooled.wrappedBuffer(msg);
-			WebSocketFrame frame = new TextWebSocketFrame(buf);
-			out.add(frame); 
-			return; 
-		} 
-		
 		if(!(obj instanceof Message)){
-			log.warn("HttpMessage required");
+			log.error("Message type required");
 			return;
 		} 
 		
+		Message msg = (Message)obj;
+		//1) WebSocket mode  
+		if(handshaker != null){   
+			byte[] data = JsonKit.toJSONBytes(msg);
+			ByteBuf buf = Unpooled.wrappedBuffer(data);
+			WebSocketFrame frame = new TextWebSocketFrame(buf);
+			out.add(frame);  
+			return;
+		} 
+		
+		
 		//2) HTTP mode  
 		FullHttpMessage httpMessage = null;  
-		Message msg = (Message)obj;
+		
 		if (msg.getStatus() == null) {// as request
 			httpMessage = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(msg.getMethod()),
 					msg.getUrl()); 
@@ -107,6 +106,7 @@ public class HttpWsServerCodec extends MessageToMessageCodec<Object, Object> {
 		if(contentType == null) {
 			contentType = "application/json; charset=utf8";
 		}
+		httpMessage.headers().set("connection", "Keep-Alive");
 		httpMessage.headers().set(Http.CONTENT_TYPE, contentType); 
 		
 		for (Entry<String, String> e : msg.getHeaders().entrySet()) { 
@@ -122,7 +122,8 @@ public class HttpWsServerCodec extends MessageToMessageCodec<Object, Object> {
 	protected void decode(ChannelHandlerContext ctx, Object obj, List<Object> out) throws Exception {
 		//1) WebSocket mode
 		if(obj instanceof WebSocketFrame){
-			byte[] msg = decodeWebSocketFrame(ctx, (WebSocketFrame)obj);
+			byte[] bytes = decodeWebSocketFrame(ctx, (WebSocketFrame)obj);
+			Message msg = JsonKit.parseObject(bytes, Message.class);
 			if(msg != null){
 				out.add(msg);
 			}

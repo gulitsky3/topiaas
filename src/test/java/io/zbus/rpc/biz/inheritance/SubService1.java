@@ -1,8 +1,8 @@
 package io.zbus.rpc.biz.inheritance;
 
-import io.zbus.rpc.annotation.Remote;
+import io.zbus.rpc.annotation.Path;
 
-@Remote
+@Path
 public class SubService1 extends BaseServiceImpl<Integer> implements SubServiceInterface1{
 
 }

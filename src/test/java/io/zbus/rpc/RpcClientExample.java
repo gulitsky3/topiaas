@@ -1,7 +1,5 @@
 package io.zbus.rpc;
 
-import io.zbus.rpc.biz.InterfaceExample;
-import io.zbus.rpc.biz.User;
 import io.zbus.transport.Message;
 
 public class RpcClientExample {
@@ -13,8 +11,7 @@ public class RpcClientExample {
 		rpc.setSecretKey("461277322-943d-4b2f-b9b6-3f860d746ffd");
 
 		Message req = new Message();
-		req.addHeader("module", "example");
-		req.addHeader("method", "getOrder");
+		req.setUrl("/");  
 		
 		Message res = rpc.invoke(req); //同步调用
 		System.out.println(res);
@@ -23,11 +20,8 @@ public class RpcClientExample {
 			System.out.println(resp); 
 		}); 
 		
-		//动态代理类
-		InterfaceExample example = rpc.createProxy(InterfaceExample.class, "example");
-		User[] users = example.getUsers();
-		System.out.println(users);
+
 		 
-		rpc.close(); 
+		//rpc.close(); 
 	}
 }
