@@ -23,19 +23,22 @@ import io.zbus.transport.http.Http;
 
 public class MqServerAdaptor extends ServerAdaptor { 
 	private static final Logger logger = LoggerFactory.getLogger(MqServerAdaptor.class); 
-	private SubscriptionManager subscriptionManager = new SubscriptionManager();  
+	private SubscriptionManager subscriptionManager;
 	private MessageDispatcher messageDispatcher;
-	private MessageQueueManager mqManager = new MessageQueueManager(); 
-	private RequestAuth requestAuth;
-	
-	private Map<String, CommandHandler> commandTable = new HashMap<>(); 
+	private MessageQueueManager mqManager; 
+	private RequestAuth requestAuth; 
+	private Map<String, CommandHandler> commandTable; 
 	
 	public MqServerAdaptor(MqServerConfig config) {
+		subscriptionManager = new SubscriptionManager();  
+		mqManager = new MessageQueueManager();
+		
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
-		mqManager.mqDir = config.mqDir;
+		mqManager.mqDir = config.mqDiskDir; 
 		
 		mqManager.loadQueueTable();
 		
+		commandTable = new HashMap<>();
 		commandTable.put(Protocol.PUB, pubHandler);
 		commandTable.put(Protocol.SUB, subHandler);
 		commandTable.put(Protocol.TAKE, takeHandler);
@@ -44,6 +47,20 @@ public class MqServerAdaptor extends ServerAdaptor {
 		commandTable.put(Protocol.REMOVE, removeHandler); 
 		commandTable.put(Protocol.QUERY, queryHandler); 
 		commandTable.put(Protocol.PING, pingHandler); 
+	} 
+	
+	public MqServerAdaptor duplicate() {
+		MqServerAdaptor copy = new MqServerAdaptor(sessionTable);
+		copy.subscriptionManager = subscriptionManager;
+		copy.messageDispatcher = messageDispatcher;
+		copy.mqManager = mqManager;
+		copy.requestAuth = requestAuth;
+		copy.commandTable = commandTable;
+		return copy;
+	}
+	
+	private MqServerAdaptor(Map<String, Session> sessionTable) {
+		super(sessionTable);
 	}
 	
 	protected void attachInfo(Message request, Session sess) {

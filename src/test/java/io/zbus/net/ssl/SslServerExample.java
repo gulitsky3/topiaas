@@ -17,18 +17,18 @@ public class SslServerExample {
 		
 		SslContext context = Ssl.buildServerSsl("ssl/zbus.crt", "ssl/zbus.key"); 
 		
-		Server server = new HttpWsServer(); 
-		server.setSslContext(context);
-		
+		Server server = new HttpWsServer();   
 		ServerAdaptor adaptor = new ServerAdaptor() { 
 			@Override
 			public void onMessage(Object msg, Session sess) throws IOException { 
 				Message res = new Message();
+				res.setStatus(200);
+				res.setHeader("content-type", "text/html; charset=utf8"); 
 				res.setBody("<h1>hello world</h1>");  
 				
 				sess.write(res);
 			}
 		}; 
-		server.start(80, adaptor);  
+		server.start(8080, adaptor, context);  
 	} 
 }

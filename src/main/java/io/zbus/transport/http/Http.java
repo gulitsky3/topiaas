@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,12 +67,10 @@ public class Http {
 			if(bodyObj != null) {
 				if(bodyObj instanceof byte[]) { 
 					body = (byte[])bodyObj;
-				} else {
-					try {
-						body = bodyObj.toString().getBytes(charset);
-					} catch (UnsupportedEncodingException e) {
-						body = bodyObj.toString().getBytes();
-					}
+				} else if(bodyObj instanceof String) { 
+					body = msg.getBody().toString().getBytes();
+				} else { 
+					body = JsonKit.toJSONBytes(msg.getBody(), charset);
 				}
 			}   
 		} 

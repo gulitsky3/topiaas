@@ -13,35 +13,59 @@ import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
 
 public class MqServerConfig extends XmlConfig {
-	public String host;
-	public Integer port;
-	public boolean sslEnabled = false;
-	public String sslCertFile;
-	public String sslKeyFile;
+	public static class ServerConfig{
+		public String address;
+		public boolean sslEnabled = false;
+		public String sslCertFile;
+		public String sslKeyFile;
+		public RequestAuth auth;
+	}
+	
+	public ServerConfig publicServer;
+	public ServerConfig privateServer;
+	public ServerConfig monitorServer;
+	
 	public int maxSocketCount = 102400;
 	public int packageSizeLimit = 1024 * 1024 * 64; // 64M
-	public String mqDir = "/tmp/zbus"; 
+	public String mqDiskDir = "/tmp/zbus"; 
+	public String mqDbUrl;  
 	
-	public RequestAuth requestAuth;
-
-	public MqServerConfig() {
-
+	public MqServerConfig() { 
 	}
 
 	public MqServerConfig(String configXmlFile) {
 		loadFromXml(configXmlFile);
+	} 
+	
+	private ServerConfig loadConfig(Document doc, XPath xpath, String serverName) throws Exception { 
+		String path = String.format("/zbus/%s/address", serverName);
+		String address = valueOf(xpath.evaluate(path, doc), null); 
+		if(address == null) return null;
+		if(address.equals("")) return null;
+		
+		ServerConfig config = new ServerConfig();
+		config.address = address;
+		config.sslEnabled = valueOf(xpath.evaluate("/zbus/"+serverName+"/sslEnabled", doc), false);
+		config.sslCertFile = valueOf(xpath.evaluate("/zbus/"+serverName+"/sslEnabled/@certFile", doc), null);
+		config.sslKeyFile = valueOf(xpath.evaluate("/zbus/"+serverName+"/sslEnabled/@keyFile", doc), null);
+		
+		String authXPath = "/zbus/"+serverName+"/auth";
+		if (valueOf(xpath.evaluate(authXPath, doc), null) != null) {
+			XmlApiKeyProvider provider = new XmlApiKeyProvider();
+			provider.setAuthXPath(authXPath);
+			provider.loadFromXml(doc);
+			config.auth = new DefaultAuth(provider); 
+		}
+		return config;
 	}
 
 	@Override
 	public void loadFromXml(Document doc) throws Exception {
 		XPath xpath = XPathFactory.newInstance().newXPath();
 
-		this.host = valueOf(xpath.evaluate("/zbus/host", doc), "0.0.0.0");
-		this.port = valueOf(xpath.evaluate("/zbus/port", doc), 15555);
-
-		this.sslEnabled = valueOf(xpath.evaluate("/zbus/sslEnabled", doc), false);
-		this.sslCertFile = valueOf(xpath.evaluate("/zbus/sslEnabled/@certFile", doc), null);
-		this.sslKeyFile = valueOf(xpath.evaluate("/zbus/sslEnabled/@keyFile", doc), null);
+		this.publicServer = loadConfig(doc, xpath, "public");
+		this.privateServer = loadConfig(doc, xpath, "private");
+		this.monitorServer = loadConfig(doc, xpath, "monitor"); 
 
 		this.maxSocketCount = valueOf(xpath.evaluate("/zbus/maxSocketCount", doc), 102400);
 		String size = valueOf(xpath.evaluate("/zbus/packageSizeLimit", doc), "64M");
@@ -52,21 +76,31 @@ public class MqServerConfig extends XmlConfig {
 			this.packageSizeLimit = Integer.valueOf(size.substring(0, size.length() - 1)) * 1024 * 1024 * 1024;
 		} else {
 			this.packageSizeLimit = Integer.valueOf(size);
-		}
-
-		if (valueOf(xpath.evaluate("/zbus/auth", doc), null) != null) {
-			XmlApiKeyProvider provider = new XmlApiKeyProvider();
-			provider.loadFromXml(doc);
-			this.requestAuth = new DefaultAuth(provider); 
-		}
+		} 
 	}
 
-	public Integer getPort() {
-		return port;
+	public ServerConfig getPublicServer() {
+		return publicServer;
 	}
 
-	public void setPort(Integer port) {
-		this.port = port;
+	public void setPublicServer(ServerConfig publicServer) {
+		this.publicServer = publicServer;
+	}
+
+	public ServerConfig getPrivateServer() {
+		return privateServer;
+	}
+
+	public void setPrivateServer(ServerConfig privateServer) {
+		this.privateServer = privateServer;
+	}
+
+	public ServerConfig getMonitorServer() {
+		return monitorServer;
+	}
+
+	public void setMonitorServer(ServerConfig monitorServer) {
+		this.monitorServer = monitorServer;
 	}
 
 	public int getMaxSocketCount() {
@@ -85,51 +119,20 @@ public class MqServerConfig extends XmlConfig {
 		this.packageSizeLimit = packageSizeLimit;
 	}
 
-	public String getMqDir() {
-		return mqDir;
+	public String getMqDiskDir() {
+		return mqDiskDir;
 	}
 
-	public void setMqDir(String mqDir) {
-		this.mqDir = mqDir;
+	public void setMqDiskDir(String mqDiskDir) {
+		this.mqDiskDir = mqDiskDir;
 	}
 
-	public String getHost() {
-		return host;
+	public String getMqDbUrl() {
+		return mqDbUrl;
 	}
 
-	public void setHost(String host) {
-		this.host = host;
+	public void setMqDbUrl(String mqDbUrl) {
+		this.mqDbUrl = mqDbUrl;
 	}
-
-	public boolean isSslEnabled() {
-		return sslEnabled;
-	}
-
-	public void setSslEnabled(boolean sslEnabled) {
-		this.sslEnabled = sslEnabled;
-	}
-
-	public String getSslCertFile() {
-		return sslCertFile;
-	}
-
-	public void setSslCertFile(String sslCertFile) {
-		this.sslCertFile = sslCertFile;
-	}
-
-	public String getSslKeyFile() {
-		return sslKeyFile;
-	}
-
-	public void setSslKeyFile(String sslKeyFile) {
-		this.sslKeyFile = sslKeyFile;
-	}
-
-	public RequestAuth getRequestAuth() {
-		return requestAuth;
-	}
-
-	public void setRequestAuth(RequestAuth requestAuth) {
-		this.requestAuth = requestAuth;
-	} 
+ 
 }

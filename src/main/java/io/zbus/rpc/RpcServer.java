@@ -4,10 +4,11 @@ import java.io.Closeable;
 import java.io.IOException;
 
 import io.netty.handler.ssl.SslContext;
-import io.zbus.rpc.server.HttpRpcServer;
+import io.zbus.rpc.server.HttpRpcServerAdaptor;
 import io.zbus.rpc.server.MqRpcServer;
 import io.zbus.transport.IoAdaptor;
-import io.zbus.transport.Ssl; 
+import io.zbus.transport.Ssl;
+import io.zbus.transport.http.HttpWsServer; 
  
 
 public class RpcServer implements Closeable {   
@@ -19,8 +20,9 @@ public class RpcServer implements Closeable {
 	private String host = "0.0.0.0"; 
 	private String certFile;
 	private String keyFile;
-	private HttpRpcServer httpRpcServer; 
 	
+	private HttpWsServer httpWsServer; 
+	private HttpRpcServerAdaptor httpRpcServerAdaptor; 
 	
 	//RPC over MQ
 	private String mq;
@@ -97,9 +99,8 @@ public class RpcServer implements Closeable {
 		return this;
 	}  
 	   
-	public IoAdaptor getHttpRpcServerAdaptor() {
-		if(httpRpcServer == null) return null;
-		return httpRpcServer.getHttpRpcAdaptor();
+	public IoAdaptor getHttpRpcServerAdaptor() { 
+		return httpRpcServerAdaptor;
 	}
 
 	public void setMqServerAddress(String mqServerAddress) {
@@ -119,13 +120,13 @@ public class RpcServer implements Closeable {
 		} 
 		
 		if(port != null) {
-			this.httpRpcServer = new HttpRpcServer(this.processor); 
+			this.httpWsServer = new HttpWsServer(); 
+			this.httpRpcServerAdaptor = new HttpRpcServerAdaptor(processor);
+			SslContext context = null;
 			if(keyFile != null && certFile != null) {
-				SslContext context = Ssl.buildServerSsl(certFile, keyFile);
-				httpRpcServer.setSslContext(context);
-			}  
-			 
-			httpRpcServer.start(this.host, this.port); 
+				context = Ssl.buildServerSsl(certFile, keyFile); 
+			}   
+			httpWsServer.start(String.format("%s:%d",this.host, this.port), httpRpcServerAdaptor, context); 
 		} 
 		
 		if(mqServerAddress != null && mq != null) { 
@@ -160,9 +161,9 @@ public class RpcServer implements Closeable {
 	
 	@Override
 	public void close() throws IOException {  
-		if(httpRpcServer != null) {
-			httpRpcServer.close();
-			httpRpcServer = null;
+		if(httpWsServer != null) {
+			httpWsServer.close();
+			httpWsServer = null;
 		} 
 		if(mqRpcServer != null) {
 			mqRpcServer.close();
