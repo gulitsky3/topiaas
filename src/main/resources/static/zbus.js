@@ -349,20 +349,44 @@ class MqClient extends (WebsocketClient) {
             if (mqHandlers == null) {
                 return;
             }
-            var handler = mqHandlers[channel];
-            if (handler == null) return;
+            var mqHandler = mqHandlers[channel];
+            if (mqHandler == null) return;
 
-            handler(msg);
+            const window = msg.headers.window;
+            mqHandler.handler(msg)
+            if(window && window<=mqHandler.window/2){
+                const sub = new Message();
+                sub.headers.cmd = 'sub';
+                sub.headers.mq = mq;
+                sub.headers.channel = channel;
+                sub.headers.window = mqHandler.window;
+                sub.headers.ack = false;
+
+                this.send(sub, mqHandler.beforesend);
+            }
         };
     }
 
-    addMqHandler(mq, channel, callback) {
+    /**
+     * subscribe on channel of mq
+     * 
+     * @param {*} mq message queue id
+     * @param {*} channel channel fo mq
+     * @param {*} callback callback when message from channel of mq received
+    *  @param {*} window window size if sub enabled
+     * @param {*} beforsend message preprocessor before send, such as adding auth headers
+     */
+    addMqHandler(mq, channel, callback=null, window=1, beforsend=null) {
         var mqHandlers = this.mqHandlerTable[mq];
         if (mqHandlers == null) {
             mqHandlers = {};
             this.mqHandlerTable[mq] = mqHandlers;
         }
-        mqHandlers[channel] = callback;
+        mqHandlers[channel] = {
+            handler: callback,
+            window: window,
+            beforesend: this.beforeSend
+        };
     }
 }
 
@@ -392,7 +416,7 @@ var RpcInfoTemplate = `
 <table class="table">
 <thead>
 <tr class="table-info"> 
-    <th class="urlPath">Module</th>
+    <th class="urlPath">URL Path</th>
     <th class="returnType">Return Type</th>
     <th class="methodParams">Method and Params</th> 
 </tr>
@@ -552,6 +576,7 @@ class RpcProcessor {
             res.replace(result); 
         } else {
             res.status = 200;
+            res.headers['content-type'] = 'application/json; charset=utf8;'
             res.body = result;
         }
     }
@@ -686,6 +711,7 @@ class RpcServer {
                     processor.process(req, res);
                 } catch(e) {
                     logger.error(e);
+                    res.headers['content-type'] = 'text/plain; charset=utf8;'
                     _reply(res, 500, e); 
                 }  
 
