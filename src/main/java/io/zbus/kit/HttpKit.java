@@ -32,7 +32,7 @@ public class HttpKit {
 	public static class UrlInfo {
 		public List<String> path = new ArrayList<String>();
 		public Map<String, String> params = new HashMap<String, String>(); 
-	}
+	} 
 	
 	public static UrlInfo parseUrl(String url){
 		UrlInfo info = new UrlInfo();
