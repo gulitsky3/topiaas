@@ -65,7 +65,7 @@ public class MqRpcServer implements Closeable {
 		final MqClient mqClient = client;
 		mqClient.heartbeat(heartbeatInterval, TimeUnit.SECONDS);
 
-		mqClient.addListener(mq, channel, request -> {
+		mqClient.addMqHandler(mq, channel, request -> {
 			String source = (String)request.get(Protocol.SOURCE);
 			String id = (String)request.get(Protocol.ID); 
 			

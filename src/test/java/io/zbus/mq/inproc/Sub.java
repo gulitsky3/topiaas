@@ -19,7 +19,7 @@ public class Sub {
 		
 		final String mq = "DiskQ", channel = "MyChannel";
 		AtomicInteger count = new AtomicInteger(0);  
-		client.addListener(mq, channel, data->{
+		client.addMqHandler(mq, channel, data->{
 			if(count.getAndIncrement() % 10000 == 0) {
 				System.out.println(data); 
 			} 

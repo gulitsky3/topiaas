@@ -58,7 +58,7 @@ public class MqClient extends Client{
 		});
 	}  
 	
-	public void addListener(String mq, String channel, DataHandler<Map<String, Object>> dataHandler) {
+	public void addMqHandler(String mq, String channel, DataHandler<Map<String, Object>> dataHandler) {
 		Map<String,DataHandler<Map<String,Object>>> mqHandlers = handlerTable.get(mq);
 		if(mqHandlers == null) {
 			mqHandlers = new ConcurrentHashMap<>();
