@@ -489,8 +489,7 @@ public class HttpMessage {
 		if(status != null) {  
 			msg.setStatus(status);
 		}
-		Object body = table.remove(Protocol.BODY);
-		int bodyLen = 0;
+		Object body = table.remove(Protocol.BODY); 
 		if(body != null) {
 			String contentType = (String)table.get("content-type"); 
 			String bodyStr = null;
@@ -499,11 +498,9 @@ public class HttpMessage {
 				bodyStr = body.toString();
 			} else { //default to JSON
 				bodyStr = JsonKit.toJSONString(body);
-			}
-			bodyLen = bodyStr.length();
+			} 
 			msg.setJsonBody(bodyStr);
-		}
-		msg.setHeader(CONTENT_LENGTH, bodyLen);
+		}  
 		for(Entry<String, Object> e : table.entrySet()) {
 			msg.setHeader(e.getKey().toLowerCase(), e.getValue());
 		} 
