@@ -16,7 +16,7 @@ public class JsKit {
 			scriptClass = Class.forName("jdk.nashorn.api.scripting.ScriptObjectMirror"); //TODO remove nashorn dependency
 		} catch (ClassNotFoundException e) { 
 			scriptClass = null;
-			e.printStackTrace();
+//			e.printStackTrace();
 		} 
 	}
 	@SuppressWarnings("unchecked")
