@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
+import io.zbus.rpc.RpcMethod.MethodParam;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
@@ -84,7 +85,7 @@ public class RpcProcessor {
 				info.urlPath = urlPath;
 				info.method = methodName; 
 				info.docEnabled = enableDoc;
-				info.returnType = m.getReturnType().getCanonicalName();
+				info.setReturnType(m.getReturnType());
 				
 				RequestMapping p = m.getAnnotation(RequestMapping.class);
 				if (p != null) { 
@@ -105,20 +106,20 @@ public class RpcProcessor {
 				info.authRequired = authRequired;
 
 				m.setAccessible(true);  
-				
-				List<String> paramTypes = new ArrayList<String>();
+				 
 				for (Class<?> t : m.getParameterTypes()) {
-					paramTypes.add(t.getCanonicalName());
-				}
-				info.paramTypes = paramTypes;  
+					info.addParam(t); 
+				} 
 				Annotation[][] paramAnnos = m.getParameterAnnotations(); 
-				int size = paramTypes.size(); 
+				int size = info.params.size(); 
 				for(int i=0; i<size; i++) {
 					Annotation[] annos = paramAnnos[i];
 					for(Annotation annotation : annos) {
 						if(Param.class.isAssignableFrom(annotation.getClass())) {
 							Param param = (Param)annotation;  
-							info.paramNames.add(param.value()); 
+							String paramName = param.name();
+							if("".equals(paramName)) paramName = param.value();
+							info.params.get(i).name = paramName; 
 							break;
 						}
 					} 
@@ -238,54 +239,12 @@ public class RpcProcessor {
 		response.setStatus(status);
 		response.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 		response.setBody(message);
-	}  
-	
-	
-	private boolean checkParams(Message req, Message res, Method method, Object[] params, Object[] invokeParams) {
-		Class<?>[] targetParamTypes = method.getParameterTypes(); 
-		/*
-		boolean reqInject = false;
-		int count = 0; 
-		for(Class<?> paramType : targetParamTypes) {
-			if(Message.class.isAssignableFrom(paramType)) {
-				reqInject = true;
-				continue;
-			}
-			count++;
-		}
-		
-		if(!reqInject && count != params.length) { 
-			String msg = String.format("Request(Url=%s, Method=%s, Params=%s) Bad Format", req.getUrl(), method.getName(), JsonKit.toJSONString(params));
-			reply(res, 400, msg);
-			return false;
-		} 
-		*/
-		for (int i = 0; i < targetParamTypes.length; i++) { 
-			Class<?> paramType = targetParamTypes[i];
-			if(Message.class.isAssignableFrom(paramType)) {
-				invokeParams[i] = req;
-				continue;
-			}
-			if(i >= params.length) {
-				invokeParams[i] = null;
-			} else {
-				try {
-					invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
-				} catch (Exception e) {
-					res.setStatus(400);
-					res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
-					res.setBody(String.format("Required parameter type(%s) bad format", paramType.getName()));
-					return false;
-				}
-			}
-		} 
-		return true;
-	}
-	
+	}   
 	
 	private class MethodTarget{
 		public MethodInstance methodInstance;
 		public Object[] params;
+		public Map<String, String> queryMap;
 	}
 	 
 	private boolean httpMethodMatached(Message req, RequestMapping anno) { 
@@ -374,7 +333,8 @@ public class RpcProcessor {
 			UrlInfo info = HttpKit.parseUrl(subUrl);
 			List<Object> paramList = new ArrayList<>(info.pathList); 
 			if(!info.queryParamMap.isEmpty()) {
-				paramList.add(info.queryParamMap);
+				target.queryMap = info.queryParamMap;
+				//paramList.add(info.queryParamMap);
 			}
 			params = paramList.toArray();
 		} 
@@ -397,8 +357,7 @@ public class RpcProcessor {
 		}
 		
 		Object[] params = target.params; 
-		MethodInstance mi = target.methodInstance;
-		
+		MethodInstance mi = target.methodInstance; 
 		//Authentication step in if required
 		if(authFilter != null && mi.info.authRequired) { 
 			boolean next = authFilter.doFilter(req, response);
@@ -410,9 +369,8 @@ public class RpcProcessor {
 			Class<?>[] targetParamTypes = mi.reflectedMethod.getParameterTypes();
 			Object[] invokeParams = new Object[targetParamTypes.length];  
 			
-			boolean ok = checkParams(req, response, mi.reflectedMethod, params, invokeParams);
-			if(!ok) return;
-
+			applyParams(req, response, target, invokeParams); 
+			
 			data = mi.reflectedMethod.invoke(mi.instance, invokeParams);
 			
 		} else if(mi.target != null) {
@@ -421,10 +379,18 @@ public class RpcProcessor {
 				if(params.length == 1 && params[0] instanceof Map) {
 					mapParams = (Map<String, Object>)params[0]; 
 				} else {
-					for(int i=0;i <params.length; i++) {
-						if(mi.info.paramNames == null) break;
-						if(i<mi.info.paramNames.size()) {
-							mapParams.put(mi.info.paramNames.get(i), params[i]);
+					RpcMethod m = mi.info;
+					for(int i=0; i<m.params.size();i++) {
+						String paramName = m.params.get(i).name;
+						if(paramName == null) continue; //missing
+						if(i<params.length) {
+							mapParams.put(paramName, params[i]); 
+						}  
+					}  
+					if(target.queryMap != null) {
+						for(Entry<String, String> e : target.queryMap.entrySet()) {
+							if(mapParams.containsKey(e.getKey())) continue; //path match first
+							mapParams.put(e.getKey(), e.getValue());
 						}
 					}
 				}
@@ -439,6 +405,53 @@ public class RpcProcessor {
 			response.setHeader(Http.CONTENT_TYPE, "application/json; charset=utf8"); 
 			response.setBody(data); 
 		} 
+	}
+	
+	private Object convert(Object value, Class<?> paramType) {
+		try {
+			return JsonKit.convert(value, paramType);  
+		} catch (Exception e) {
+			throw new RpcException(400, String.format("Required parameter type(%s) bad format", paramType.getName())); 
+		}
+	}
+	
+	private void applyParams(Message req, Message res, MethodTarget target, Object[] invokeParams) { 
+		Object[] params = target.params;  
+		Method method = target.methodInstance.reflectedMethod; 
+		Class<?>[] targetParamTypes = method.getParameterTypes();  
+		
+		List<MethodParam> declaredParams = target.methodInstance.info.params;
+		if(declaredParams.size() != targetParamTypes.length) {
+			throw new IllegalStateException("Mehtod param size mismatched");
+		}
+		int j = 0;
+		for (int i = 0; i < targetParamTypes.length; i++) { 
+			Class<?> paramType = targetParamTypes[i];
+			if(Message.class.isAssignableFrom(paramType)) { //handle Message context injection
+				invokeParams[i] = req;
+				continue;
+			}  
+			
+			MethodParam mp = declaredParams.get(i);
+			if(mp.name != null) {
+				if(target.queryMap != null) {
+					String value = target.queryMap.get(mp.name);
+					if(value != null) { 
+						invokeParams[i] = convert(value, paramType);    
+					}
+				}
+			}
+			
+			if(j >= params.length) { 
+				if(Map.class.isAssignableFrom(paramType) && target.queryMap != null) {
+					invokeParams[i] = convert(target.queryMap, paramType);   
+				} else {
+					invokeParams[i] = null;
+				}
+			} else { 
+				invokeParams[i] = convert(params[j++], paramType);   
+			}
+		}  
 	}
 	 
 	private void invoke(Message req, Message response) {   
@@ -461,6 +474,7 @@ public class RpcProcessor {
 			response.setBody(errorMsg);
 			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			response.setStatus(500); 
+			
 			if(t instanceof RpcException) {
 				RpcException ex = (RpcException)t;
 				response.setStatus(ex.getStatus());

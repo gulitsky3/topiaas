@@ -20,14 +20,13 @@ import io.zbus.mq.commands.RemoveHandler;
 import io.zbus.mq.commands.RouteHandler;
 import io.zbus.mq.commands.SubHandler;
 import io.zbus.mq.commands.TakeHandler;
-import io.zbus.mq.plugin.DefaultUrlRouter;
+import io.zbus.mq.plugin.PublicUrlRouter;
 import io.zbus.mq.plugin.IpFilter;
 import io.zbus.mq.plugin.UrlRouter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
 import io.zbus.transport.Session;
-import io.zbus.transport.http.Http;
 
 /**
  * 
@@ -38,19 +37,17 @@ import io.zbus.transport.http.Http;
  */
 public class MqServerAdaptor extends ServerAdaptor implements Cloneable { 
 	private static final Logger logger = LoggerFactory.getLogger(MqServerAdaptor.class); 
-	private SubscriptionManager subscriptionManager;
-	private MessageDispatcher messageDispatcher;
-	private MqManager mqManager; 
-	private RequestAuth requestAuth; 
-	private Map<String, CommandHandler> commandTable = new HashMap<>(); 
+	protected SubscriptionManager subscriptionManager;
+	protected MessageDispatcher messageDispatcher;
+	protected MqManager mqManager; 
+	protected RequestAuth requestAuth; 
+	protected Map<String, CommandHandler> commandTable = new HashMap<>(); 
 	
-	private RpcProcessor rpcProcessor;
-	private MqServerConfig config;
+	protected RpcProcessor rpcProcessor;
+	protected MqServerConfig config;
 	
-	private UrlRouter urlRouter;
-	private IpFilter sessionFilter;
-	
-	private FileKit fileKit;
+	protected UrlRouter urlRouter;
+	protected IpFilter sessionFilter; 
 	
 	public MqServerAdaptor(MqServerConfig config) { 
 		this.config = config;
@@ -59,15 +56,15 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
 		mqManager.mqDir = config.mqDiskDir;  
-		
-		fileKit = new FileKit(config.fileCacheEnabled);
+		 
 		mqManager.loadQueueTable();    
+		if(config.getUrlRouter() != null) {
+			urlRouter = config.getUrlRouter();
+		} else {
+			urlRouter = new PublicUrlRouter();
+		}
 		
-		urlRouter = config.getUrlMqRouter();
-		
-		if(urlRouter == null) {
-			urlRouter = new DefaultUrlRouter();
-		} 
+		urlRouter.init(this);
 		
 		commandTable.put(Protocol.PUB, new PubHandler(messageDispatcher, mqManager));
 		commandTable.put(Protocol.SUB, new SubHandler(messageDispatcher, mqManager, subscriptionManager));
@@ -78,6 +75,14 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		commandTable.put(Protocol.QUERY, new QueryHandler(mqManager));  
 		commandTable.put(Protocol.PING, (req, sess)->{}); 
 	} 
+	
+	protected MqServerAdaptor(MqServerAdaptor that) {
+		this.config = that.config;
+		this.mqManager = that.mqManager;
+		this.subscriptionManager = that.subscriptionManager;
+		this.messageDispatcher = that.messageDispatcher;
+		this.commandTable = that.commandTable; 
+	}
 	
 	@Override
 	protected MqServerAdaptor clone() { 
@@ -145,7 +150,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		
 		if(cmd == null) {
 			//Filter on URL of request
-			boolean handled = routeUrl(req, sess);
+			boolean handled = urlRouter.route(req, sess);
 			if(handled) return;
 		} 
 		
@@ -169,67 +174,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			logger.error(e.getMessage(), e);
 			MsgKit.reply(req, 500, e.getMessage(), sess);  
 		}
-	}    
-	
-	
-	public boolean routeUrl(Message req, Session sess) { 
-		String url = req.getUrl();
-		if(url == null) return false;   
-		
-		if(config.urlMatchLocalFirst) {
-			if(rpcProcessor != null) {
-				if(rpcProcessor.matchUrl(url)) {
-					Message res = new Message();
-					rpcProcessor.process(req, res);
-					sess.write(res); 
-					return true;
-				} 
-			} 
-		}
-		
-		String mq = urlRouter.match(mqManager, url); 
-		if(mq != null) {
-			req.setHeader(Protocol.MQ, mq);
-			//Assumed to be RPC
-			if(req.getHeader(Protocol.CMD) == null) { // RPC assumed
-				req.setHeader(Protocol.CMD, Protocol.PUB);
-				req.setHeader(Protocol.ACK, false); //ACK should be disabled
-			}  
-			
-			//TODO check if consumer exists, reply 502, no service available 
-			return false;
-		} 
-		
-		if(!config.urlMatchLocalFirst) {
-			if(rpcProcessor != null) {
-				if(rpcProcessor.matchUrl(url)) {
-					Message res = new Message();
-					rpcProcessor.process(req, res);
-					sess.write(res); 
-					return true;
-				} 
-			} 
-		} 
-		
-		Message res = null;
-		if("/".equals(url)) { 
-			res = fileKit.loadResource("static/index.html"); 
-			if(res.getStatus() != 200) {
-				res = new Message();
-				res.setStatus(200);
-				res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-				res.setBody("<h1> Welcome to zbus</h1>"); 
-			} 
-			 
-		} else {
-			res = new Message();
-			res.setStatus(404);
-			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-			res.setBody(String.format("URL=%s Not Found", url));
-		}
-		sess.write(res);
-		return true; 
-	}
+	}     
 	
 	public void setRpcProcessor(RpcProcessor rpcProcessor) {
 		this.rpcProcessor = rpcProcessor;
@@ -254,5 +199,10 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	public MqManager getMqManager() {
 		return mqManager;
 	}  
-	
+	public MqServerConfig getConfig() {
+		return config;
+	}
+	public RpcProcessor getRpcProcessor() {
+		return rpcProcessor;
+	}
 }

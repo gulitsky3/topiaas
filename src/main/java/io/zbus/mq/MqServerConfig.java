@@ -97,6 +97,16 @@ public class MqServerConfig extends XmlConfig {
 	public ServerConfig getPublicServer() {
 		return publicServer;
 	}
+	
+	public void setPublicServer(String address) {
+		this.publicServer = new ServerConfig(address);
+	}
+	public void setPrivateServer(String address) {
+		this.privateServer = new ServerConfig(address);
+	} 
+	public void setMonitorServer(String address) {
+		this.monitorServer = new ServerConfig(address);
+	}
 
 	public void setPublicServer(ServerConfig publicServer) {
 		this.publicServer = publicServer;
@@ -175,7 +185,7 @@ public class MqServerConfig extends XmlConfig {
 		this.mqDbPassword = mqDbPassword;
 	}
 
-	public UrlRouter getUrlMqRouter() {
+	public UrlRouter getUrlRouter() {
 		return urlRouter;
 	}
 

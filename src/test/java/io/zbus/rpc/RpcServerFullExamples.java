@@ -1,6 +1,5 @@
 package io.zbus.rpc;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,8 +76,9 @@ public class RpcServerFullExamples {
 		RpcMethod spec = new RpcMethod(); 
 		spec.urlPath = "/dynamic/func1";
 		spec.method = "func1";
-		spec.paramTypes = Arrays.asList(String.class.getName(), Integer.class.getName());
-		spec.paramNames = Arrays.asList("name", "age");
+		spec.addParam(String.class, "name");
+		spec.addParam(Integer.class, "age"); 
+		
 		spec.returnType = Map.class.getName(); 
 		p.mount(spec, new GenericService());   
 		
