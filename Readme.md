@@ -56,6 +56,69 @@ Signature generation algorithm
 	2) Init HmacSHA256 with secretKey, do encrypt on 1)'s json string to generate bytes
 	3) signature = Hex format in upper case on the 2)'s bytes
 
+### Publish Message 
+
+Request
+
+	{
+		cmd:         pub,         //required
+		mq:          <mq_name>,   //required 
+		body:        <business data> 
+	}
+
+Response
+
+	{
+		status:      200|400|403|500,    
+		body:        <string_response> 
+	}
+
+### Subscribe Message 
+
+Request
+
+	{
+		cmd:         sub,           //required
+		mq:          <mq_name>,     //required  
+		channel:     <channel_name> //required
+		window:      <window_size>
+	}
+
+Response
+
+	First message: indicates subscribe success or failure
+	{
+		status:      200|400|403|500,    
+		body:        <string_response> 
+	}
+
+	Following messages:
+	{
+		mq:          <mq_name>,     //required  
+		channel:     <channel_name> //required
+		sender:      <message from>
+		id:          <message id>
+		body:        <business_data>
+	}
+
+### Take Message 
+
+Request
+
+	{
+		cmd:         take,          //required
+		mq:          <mq_name>,     //required 
+		channel:     <channel_name> //required
+		window:      <batch_size>
+	}
+
+Response
+
+	{
+		status:      200|400|403|500|604, //604 stands for NO data   
+		body:        <data> 
+	}
+
 
 ### Create MQ/Channel 
 
@@ -126,69 +189,6 @@ Response
 			type: "disk"
 		},
 		status: 200
-	}
-
-### Publish Message 
-
-Request
-
-	{
-		cmd:         pub,         //required
-		mq:          <mq_name>,   //required 
-		body:        <business data> 
-	}
-
-Response
-
-	{
-		status:      200|400|403|500,    
-		body:        <string_response> 
-	}
-
-### Subscribe Message 
-
-Request
-
-	{
-		cmd:         sub,           //required
-		mq:          <mq_name>,     //required  
-		channel:     <channel_name> //required
-		window:      <window_size>
-	}
-
-Response
-
-	First message: indicates subscribe success or failure
-	{
-		status:      200|400|403|500,    
-		body:        <string_response> 
-	}
-
-	Following messages:
-	{
-		mq:          <mq_name>,     //required  
-		channel:     <channel_name> //required
-		sender:      <message from>
-		id:          <message id>
-		body:        <business_data>
-	}
-
-### Take Message 
-
-Request
-
-	{
-		cmd:         take,          //required
-		mq:          <mq_name>,     //required 
-		channel:     <channel_name> //required
-		window:      <batch_size>
-	}
-
-Response
-
-	{
-		status:      200|400|403|500|604, //604 stands for NO data   
-		body:        <data> 
 	}
 
 
