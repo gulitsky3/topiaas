@@ -55,8 +55,7 @@ public class RpcServerDirectHttp {
 		RpcProcessor p = new RpcProcessor();
 		StaticResource resource = new StaticResource();
 		resource.setBasePath("\\tmp"); 
-		
-		p.setDocModule("m"); 
+		 
 		p.mount("", RpcServerDirectHttp.class); 
 		p.mount("static", resource);
 		

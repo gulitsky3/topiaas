@@ -47,7 +47,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		
 		urlFilter = config.getUrlFilter();
 		if(urlFilter == null) {
-			urlFilter = new DefaultUrlFilter();
+			urlFilter = new DefaultUrlFilter(mqManager);
 		}
 		
 		commandTable = new HashMap<>();
@@ -213,7 +213,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		}
 		
 		Boolean clearBind = req.getHeaderBool(Protocol.CLEAR_BIND); 
-		boolean clear = clearBind == null? false : clearBind;
+		boolean clear = clearBind == null? true : clearBind;
 		List<UrlEntry> entries = JsonKit.convertList(body, UrlEntry.class);
 		urlFilter.updateUrlEntry(mqName, entries, clear); 
 		

@@ -5,12 +5,19 @@ import java.util.Map.Entry;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
+import io.zbus.mq.MessageQueueManager;
 import io.zbus.mq.Protocol;
 import io.zbus.transport.Message;
+import io.zbus.transport.http.Http;
 
 public class DefaultUrlFilter implements UrlFilter {
 	private UrlMapping urlMapping = new UrlMapping();
-
+	private MessageQueueManager mqManager;
+	
+	public DefaultUrlFilter(MessageQueueManager mqManager) {
+		this.mqManager = mqManager;
+	}
+	
 	@Override
 	public Message doFilter(Message req) { 
 		String url = req.getUrl();
@@ -44,17 +51,26 @@ public class DefaultUrlFilter implements UrlFilter {
 			}
 		}
 		
-		//Assumed to be RPC
-		if(req.getHeader(Protocol.CMD) == null) { // RPC assumed
-			req.setHeader(Protocol.CMD, Protocol.PUB);
-			req.setHeader(Protocol.ACK, false); //ACK should be disabled
-		}    
-		
-		if(mq == null) {
+		if(mq == null) { 
 			if(info.pathList.size() > 0) {
 				mq = info.pathList.get(0); 
 			}
 		} 
+		
+		if(mqManager.get(mq) == null) {
+			Message res = new Message();
+			res.setStatus(404);
+			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+			res.setBody(String.format("%s Not Found", url));
+			return res;
+		}
+		
+		//Assumed to be RPC
+		if(req.getHeader(Protocol.CMD) == null) { // RPC assumed
+			req.setHeader(Protocol.CMD, Protocol.PUB);
+			req.setHeader(Protocol.ACK, false); //ACK should be disabled
+		}     
+		
 		if(mq != null) {
 			req.setHeader(Protocol.MQ, mq);
 		}

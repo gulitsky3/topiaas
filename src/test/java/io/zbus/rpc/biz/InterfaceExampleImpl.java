@@ -85,6 +85,7 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		return Arrays.asList(getUser("hong"), getUser("leiming"));
 	} 
 	
+	@RequestMapping(path="/map")
 	public List<Map<String, Object>> listMap() {
 		List<Map<String, Object>> res = new ArrayList<Map<String,Object>>();
 		res.add(map(1));
