@@ -53,7 +53,7 @@ public class DocRender {
 		String fmt = 
 				"<tr>" +   
 				"<td class=\"module\">" + 
-				"	<a href='%s'>%s</a>" + 
+				"%s" + 
 				"</td>" +
 				"<td class=\"returnType\">%s</td>" +  
 				"<td class=\"methodParams\"><code><strong><a href=\"%s\">%s</a></strong>(%s)</code>" +  
@@ -78,10 +78,9 @@ public class DocRender {
 		} 
 		if(paramList.length() > 0) {
 			paramList = paramList.substring(0, paramList.length()-2);
-		}  
-		String moduleLink = urlPrefix + m.module;
+		}    
 		
-		return String.format(fmt, moduleLink, m.module, m.returnType, methodLink, method,
+		return String.format(fmt, m.module, m.returnType, methodLink, method,
 				paramList);
 	} 
 	
