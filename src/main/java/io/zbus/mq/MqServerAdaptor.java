@@ -22,7 +22,6 @@ import io.zbus.mq.commands.RemoveHandler;
 import io.zbus.mq.commands.RouteHandler;
 import io.zbus.mq.commands.SubHandler;
 import io.zbus.mq.commands.TakeHandler;
-import io.zbus.mq.plugin.CorsFilter;
 import io.zbus.mq.plugin.Filter;
 import io.zbus.mq.plugin.IpFilter;
 import io.zbus.mq.plugin.UrlRouteFilter;
@@ -62,8 +61,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		mqManager.mqDir = config.mqDiskDir;  
 		 
 		mqManager.loadQueueTable();     
-		
-		filterList.add(new CorsFilter());
+		 
 		filterList.add(new UrlRouteFilter());
 		
 		commandTable.put(Protocol.PUB, new PubHandler(messageDispatcher, mqManager));

@@ -30,11 +30,7 @@ public class RouteHandler implements CommandHandler {
 			logger.warn("Target=" + recver + " Not Found");
 		}
 		
-		Boolean ack = req.getHeaderBool(Protocol.ACK);  
-		req.setHeader("Access-Control-Allow-Origin", "*");
-		req.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
-		req.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
-		
+		Boolean ack = req.getHeaderBool(Protocol.ACK);    
 		if(ack != null && ack == true) {
 			if(target == null) {
 				MsgKit.reply(req, 404,  "Target=" + recver + " Not Found", sess);

@@ -15,7 +15,6 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import io.zbus.kit.HttpKit;
@@ -315,8 +314,7 @@ public class RpcProcessor {
 		MethodTarget target = new MethodTarget(); 
 		target.methodInstance = matched.getValue();
 		Object[] params = null; 
-		
-		//TODO more support on URL parameters 
+		 
 		Route anno = target.methodInstance.info.urlAnnotation;
 		if(anno != null) {
 			boolean httpMethodMatched = httpMethodMatached(req, anno);
@@ -334,9 +332,7 @@ public class RpcProcessor {
 				if(form.files.isEmpty()) { //if no files upload, attributes same as queryString
 					target.queryMap = form.attributes;
 				} 
-			} else if(body instanceof String) {
-				target.queryMap = JsonKit.parseObject((String)body);
-			} else if(body instanceof JSONArray) {
+			} else { 
 				params = JsonKit.convert(body, Object[].class);
 			}
 		}   

@@ -29,6 +29,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.cors.CorsConfig;
+import io.netty.handler.codec.http.cors.CorsConfigBuilder;
+import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.DiskAttribute;
@@ -64,12 +67,25 @@ import io.zbus.transport.http.Http.FormData;
  */
 public class HttpWsServer extends Server { 
 	public HttpWsServer() {
+		CorsConfig corsConfig = CorsConfigBuilder.forAnyOrigin().allowNullOrigin().allowCredentials().build();  
+		initCodec(corsConfig);
+	} 
+	
+	public HttpWsServer(CorsConfig corsConfig) {
+		initCodec(corsConfig);
+	}
+	
+	protected void initCodec(CorsConfig corsConfig) {
 		codec(p -> {
 			p.add(new HttpServerCodec());
 			p.add(new HttpObjectAggregator(packageSizeLimit)); 
+			if(corsConfig != null) {
+				//p.add(new ChunkedWriteHandler());
+				p.add(new CorsHandler(corsConfig));
+			} 
 			p.add(new HttpWsServerCodec());  
 		}); 
-	}  
+	}
 	
 	public static class HttpWsServerCodec extends MessageToMessageCodec<Object, Object> {
 		private static final Logger logger = LoggerFactory.getLogger(HttpWsServerCodec.class); 
