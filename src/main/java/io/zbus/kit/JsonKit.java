@@ -1,11 +1,9 @@
 package io.zbus.kit;
 
 import java.io.UnsupportedEncodingException;
-import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.JSONSerializer;
@@ -27,6 +25,16 @@ public class JsonKit {
 			string = new String(bytes);
 		}
 		return JSON.parseObject(string);
+	} 
+	
+	public static <T> T parseObject(byte[] bytes, Class<T> clazz) {
+		String string;
+		try {
+			string = new String(bytes, DEFAULT_ENCODING);
+		} catch (UnsupportedEncodingException e) {
+			string = new String(bytes);
+		}
+		return JSON.parseObject(string, clazz);
 	} 
 	
 	public static <T> T parseObject(String jsonString, Class<T> clazz) {
@@ -125,20 +133,7 @@ public class JsonKit {
 		} finally {
 			out.close();
 		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static Object[] getArray(Map<String, Object> req, String key) {
-		Object params = req.get(key); 
-		if(params == null) return null; 
-		if(params instanceof List) {
-			return ((List<Object>)params).toArray();
-		} else if (params instanceof JSONArray) {
-			JSONArray array = (JSONArray)params;
-			return array.toArray();
-		} 
-		return (Object[])params;
-	}
+	} 
 	
 	public static String fixJson(String str){
 		if(!str.startsWith("{")) {

@@ -3,7 +3,6 @@ package io.zbus.mq.disk;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.disk.support.DiskMessage;
 import io.zbus.mq.disk.support.QueueReader;
 import io.zbus.mq.model.ChannelReader;
+import io.zbus.transport.Message;
 
 public class DiskChannelReader implements ChannelReader {
 	private static final Logger logger = LoggerFactory.getLogger(DiskChannelReader.class);
@@ -33,23 +33,22 @@ public class DiskChannelReader implements ChannelReader {
 			return true;
 		}
 	}
-
-	@SuppressWarnings("unchecked")
-	public Map<String, Object> read() throws IOException {
+ 
+	public Message read() throws IOException {
 		DiskMessage data = reader.read();
 		if (data == null) {
 			return null;
 		}
-		Map<String, Object> res = JsonKit.parseObject(new String(data.body, "UTF8"), Map.class);
-		res.put(Protocol.OFFSET, data.offset);
+		Message res = JsonKit.parseObject(data.body, Message.class);
+		res.addHeader(Protocol.OFFSET, data.offset);
 		return res;
 	}
 
 	@Override
-	public List<Map<String, Object>> read(int count) throws IOException {
-		List<Map<String, Object>> res = new ArrayList<>();
+	public List<Message> read(int count) throws IOException {
+		List<Message> res = new ArrayList<>();
 		for (int i = 0; i < count; i++) {
-			Map<String, Object> data = read();
+			Message data = read();
 			if(data == null) break;
 			res.add(data);
 		}

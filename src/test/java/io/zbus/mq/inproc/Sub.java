@@ -1,13 +1,12 @@
 package io.zbus.mq.inproc;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.zbus.mq.MqClient;
 import io.zbus.mq.MqServer;
 import io.zbus.mq.MqServerConfig;
+import io.zbus.transport.Message;
 
 public class Sub { 
 	
@@ -26,19 +25,19 @@ public class Sub {
 		});  
 		
 		client.onOpen(()->{
-			Map<String, Object> req = new HashMap<>();
-			req.put("cmd", "create"); //create MQ/Channel
-			req.put("mq", mq); 
-			req.put("mqType", "disk"); //Set as Disk type
-			req.put("channel", channel);  
+			Message req = new Message();
+			req.addHeader("cmd", "create"); //create MQ/Channel
+			req.addHeader("mq", mq); 
+			req.addHeader("mqType", "disk"); //Set as Disk type
+			req.addHeader("channel", channel);  
 			client.invoke(req, res->{
 				System.out.println(res);
 			});  
 			
-			Map<String, Object> sub = new HashMap<>();
-			sub.put("cmd", "sub"); //Subscribe on MQ/Channel
-			sub.put("mq", mq); 
-			sub.put("channel", channel);
+			Message sub = new Message();
+			sub.addHeader("cmd", "sub"); //Subscribe on MQ/Channel
+			sub.addHeader("mq", mq); 
+			sub.addHeader("channel", channel);
 			client.invoke(sub, res->{
 				System.out.println(res);
 			});

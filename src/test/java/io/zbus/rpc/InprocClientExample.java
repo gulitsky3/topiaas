@@ -1,10 +1,9 @@
 package io.zbus.rpc;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.zbus.rpc.biz.InterfaceExampleImpl;
+import io.zbus.transport.Message;
 import io.zbus.transport.inproc.InprocClient;
 
 public class InprocClientExample {
@@ -19,12 +18,10 @@ public class InprocClientExample {
 		
 		AtomicInteger count = new AtomicInteger(0);  
 		for (int i = 0; i < 1000000; i++) {
-			Map<String, Object> req = new HashMap<>();
-			req.put("method", "getOrder");
-			req.put("module", "example");
-			
-			//Map<String, Object> res = rpc.invoke(req); //sync mode
-			
+			Message req = new Message();
+			req.addHeader("module", "example");
+			req.addHeader("method", "getOrder"); 
+			 
 			rpc.invoke(req, res->{
 				int c = count.getAndIncrement();
 				if(c % 10000 == 0) {

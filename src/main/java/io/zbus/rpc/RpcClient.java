@@ -4,12 +4,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.Map;
 
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Client;
-import io.zbus.transport.IoAdaptor; 
+import io.zbus.transport.IoAdaptor;
+import io.zbus.transport.Message; 
 
 public class RpcClient extends Client {  
 	public RpcClient(String address) {  
@@ -23,15 +22,15 @@ public class RpcClient extends Client {
 	public void setMq(final String mq) { 
 		//add more controls for MQ before send
 		setBeforeSend(msg->{
-			msg.put(io.zbus.mq.Protocol.MQ, mq);
-			msg.put(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
-			msg.put(io.zbus.mq.Protocol.ACK, false);
+			msg.addHeader(io.zbus.mq.Protocol.MQ, mq);
+			msg.addHeader(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
+			msg.addHeader(io.zbus.mq.Protocol.ACK, false);
 		});
 	}
 	
-	private static <T> T parseResult(Map<String, Object> resp, Class<T> clazz) { 
-		Object data = resp.get(Protocol.BODY);
-		Integer status = (Integer)resp.get(Protocol.STATUS);
+	private static <T> T parseResult(Message resp, Class<T> clazz) { 
+		Object data = resp.getBody();
+		Integer status = resp.getStatus();
 		if(status != null && status != 200){
 			if(data instanceof RuntimeException){
 				throw (RuntimeException)data;
@@ -79,12 +78,12 @@ public class RpcClient extends Client {
 			Object value = handleLocalMethod(proxy, method, args);
 			if (value != REMOTE_METHOD_CALL) return value; 
 			 
-			Map<String, Object> request = new HashMap<>();
-			request.put(Protocol.MODULE, module);
-			request.put(Protocol.METHOD, method.getName());  
-			request.put(Protocol.PARAMS, args);
+			Message request = new Message();
+			request.addHeader(Protocol.MODULE, module);
+			request.addHeader(Protocol.METHOD, method.getName());  
+			request.addHeader(Protocol.ARGS, args);
 			
-			Map<String, Object> resp = rpc.invoke(request);
+			Message resp = rpc.invoke(request);
 			return parseResult(resp, method.getReturnType());
 		}
 

@@ -8,7 +8,8 @@ import io.zbus.kit.HttpKit;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Remote;
-import io.zbus.transport.http.HttpMessage; 
+import io.zbus.transport.Message;
+import io.zbus.transport.http.Http; 
 
 /**
  * 
@@ -37,10 +38,10 @@ public class FileService {
 		this.basePath = basePath;
 	} 
 
-	public HttpMessage file(@Param(raw=true) Map<String, Object> request) {
-		HttpMessage res = new HttpMessage(); 
+	public Message file(@Param(raw=true) Map<String, Object> request) {
+		Message res = new Message(); 
 		
-		Object[] params = (Object[])request.get(Protocol.PARAMS);  
+		Object[] params = (Object[])request.get(Protocol.ARGS);  
 		try {
 			String resource = "";
 			for(Object param : params) { 
@@ -55,7 +56,7 @@ public class FileService {
 				res.setStatus(404);
 			} else {
 				res.setStatus(200);
-				res.setHeader(HttpMessage.CONTENT_TYPE, HttpKit.contentType(resource));
+				res.addHeader(Http.CONTENT_TYPE, HttpKit.contentType(resource));
 				res.setBody(data);
 			}
 		} catch (IOException e) {

@@ -2,11 +2,11 @@ package io.zbus.mq.db;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import io.zbus.mq.Protocol;
 import io.zbus.mq.model.ChannelReader;
 import io.zbus.mq.model.MessageQueue.AbstractMessageQueue;
+import io.zbus.transport.Message;
 
 public class DbQueue extends AbstractMessageQueue{
 	
@@ -25,13 +25,13 @@ public class DbQueue extends AbstractMessageQueue{
 	}
 
 	@Override
-	public void write(Map<String, Object> message) {
+	public void write(Message message) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void write(List<Map<String, Object>> messages) {
+	public void write(List<Message> messages) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -9,7 +9,7 @@ import java.util.Random;
 
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.transport.http.HttpMessage; 
+import io.zbus.transport.Message; 
 
 @Auth(exclude=true)
 public class InterfaceExampleImpl implements InterfaceExample{
@@ -154,8 +154,8 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		return value;
 	} 
 	
-	public HttpMessage html() {
-		HttpMessage res = new HttpMessage();
+	public Message html() {
+		Message res = new Message();
 		res.setStatus(200);
 		res.setBody("html" + System.currentTimeMillis());
 		return res;

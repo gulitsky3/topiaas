@@ -1,9 +1,9 @@
 package io.zbus.mq;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import io.zbus.transport.Message;
 
 public class Sub { 
 	public static MqClient buildInproClient() {
@@ -28,18 +28,18 @@ public class Sub {
 		});  
 		
 		client.onOpen(()->{
-			Map<String, Object> req = new HashMap<>();
-			req.put("cmd", "create"); //create MQ/Channel
-			req.put("mq", mq); 
-			req.put("mqType", mqType); 
-			req.put("channel", channel);  
-			Map<String, Object> res = client.invoke(req);
+			Message req = new Message();
+			req.addHeader("cmd", "create"); //create MQ/Channel
+			req.addHeader("mq", mq); 
+			req.addHeader("mqType", mqType); 
+			req.addHeader("channel", channel);  
+			Message res = client.invoke(req);
 			System.out.println(res);
 			
-			Map<String, Object> sub = new HashMap<>();
-			sub.put("cmd", "sub"); //Subscribe on MQ/Channel
-			sub.put("mq", mq); 
-			sub.put("channel", channel);
+			Message sub = new Message();
+			sub.addHeader("cmd", "sub"); //Subscribe on MQ/Channel
+			sub.addHeader("mq", mq); 
+			sub.addHeader("channel", channel);
 			client.invoke(sub, data->{
 				System.out.println(data);
 			});

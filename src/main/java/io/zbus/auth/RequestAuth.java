@@ -1,6 +1,6 @@
 package io.zbus.auth;
 
-import java.util.Map;
+import io.zbus.transport.Message;
 
 
 /**
@@ -22,5 +22,5 @@ public interface RequestAuth {
 	 * @param request JSON typed request object
 	 * @return authentication result, success set to true of false with failure message
 	 */
-	AuthResult auth(Map<String, Object> request); 
+	AuthResult auth(Message request); 
 }

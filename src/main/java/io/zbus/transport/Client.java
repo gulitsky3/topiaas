@@ -1,7 +1,6 @@
 package io.zbus.transport;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.zbus.auth.RequestSign;
@@ -20,11 +19,11 @@ public class Client extends AbastractClient {
 	} 
 	
 	@Override
-	protected void sendMessage0(Map<String, Object> data) { 
+	protected void sendMessage0(Message data) { 
 		support.sendMessage0(data);
 	}
 	
-	public void sendMessage(Map<String, Object> data) {
+	public void sendMessage(Message data) {
 		support.sendMessage(data);
 	}
 
@@ -41,25 +40,25 @@ public class Client extends AbastractClient {
 		support.close();
 	}
 
-	public void invoke(Map<String, Object> req, DataHandler<Map<String, Object>> dataHandler) {
+	public void invoke(Message req, DataHandler<Message> dataHandler) {
 		support.invoke(req, dataHandler);
 	}
 
-	public void invoke(Map<String, Object> req, DataHandler<Map<String, Object>> dataHandler,
+	public void invoke(Message req, DataHandler<Message> dataHandler,
 			ErrorHandler errorHandler) {
 		support.invoke(req, dataHandler, errorHandler);
 	}
 
-	public Map<String, Object> invoke(Map<String, Object> req) throws IOException, InterruptedException {
+	public Message invoke(Message req) throws IOException, InterruptedException {
 		return support.invoke(req);
 	}
 
-	public Map<String, Object> invoke(Map<String, Object> req, long timeout, TimeUnit timeUnit)
+	public Message invoke(Message req, long timeout, TimeUnit timeUnit)
 			throws IOException, InterruptedException {
 		return support.invoke(req, timeout, timeUnit);
 	}
 
-	public boolean handleInvokeResponse(Map<String, Object> response) throws Exception {
+	public boolean handleInvokeResponse(Message response) throws Exception {
 		return support.handleInvokeResponse(response);
 	};
 
@@ -79,7 +78,7 @@ public class Client extends AbastractClient {
 		support.setRequestSign(requestSign);
 	}
 
-	public void onMessage(DataHandler<Map<String, Object>> onMessage) {
+	public void onMessage(DataHandler<Message> onMessage) {
 		support.onMessage(onMessage);
 	}
 

@@ -1,7 +1,6 @@
 package io.zbus.mq;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -12,13 +11,10 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson.JSON;
-
 import io.zbus.mq.model.MessageQueue;
 import io.zbus.mq.model.Subscription;
+import io.zbus.transport.Message;
 import io.zbus.transport.Session;
-import io.zbus.transport.Session.SessionType;
-import io.zbus.transport.http.HttpMessage;
 
 public class MessageDispatcher {
 	private static final Logger logger = LoggerFactory.getLogger(MessageDispatcher.class);
@@ -52,15 +48,15 @@ public class MessageDispatcher {
 				index = 0L;
 			}
 			while (true) {
-				List<Map<String, Object>> data;
+				List<Message> data;
 				try {
 					data = mq.read(channel, batchReadSize);
 				} catch (IOException e) {
 					logger.error(e.getMessage(), e);
 					break;
 				}
-				for (Map<String, Object> message : data) {
-					String filter = (String) message.get(Protocol.TOPIC);
+				for (Message message : data) {
+					String filter = (String) message.getHeader(Protocol.TOPIC);
 					int N = subs.size();
 					long max = index + N;
 					while (index < max) {
@@ -72,8 +68,8 @@ public class MessageDispatcher {
 							Session sess = sessionTable.get(sub.clientId);
 							if (sess == null)
 								continue;
-							message.put(Protocol.CHANNEL, channel); 
-							sendMessage(message, sess);
+							message.addHeader(Protocol.CHANNEL, channel); 
+							sess.write(message); 
 							break;
 						}
 					}
@@ -94,56 +90,16 @@ public class MessageDispatcher {
 	}
 
 	public void take(MessageQueue mq, String channel, int count, String reqMsgId, Session sess) throws IOException { 
-		List<Map<String, Object>> data = mq.read(channel, count);
-		Map<String, Object> message = new HashMap<>();  
+		List<Message> data = mq.read(channel, count);
+		Message message = new Message();  
 		int status = data.size()>0? 200 : 604;//Special status code, no DATA
-		message.put(Protocol.STATUS, status); 
-		message.put(Protocol.ID, reqMsgId);
-		message.put(Protocol.MQ, mq.name());
-		message.put(Protocol.CHANNEL, channel); 
-		message.put(Protocol.BODY, data);
-		sendMessage(message, sess);
-	}
-	
-
-	public void sendMessage(Map<String, Object> data, Session sess) { 
-		SessionType clientType = sess.attr(Session.TYPE_KEY); //Get type of session
-		if(clientType == null) clientType = SessionType.Websocket; 
+		message.setStatus(status); 
+		message.addHeader(Protocol.ID, reqMsgId);
+		message.addHeader(Protocol.MQ, mq.name());
+		message.addHeader(Protocol.CHANNEL, channel);   
+		message.setBody(data); 
 		
-		if (clientType == SessionType.Websocket) {
-			sess.write(JSON.toJSONBytes(data));
-			return;
-		}
 		
-		if (clientType == SessionType.Inproc) {
-			sess.write(data);
-			return;
-		} 
-		
-		if (clientType == SessionType.HTTP) {
-			HttpMessage res = new HttpMessage();
-			Boolean bodyHttp = (Boolean)data.remove(Protocol.BODY_HTTP);
-			Object body = data.get(Protocol.BODY);  
-			if(bodyHttp != null && bodyHttp && body != null) { 
-				byte[] bytes = null;
-				if(body instanceof byte[]) {
-					bytes = (byte[])body; 
-				} else if(body instanceof String) {
-					bytes = ((String)body).getBytes();
-				} else {
-					logger.warn("Unsupport HTTP body type: " + body.getClass());
-					return;
-				}
-				res = HttpMessage.parse(bytes);
-			} else {  
-				res = HttpMessage.fromMap(data);
-				if(res.getStatus() == null) {
-					res.setStatus(200);
-				} 
-			}   
-			sess.write(res);
-			
-			return;
-		}
-	}
+		sess.write(message); 
+	} 
 }

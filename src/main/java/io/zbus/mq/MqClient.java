@@ -1,6 +1,5 @@
 package io.zbus.mq;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -10,11 +9,12 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Client;
-import io.zbus.transport.DataHandler; 
+import io.zbus.transport.DataHandler;
+import io.zbus.transport.Message; 
 
 public class MqClient extends Client{ 
 	private static final Logger logger = LoggerFactory.getLogger(MqClient.class); 
-	private Map<String, Map<String,DataHandler<Map<String,Object>>>> handlerTable = new ConcurrentHashMap<>(); //mq=>{channel=>handler}
+	private Map<String, Map<String,DataHandler<Message>>> handlerTable = new ConcurrentHashMap<>(); //mq=>{channel=>handler}
 	
 	public MqClient(String address) {  
 		super(address);
@@ -30,21 +30,21 @@ public class MqClient extends Client{
 		});
 	}
 	
-	private void handleMessage(Map<String, Object> response) throws Exception {
+	private void handleMessage(Message response) throws Exception {
 		boolean handled = handleInvokeResponse(response);
 		if(handled) return;
 		
 		
 		//Subscribed message pushing 
-		String mq = (String)response.get(Protocol.MQ);
-		String channel = (String)response.get(Protocol.CHANNEL);
+		String mq = (String)response.getHeader(Protocol.MQ);
+		String channel = (String)response.getHeader(Protocol.CHANNEL);
 		if(mq == null || channel == null) {
 			logger.warn("MQ/Channel both required in reponse: " + JsonKit.toJSONString(response));
 			return;
 		} 
-		Map<String,DataHandler<Map<String,Object>>> mqHandlers = handlerTable.get(mq);
+		Map<String,DataHandler<Message>> mqHandlers = handlerTable.get(mq);
 		if(mqHandlers == null) return;
-		DataHandler<Map<String,Object>> handler = mqHandlers.get(channel);
+		DataHandler<Message> handler = mqHandlers.get(channel);
 		if(handler == null) return;
 		
 		handler.handle(response); 
@@ -52,14 +52,14 @@ public class MqClient extends Client{
 	 
 	public synchronized void heartbeat(long interval, TimeUnit timeUnit) {
 		heartbeat(interval, timeUnit, ()->{
-			Map<String, Object> msg = new HashMap<>();
-			msg.put(Protocol.CMD, Protocol.PING);
+			Message msg = new Message();
+			msg.addHeader(Protocol.CMD, Protocol.PING);
 			return msg;
 		});
 	}  
 	
-	public void addMqHandler(String mq, String channel, DataHandler<Map<String, Object>> dataHandler) {
-		Map<String,DataHandler<Map<String,Object>>> mqHandlers = handlerTable.get(mq);
+	public void addMqHandler(String mq, String channel, DataHandler<Message> dataHandler) {
+		Map<String,DataHandler<Message>> mqHandlers = handlerTable.get(mq);
 		if(mqHandlers == null) {
 			mqHandlers = new ConcurrentHashMap<>();
 			handlerTable.put(mq, mqHandlers);

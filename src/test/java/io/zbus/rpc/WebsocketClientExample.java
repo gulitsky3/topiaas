@@ -1,9 +1,8 @@
 package io.zbus.rpc;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.zbus.transport.Message;
 import io.zbus.transport.http.WebsocketClient;
 
 public class WebsocketClientExample {
@@ -14,11 +13,10 @@ public class WebsocketClientExample {
 		
 		AtomicInteger count = new AtomicInteger(0);  
 		for (int i = 0; i < 100000; i++) {
-			Map<String, Object> req = new HashMap<>();
-			req.put("method", "getOrder");
-			req.put("module", "example");
-			
-			//Map<String, Object> res = rpc.invoke(req); //sync mode
+			Message req = new Message();
+			req.addHeader("method", "getOrder");
+			req.addHeader("module", "example");
+			 
 			
 			rpc.invoke(req, res->{
 				int c = count.getAndIncrement();

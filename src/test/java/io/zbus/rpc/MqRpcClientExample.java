@@ -1,7 +1,6 @@
 package io.zbus.rpc;
 
-import java.util.HashMap;
-import java.util.Map;
+import io.zbus.transport.Message;
 
 public class MqRpcClientExample {
 
@@ -14,11 +13,11 @@ public class MqRpcClientExample {
 		rpc.setSecretKey("461277322-943d-4b2f-b9b6-3f860d746ffd");
 		
 
-		Map<String, Object> req = new HashMap<>();
-		req.put("module", "example");
-		req.put("method", "getOrder"); 
+		Message req = new Message();
+		req.addHeader("module", "example");
+		req.addHeader("method", "getOrder"); 
 		
-		Map<String, Object> res = rpc.invoke(req); //同步调用
+		Message res = rpc.invoke(req); //同步调用
 		System.out.println(res);
 		
 		rpc.invoke(req, resp -> { //异步调用

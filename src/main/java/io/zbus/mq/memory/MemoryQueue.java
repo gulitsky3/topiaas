@@ -2,12 +2,12 @@ package io.zbus.mq.memory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import io.zbus.mq.Protocol;
 import io.zbus.mq.model.Channel;
 import io.zbus.mq.model.ChannelReader;
 import io.zbus.mq.model.MessageQueue.AbstractMessageQueue;
+import io.zbus.transport.Message;
 
 public class MemoryQueue extends AbstractMessageQueue{  
 	private CircularArray data;   
@@ -39,12 +39,12 @@ public class MemoryQueue extends AbstractMessageQueue{
 	}
 	 
 	@Override
-	public void write(Map<String, Object> message) {  
+	public void write(Message message) {  
 		data.write(message);
 	} 
 	
 	@Override
-	public void write(List<Map<String, Object>> messages) { 
+	public void write(List<Message> messages) { 
 		data.write(messages.toArray());
 	} 
    

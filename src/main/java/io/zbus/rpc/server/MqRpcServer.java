@@ -3,9 +3,7 @@ package io.zbus.rpc.server;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -16,7 +14,7 @@ import io.zbus.mq.MqClient;
 import io.zbus.mq.MqServer;
 import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcProcessor;
-import io.zbus.transport.http.HttpMessage;
+import io.zbus.transport.Message;
 
 public class MqRpcServer implements Closeable {
 	private static final Logger logger = LoggerFactory.getLogger(MqRpcServer.class);
@@ -66,46 +64,36 @@ public class MqRpcServer implements Closeable {
 		mqClient.heartbeat(heartbeatInterval, TimeUnit.SECONDS);
 
 		mqClient.addMqHandler(mq, channel, request -> {
-			String source = (String)request.get(Protocol.SOURCE);
-			String id = (String)request.get(Protocol.ID); 
+			String source = (String)request.getHeader(Protocol.SOURCE);
+			String id = (String)request.getHeader(Protocol.ID); 
 			
-			Map<String, Object> response = processor.process(request);
+			Message response = processor.process(request);
 			
-			Object body = response.get(Protocol.BODY);
-			if (body != null && body instanceof HttpMessage) { //Special case when body is HTTP Message, make it browser friendly
-				HttpMessage res = (HttpMessage)body;
-				if(res.getStatus() == null) {
-					res.setStatus(200);
-				}
-				res.setHeader(Protocol.ID, id);
-				response.put(Protocol.BODY_HTTP, true);
-				response.put(Protocol.BODY, new String(res.toBytes())); //TODO support binary data
+			if(response.getStatus() == null) {
+				response.setStatus(200);
 			}
 			
-			if (response.get(Protocol.STATUS) == null) {
-				response.put(Protocol.STATUS, 200);
-			}
-			response.put(Protocol.CMD, Protocol.ROUTE);
-			response.put(Protocol.TARGET, source);
-			response.put(Protocol.ID, id);
+			response.addHeader(Protocol.CMD, Protocol.ROUTE);
+			response.addHeader(Protocol.TARGET, source);
+			response.addHeader(Protocol.ID, id);
 
 			mqClient.sendMessage(response);
 		});
 
 		mqClient.onOpen(() -> {
-			Map<String, Object> req = new HashMap<>();
-			req.put(Protocol.CMD, Protocol.CREATE); // create MQ/Channel
-			req.put(Protocol.MQ, mq);
-			req.put(Protocol.MQ_TYPE, mqType);
-			req.put(Protocol.CHANNEL, channel);
+			Message req = new Message();
+			req.addHeader(Protocol.CMD, Protocol.CREATE); // create MQ/Channel
+			req.addHeader(Protocol.MQ, mq);
+			req.addHeader(Protocol.MQ_TYPE, mqType);
+			req.addHeader(Protocol.CHANNEL, channel);
 
-			Map<String, Object> res = mqClient.invoke(req);
+			Message res = mqClient.invoke(req);
 			logger.info(JsonKit.toJSONString(res));
 
-			Map<String, Object> sub = new HashMap<>();
-			sub.put(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
-			sub.put(Protocol.MQ, mq);
-			sub.put(Protocol.CHANNEL, channel);
+			Message sub = new Message();
+			sub.addHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
+			sub.addHeader(Protocol.MQ, mq);
+			sub.addHeader(Protocol.CHANNEL, channel);
 			mqClient.invoke(sub, data -> {
 				logger.info(JsonKit.toJSONString(data));
 			});

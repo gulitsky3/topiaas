@@ -3,7 +3,6 @@ package io.zbus.mq.disk;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +14,7 @@ import io.zbus.mq.disk.support.Index;
 import io.zbus.mq.disk.support.QueueWriter;
 import io.zbus.mq.model.ChannelReader;
 import io.zbus.mq.model.MessageQueue.AbstractMessageQueue;
+import io.zbus.transport.Message;
 
 public class DiskQueue extends AbstractMessageQueue {
 	private static final Logger logger = LoggerFactory.getLogger(DiskQueue.class); 
@@ -63,15 +63,15 @@ public class DiskQueue extends AbstractMessageQueue {
         } 
 	}
 	 
-	private DiskMessage diskMessage(Map<String, Object> message) {
+	private DiskMessage diskMessage(Message message) {
 		DiskMessage diskMsg = new DiskMessage();
-		diskMsg.id = (String)message.get(Protocol.ID);
-		diskMsg.tag = (String)message.get(Protocol.TOPIC);
+		diskMsg.id = (String)message.getHeader(Protocol.ID);
+		diskMsg.tag = (String)message.getHeader(Protocol.TOPIC);
 		diskMsg.body = JsonKit.toJSONBytes(message, "UTF8");
 		return diskMsg;
 	}
 	@Override
-	public void write(Map<String, Object> message) { 
+	public void write(Message message) { 
 		try {  
 			writer.write(diskMessage(message)); 
 		} catch (IOException e) {
@@ -80,7 +80,7 @@ public class DiskQueue extends AbstractMessageQueue {
 	} 
 	
 	@Override
-	public void write(List<Map<String, Object>> messages) {
+	public void write(List<Message> messages) {
 		try { 
 			DiskMessage[] diskMsgs = new DiskMessage[messages.size()];
 			for(int i=0;i<messages.size();i++) { 

@@ -3,12 +3,12 @@ package io.zbus.mq.memory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import io.zbus.mq.Protocol;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.model.Channel;
 import io.zbus.mq.model.ChannelReader;
+import io.zbus.transport.Message;
 
 public class MemoryChannelReader implements ChannelReader {  
 	private final CircularArray queue;
@@ -40,19 +40,18 @@ public class MemoryChannelReader implements ChannelReader {
 	public void close() throws IOException { 
 		
 	}
- 
-	@SuppressWarnings("unchecked")
-	public List<Map<String, Object>> read(int count) throws IOException { 
+  
+	public List<Message> read(int count) throws IOException { 
 		synchronized (queue.array) {
-			List<Map<String, Object>> res = new ArrayList<>();
+			List<Message> res = new ArrayList<>();
 			if (channel.offset < queue.start) {
 				channel.offset = queue.start;
 			}
 			int c = 0;
 			while (channel.offset < queue.end) {
 				int idx = (int) (channel.offset % queue.maxSize);
-				Map<String, Object> data = (Map<String, Object>)queue.array[idx];
-				data.put(Protocol.OFFSET, channel.offset); //Add offset
+				Message data = (Message)queue.array[idx];
+				data.addHeader(Protocol.OFFSET, channel.offset); //Add offset
 				res.add(data);
 				channel.offset++;
 				c++;
@@ -61,19 +60,18 @@ public class MemoryChannelReader implements ChannelReader {
 			return res;
 		} 
 	} 
-	
-	@SuppressWarnings("unchecked")
+	 
 	@Override
-	public Map<String, Object> read() throws IOException {
+	public Message read() throws IOException {
 		synchronized (queue.array) { 
 			if (channel.offset < queue.start) {
 				channel.offset = queue.start;
 			} 
-			Map<String, Object> res = null;
+			Message res = null;
 			if (channel.offset < queue.end) {
 				int idx = (int) (channel.offset % queue.maxSize);
-				res = (Map<String, Object>)queue.array[idx];
-				res.put(Protocol.OFFSET, channel.offset); //Add offset
+				res = (Message)queue.array[idx];
+				res.addHeader(Protocol.OFFSET, channel.offset); //Add offset
 				channel.offset++; 
 			}
 			return res;

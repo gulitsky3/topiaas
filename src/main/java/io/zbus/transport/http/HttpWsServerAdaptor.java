@@ -26,12 +26,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
 import io.zbus.transport.Session; 
 
 public class HttpWsServerAdaptor extends ServerAdaptor{     
-	protected MessageHandler<HttpMessage> filterHandler;   
-	protected Map<String, MessageHandler<HttpMessage>> handlerMap = new ConcurrentHashMap<>();  
+	protected MessageHandler<Message> filterHandler;   
+	protected Map<String, MessageHandler<Message>> handlerMap = new ConcurrentHashMap<>();  
 	
 	public HttpWsServerAdaptor(){ 
 		this(null);
@@ -41,56 +42,35 @@ public class HttpWsServerAdaptor extends ServerAdaptor{
 		super(sessionTable); 
 	} 
 	
-	public void url(String url, MessageHandler<HttpMessage> handler){ 
+	public void url(String url, MessageHandler<Message> handler){ 
     	this.handlerMap.put(url, handler);
     }
 	 
-    public void registerFilterHandler(MessageHandler<HttpMessage> filterHandler) {
+    public void registerFilterHandler(MessageHandler<Message> filterHandler) {
 		this.filterHandler = filterHandler;
 	}  
     
     public void onMessage(Object obj, Session sess) throws IOException {  
-    	HttpMessage msg = (HttpMessage)obj;  
-    	final String msgId = msg.getId();
-    	handleUrlMessage(msg);
+    	Message msg = (Message)obj;  
+    	final String msgId = msg.getHeader(Message.ID); 
     	
     	if(this.filterHandler != null){
     		this.filterHandler.handle(msg, sess);
     	}
     	
     	String url = msg.getUrl();
-    	MessageHandler<HttpMessage> handler = handlerMap.get(url);
+    	MessageHandler<Message> handler = handlerMap.get(url);
     	if(handler != null){
     		handler.handle(msg, sess);
     		return;
     	}  
     	
-    	HttpMessage res = new HttpMessage();
-    	res.setId(msgId); 
+    	Message res = new Message();
+    	res.addHeader(Message.ID, msgId);
     	res.setStatus(404);
     	String text = String.format("404: %s Not Found", url);
     	res.setBody(text); 
     	sess.write(res); 
-    }  
-    
-    protected void handleUrlMessage(HttpMessage msg){ 
-    	if(msg.getHeader("") != null){
-    		return;
-    	} 
-    	String url = msg.getUrl(); 
-    	if(url == null || "/".equals(url)){
-    		msg.setCommand("");
-    		return;
-    	} 
-    	int idx = url.indexOf('?');
-    	String cmd = "";
-    	if(idx >= 0){
-    		cmd = url.substring(1, idx);  
-    	} else {
-    		cmd = url.substring(1);
-    	} 
-    	  
-    	msg.setCommand(cmd.toLowerCase());  
-	}
+    }   
 }
 

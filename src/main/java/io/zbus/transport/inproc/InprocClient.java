@@ -1,7 +1,6 @@
 package io.zbus.transport.inproc;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -12,6 +11,7 @@ import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 import io.zbus.transport.AbastractClient;
 import io.zbus.transport.IoAdaptor;
+import io.zbus.transport.Message;
 import io.zbus.transport.Session;
 
 public class InprocClient extends AbastractClient implements Session { 
@@ -73,18 +73,17 @@ public class InprocClient extends AbastractClient implements Session {
 		return "Inproc-"+id;
 	}
 	
-
-	@SuppressWarnings("unchecked")
+ 
 	@Override
 	public void write(Object msg) {  //Session received message  
 		try {
-			Map<String, Object> data = null;
-			if(msg instanceof Map) {
-				data = (Map<String, Object>)msg; 
+			Message data = null;
+			if(msg instanceof Message) {
+				data = (Message)msg; 
 			} else if(msg instanceof byte[]) {
-				data = JsonKit.parseObject((byte[])msg);
+				data = JsonKit.parseObject((byte[])msg, Message.class);
 			} else if(msg instanceof String) {
-				data = JsonKit.parseObject((String)msg);
+				data = JsonKit.parseObject((String)msg, Message.class);
 			} else {
 				throw new IllegalArgumentException("type of msg not support: " + msg.getClass());
 			}
@@ -97,7 +96,7 @@ public class InprocClient extends AbastractClient implements Session {
 	}
 	
 	@Override
-	protected void sendMessage0(Map<String, Object> data) {  //Session send out message
+	protected void sendMessage0(Message data) {  //Session send out message
 		synchronized (lock) {
 			if(!active) {
 				connect();

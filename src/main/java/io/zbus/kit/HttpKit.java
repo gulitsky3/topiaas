@@ -87,7 +87,7 @@ public class HttpKit {
 
 		if (info.path.size() > size) {
 			Object[] params = new Object[info.path.size() - size];
-			req.put(Protocol.PARAMS, params);
+			req.put(Protocol.ARGS, params);
 			for (int i = 0; i < info.path.size() - size; i++) {
 				params[i] = info.path.get(size + i);
 			}
@@ -97,7 +97,7 @@ public class HttpKit {
 			String key = e.getKey();
 			Object value = e.getValue();
 			
-			if(Protocol.PARAMS.equalsIgnoreCase(key)) {  //Special case for params
+			if(Protocol.ARGS.equalsIgnoreCase(key)) {  //Special case for params
 				String[] bb = e.getValue().split("[/,]");
 				List<String> params = new ArrayList<>();
 				for(String b : bb) {

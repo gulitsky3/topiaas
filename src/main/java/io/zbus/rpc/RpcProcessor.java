@@ -11,19 +11,23 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSONArray;
+
 import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Remote;
 import io.zbus.rpc.doc.DocRender;
+import io.zbus.transport.Message;
+import io.zbus.transport.http.Http;
 
 public class RpcProcessor {
 	private static final Logger log = LoggerFactory.getLogger(RpcProcessor.class);
 	
 	public Map<String, Map<String, RpcMethod>> methodInfoTable = new HashMap<>(); //<module> => { method: => RpcMethod }
 
-	protected Map<String, MethodInstance> methodTable = new HashMap<>();      //<module>:<method> => MethodInstance 
+	protected Map<String, MethodInstance> methodTable = new HashMap<>();      //url => MethodInstance 
 	
 	protected String docUrlRoot = "/";
 	protected boolean stackTraceEnabled = true;
@@ -219,38 +223,38 @@ public class RpcProcessor {
 		}
 	} 
 	
-	private MethodInstance matchMethod(Map<String, Object> req) {
-		String module = (String)req.get(Protocol.MODULE);
-		String method = (String)req.get(Protocol.METHOD);
+	private MethodInstance matchMethod(Message req) {
+		String module = (String)req.getHeader(Protocol.MODULE);
+		String method = (String)req.getHeader(Protocol.METHOD);
 		String key = key(module, method);
 		return methodTable.get(key); 
 	} 
 	
 	private String key(String module, String method) {
-		return module + ":" + method;
+		return module + "/" + method;
 	}
 	
-	public Map<String, Object> process(Map<String, Object> req) {  
-		Map<String, Object> response = new HashMap<String, Object>();   
+	public Message process(Message req) {  
+		Message response = new Message();    
 		try { 
 			if (req == null) {
-				req = new HashMap<>(); 
-				req.put(Protocol.MODULE, "index");
-				req.put(Protocol.METHOD, "index");
+				req = new Message(); 
+				req.addHeader(Protocol.MODULE, "index");
+				req.addHeader(Protocol.METHOD, "index");
 			}  
 			
-			String module = (String)req.get(Protocol.MODULE);
-			String method = (String)req.get(Protocol.METHOD);  
+			String module = (String)req.getHeader(Protocol.MODULE);
+			String method = (String)req.getHeader(Protocol.METHOD);  
 			
-			if(req.get(Protocol.PARAMS) == null){
-				req.put(Protocol.PARAMS, new Object[0]);
+			if(req.getHeader(Protocol.ARGS) == null){
+				req.addHeader(Protocol.ARGS, new Object[0]);
 			} 
 			
 			if (StrKit.isEmpty(module)) {
-				req.put(Protocol.MODULE, "index");
+				req.addHeader(Protocol.MODULE, "index");
 			}
 			if (StrKit.isEmpty(method)) {
-				req.put(Protocol.METHOD, "index");
+				req.addHeader(Protocol.METHOD, "index");
 			}   
 			
 			if(beforeFilter != null) {
@@ -265,34 +269,46 @@ public class RpcProcessor {
 			}
 			 
 		} catch (Throwable e) {
-			response.put(Protocol.BODY, new RpcException(e.getMessage(), e.getCause(), false, stackTraceEnabled)); 
-			response.put(Protocol.STATUS, 500);
+			response.setBody(new RpcException(e.getMessage(), e.getCause(), false, stackTraceEnabled)); 
+			response.setStatus(500);
 		} finally {
 			bindRequestResponse(req, response); 
-			if(response.get(Protocol.STATUS) == null) {
-				response.put(Protocol.STATUS, 200);
+			if(response.getStatus() == null) {
+				response.setStatus(200);
 			}
 		} 
 		return response;
 	}
 	
-	private void bindRequestResponse(Map<String, Object> request, Map<String, Object> response) {
-		response.put(Protocol.ID, request.get(Protocol.ID)); //Id Match
+	private void bindRequestResponse(Message request, Message response) {
+		response.addHeader(Protocol.ID, request.getHeader(Protocol.ID)); //Id Match
 	}
 	 
+	@SuppressWarnings("unchecked")
+	public static Object[] getArray(Object params) { 
+		if(params == null) return null; 
+		if(params instanceof List) {
+			return ((List<Object>)params).toArray();
+		} else if (params instanceof JSONArray) {
+			JSONArray array = (JSONArray)params;
+			return array.toArray();
+		} 
+		return (Object[])params;
+	}
 	
 	@SuppressWarnings("unchecked")
-	private void invoke(Map<String, Object> req, Map<String, Object> response) throws IllegalAccessException, IllegalArgumentException {   
+	private void invoke(Message req, Message response) throws IllegalAccessException, IllegalArgumentException {   
 		try {   
 			MethodInstance target = matchMethod(req); 
-			String module = (String)req.get(Protocol.MODULE);
-			String method = (String)req.get(Protocol.METHOD); 
-			Object[] params = JsonKit.getArray(req, Protocol.PARAMS);
-			req.put(Protocol.PARAMS, params); //normalize
+			String module = (String)req.getHeader(Protocol.MODULE);
+			String method = (String)req.getHeader(Protocol.METHOD); 
+			Object[] params = new Object[0]; //TODO JsonKit.getArray(req, Protocol.ARGS);
+			req.addHeader(Protocol.ARGS, params); //normalize
 			
 			if(target == null) {
-				response.put(Protocol.STATUS,404);
-				response.put(Protocol.BODY, String.format("module=%s, method=%s Not Found", module, method));
+				response.setStatus(404);
+				response.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+				response.setBody(String.format("module=%s, method=%s Not Found", module, method));
 				return;
 			}
 			
@@ -338,8 +354,8 @@ public class RpcProcessor {
 				data = target.invokeBridge.invoke(method, mapParams);
 			}
 			
-			response.put(Protocol.BODY, data); 
-			response.put(Protocol.STATUS, 200);
+			response.setStatus(200); 
+			response.setBody(data); 
 		} catch (InvocationTargetException e) {  
 			Throwable t = e.getTargetException();
 			if(t != null) {
@@ -347,8 +363,8 @@ public class RpcProcessor {
 					t.setStackTrace(new StackTraceElement[0]);
 				}
 			}
-			response.put(Protocol.BODY, t);
-			response.put(Protocol.STATUS, 500);
+			response.setBody(t);
+			response.setStatus(500); 
 		} 
 	}
 

@@ -1,8 +1,10 @@
 package io.zbus.net.http;
 
+import io.zbus.kit.JsonKit;
+import io.zbus.transport.Message;
 import io.zbus.transport.Server;
+import io.zbus.transport.http.Http;
 import io.zbus.transport.http.HttpWsServer;
-import io.zbus.transport.http.HttpMessage;
 import io.zbus.transport.http.HttpWsServerAdaptor;
 
 public class HttpServerExample {
@@ -13,11 +15,13 @@ public class HttpServerExample {
 		HttpWsServerAdaptor adaptor = new HttpWsServerAdaptor();
 		
 		adaptor.url("/", (msg, sess) -> {   
-			HttpMessage res = new HttpMessage();
+			System.out.println(JsonKit.toJSONString(msg));
+			Message res = new Message();
 			res.setStatus(200);
 			
-			res.setId(msg.getId()); //match the ID for response 
-			res.setBody(""+System.currentTimeMillis());
+			res.addHeader(Message.ID, res.getHeader(Message.ID)); 
+			res.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+			res.setBody("中文"+System.currentTimeMillis());
 			sess.write(res); 
 		});   
 		 
