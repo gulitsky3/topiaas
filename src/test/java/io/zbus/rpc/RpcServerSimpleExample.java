@@ -30,7 +30,7 @@ public class RpcServerSimpleExample {
 	public Map<String, Object> map(Map<String, Object> table) {
 		System.out.println(table);
 		return table;
-	}
+	} 
 	 
 	@Route("/abc") //default path could be changed
 	public Object json() {

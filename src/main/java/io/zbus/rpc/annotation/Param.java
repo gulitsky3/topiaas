@@ -12,6 +12,6 @@ import java.lang.annotation.Target;
 public @interface Param {
 	String value() default "";         //Name of parameter
 	String name() default "";          //Alias to value
-	
+	boolean ctx() default  false;      //is from context
 	String defaultValue() default "";  //Default value of parameter 
 }

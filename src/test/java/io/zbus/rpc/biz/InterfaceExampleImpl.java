@@ -180,6 +180,10 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		res.setBody("<h1>request injected</h1>");
 		return res;
 	}
+	
+	public Object getContext(@Param(ctx=true) Map<String, Object> ctx) {
+		return ctx;
+	}
 }
 
 

@@ -1,14 +1,22 @@
 package io.zbus.rpc.filer;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.zbus.rpc.RpcFilter;
+import io.zbus.rpc.annotation.FilterDef;
+import io.zbus.rpc.annotation.FilterType;
 import io.zbus.transport.Message;
 
-//@FilterDef(type=FilterType.GlobalBefore)
+@FilterDef(type=FilterType.GlobalBefore)
 public class GlobalBeforeFilter implements RpcFilter {
 
 	@Override
 	public boolean doFilter(Message request, Message response, Throwable exception) { 
 		System.out.println("[Filter=GlobalBefore]: " + request);
+		Map<String, Object> ctx = new HashMap<>();
+		ctx.put("accessTime", System.currentTimeMillis());
+		request.setContext(ctx);
 		return true;
 	} 
 }

@@ -144,6 +144,7 @@ public class RpcProcessor {
 							String paramName = param.name();
 							if("".equals(paramName)) paramName = param.value();
 							info.params.get(i).name = paramName; 
+							info.params.get(i).fromContext = param.ctx();
 							break;
 						}
 					} 
@@ -472,9 +473,18 @@ public class RpcProcessor {
 			if(Message.class.isAssignableFrom(paramType)) { //handle Message context injection
 				invokeParams[i] = req;
 				continue;
-			}  
+			}   
 			
 			MethodParam mp = declaredParams.get(i);
+			if(mp.fromContext) {
+				try {
+					invokeParams[i] = convert(req.getContext(), paramType);  
+				} catch (Exception e) {
+					logger.warn(e.getMessage(), e); //ignore context conversion error, set to null
+				}
+				continue;
+			}
+			
 			if(mp.name != null) {
 				if(target.queryMap != null) {
 					Object value = target.queryMap.get(mp.name);
