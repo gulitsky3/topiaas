@@ -73,6 +73,14 @@ public class Message {
 	@JSONField(serialize=false)
 	private Map<String, String> cookies; 
 	
+	@JSONField(serialize=false)
+	private Map<String, String> responseCookies; 
+	
+	@JSONField(serialize=false)
+	private int serverPort;
+	
+	@JSONField(serialize=false)
+	private String pathMatched;
 	
 	public Message() {
 		
@@ -167,6 +175,9 @@ public class Message {
 		if(key.toLowerCase().equals("cookie")) {
 			cookies = null; //invalidate cookie cache
 		}
+		if(key.toLowerCase().equals("set-cookie")) {
+			responseCookies = null; //invalidate response cookie cache
+		}
 		this.headers.put(key, value);
 	}  
 	
@@ -181,6 +192,9 @@ public class Message {
 	public Object removeHeaderObject(String key){
 		if(key.toLowerCase().equals("cookie")) {
 			cookies = null; //invalidate cookie cache
+		}
+		if(key.toLowerCase().equals("set-cookie")) {
+			responseCookies = null; //invalidate response cookie cache
 		}
 		
 		return this.headers.remove(key);
@@ -296,8 +310,15 @@ public class Message {
 	public void setCookie(String key, String value) {
 		Map<String, String> m = cookies();
 		m.put(key, value);  
-		
 		calculateCookieHeader();
+	}
+	public void setRequestCookie(String key, String value) {
+		this.setCookie(key, value);
+	}
+	public void setResponseCookie(String key, String value) {
+		Map<String, String> m = cookies();
+		m.put(key, value);  
+		calculateResponseCookieHeader();
 	}  
 	
 	private void calculateCookieHeader() {
@@ -313,6 +334,19 @@ public class Message {
 		setHeader("Cookie", cookieString);
 	}
 	
+	private void calculateResponseCookieHeader() {
+		if(responseCookies == null) return;
+		List<String> cookieList = new ArrayList<>();
+		for(Entry<String, String> e : responseCookies.entrySet()) {
+			String key = e.getKey();
+			String val = e.getValue();
+			cookieList.add(String.format("%s=%s", key, val));
+		}
+		
+		String cookieString = String.join("; ", cookieList);
+		setHeader("Set-Cookie", cookieString);
+	}
+	
 	
 	@JSONField(deserialize=false, serialize=false)
 	public void setCookies(Map<String, String> cookies) {
@@ -321,8 +355,18 @@ public class Message {
 	}
 	
 	@JSONField(deserialize=false, serialize=false)
+	public void setResponseCookies(Map<String, String> cookies) {
+		this.responseCookies = cookies;
+		calculateResponseCookieHeader();
+	}
+	
+	@JSONField(deserialize=false, serialize=false)
 	public Map<String, String> getCookies() {
 		return new HashMap<>(cookies()); 
+    } 
+	@JSONField(deserialize=false, serialize=false)
+	public Map<String, String> getResponseCookies() {
+		return new HashMap<>(responseCookies()); 
     } 
 	
 	private Map<String, String> cookies(){
@@ -348,6 +392,29 @@ public class Message {
         return cookies;
 	} 
 	
+	private Map<String, String> responseCookies(){
+		if(responseCookies != null) return responseCookies;
+		
+		String cookieString = getHeader("set-cookie");
+		responseCookies = new HashMap<>();
+        if (StrKit.isEmpty(cookieString)) {
+            return responseCookies;
+        } 
+        String[] cookieStrings = cookieString.split(";"); 
+        for (String cookie : cookieStrings) {
+            if (StrKit.isEmpty(cookie)) {
+                continue;
+            } 
+            int idx = cookie.indexOf("=");
+            String key = cookie.substring(0, idx);
+            String value = cookie.substring(idx+1);
+            if(key != null) key = key.trim();
+            if(value != null) value = value.trim();
+            responseCookies.put(key, value); 
+        } 
+        return responseCookies;
+	} 
+	
 	@SuppressWarnings("unchecked")  
 	public <T> T getContext() {
 		return (T)context;
@@ -360,6 +427,21 @@ public class Message {
 	@JSONField(deserialize=false, serialize=false)
 	public boolean isBodyAsRawString() {
 		return bodyAsRawString;
+	}
+	
+	public void setServerPort(int port) {
+		this.serverPort = port;
+	}
+	
+	public int getServerPort() {
+		return this.serverPort;
+	}
+	
+	public void setPathMatched(String pathMatched) {
+		this.pathMatched = pathMatched;
+	}
+	public String getPathMatched() {
+		return this.pathMatched;
 	}
 	
 	@Override

@@ -358,7 +358,7 @@ public class RpcProcessor {
 				afterFilter.doFilter(req, response, null); 
 			} 
 		} catch (Throwable t) {
-			logger.info(t.getMessage(), t);    
+			logger.error(t.getMessage(), t);    
 			if(exceptionFilter != null) {
 				try {
 					exceptionFilter.doFilter(req, response, t);
@@ -398,13 +398,12 @@ public class RpcProcessor {
 		}
 		return false;
 	}
-	
 	public boolean matchUrl(String url) {
 		int length = 0;
 		Entry<String, List<MethodInstance>> matched = null;
 		for(Entry<String, List<MethodInstance>> e : urlPath2MethodTable.entrySet()) {
 			String key = e.getKey();
-			if(url.equals(key)||  url.startsWith(key+"/") || url.startsWith(key+"?")) {
+			if(url.equals(key) ||  url.startsWith(key+"/") || url.startsWith(key+"?")) {
 				if(key.length() > length) {
 					length = key.length();
 					matched = e; 
@@ -413,8 +412,8 @@ public class RpcProcessor {
 		}  
 		if(matched == null) return false;
 		if(length == 1) { //root
-			UrlInfo info = HttpKit.parseUrl(url);
-			if(info.pathList.size()>0) { 
+			UrlInfo urlInfo = HttpKit.parseUrl(url);
+			if(urlInfo.pathList.size() > 0) { 
 				return false; // root / should not with parameters
 			}
 		} 
@@ -503,6 +502,71 @@ public class RpcProcessor {
 		}
 	}
 	
+	/* dynamic path
+	 * 1. single entity
+	 * GET,/users/{id}
+	 * POST,/users
+	 * GET,/users
+	 * PUT,/users/{id}
+	 * PATCH,/users/{id}
+	 * DELETE,/users/{id}
+	 * 
+	 * 2. nested entity
+	 * GET,/users/{uid}/pets
+	 * POST,/users/{uid}/pets
+	 * GET,/users/{uid}/pets/{pid}
+	 * DELETE,/users/{uid}/pets/{pid}
+	 * PUT,/users/{uid}/pets/{pid}
+	 * PATCH,/users/{uid}/pets/{pid}
+	 */
+	private boolean matchDynamicPath(Entry<String, List<MethodInstance>> e, Message req, String routeKey) {
+		String reqMethod = req.getMethod();
+		String[] split1 = routeKey.split(",");
+		String routeMethod = null;
+		String routePath = split1[0];
+		if (split1.length > 1) {
+			routeMethod = routePath;
+			routePath = split1[1];
+		}
+		// 匹配 Http Method
+		if (routeMethod != null && !reqMethod.equalsIgnoreCase(routeMethod)) {
+			return false;
+		}
+		UrlInfo reqUrlInfo = HttpKit.parseUrl(req.getUrl());
+		UrlInfo routeUrlInfo = HttpKit.parseUrl(routePath);
+		// 匹配路径，要求分割部分数量一致
+		if (routeUrlInfo.pathList.size() != reqUrlInfo.pathList.size()) {
+			return false;
+		}
+		boolean pathMatched = false;
+		Map<String, String> pathParams = new HashMap<String, String>();
+		for (int i = 0; i < routeUrlInfo.pathList.size(); i++) {
+			String p1 = routeUrlInfo.pathList.get(i);
+			String p2 = reqUrlInfo.pathList.get(i);
+			// 动态部分解析参数名和参数值
+			if (p1.startsWith("{") && p1.endsWith("}")) {
+				String paramName = p1.substring(1, p1.length()-1);
+				pathParams.put(paramName, p2);
+				pathMatched = true;
+			} else {
+				// 非动态部分要求完全相等
+				if (p1.equals(p2)) {
+					pathMatched = true;
+				} else {
+					pathMatched = false;
+					break;
+				}
+			}
+		}
+		if (!pathMatched) {
+			return false;
+		}
+		for (Entry<String, String> pe :pathParams.entrySet()) {
+			req.setParam(pe.getKey(), pe.getValue());
+		}
+		return true;
+	} 
+	
 	private MethodTarget findMethodByUrl(Message req, Message response) {  
 		String url = req.getUrl();  
 		int length = -1;
@@ -515,6 +579,12 @@ public class RpcProcessor {
 					length = e.getKey().length();
 					matched = e; 
 				}
+			} else {
+				boolean bool = this.matchDynamicPath(e, req, key);
+				if (bool) {
+					matched = e;
+					break;
+				}
 			}
 		}  
 		if(matched == null) {
@@ -522,7 +592,8 @@ public class RpcProcessor {
 			return null;
 		}  
 		
-		String urlPathMatched = matched.getKey();  
+		String urlPathMatched = matched.getKey();
+		req.setPathMatched(urlPathMatched);
 		MethodTarget target = new MethodTarget();  
 		Object[] params = null;  
 		Object body = req.getBody(); //assumed to be params 
@@ -544,7 +615,10 @@ public class RpcProcessor {
 		}   
 		//Body parameters goes first, only if body has no parameters, check url part
 		if(params == null) { 
-			String subUrl = url.substring(urlPathMatched.length());
+			String subUrl = url;
+			if (url.length() > urlPathMatched.length()) {
+				subUrl = url.substring(urlPathMatched.length());
+			}
 			UrlInfo info = HttpKit.parseUrl(subUrl);
 			List<Object> paramList = new ArrayList<>(info.pathList); 
 			if(!info.queryParamMap.isEmpty()) {

@@ -116,6 +116,9 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		if(request.getHeader(Protocol.ID) == null) {
 			request.setHeader(Protocol.ID, StrKit.uuid());
 		}
+		String addr = this.config.getPublicServer().getAddress();
+		int port = Integer.parseInt(addr.split(":")[1]);
+		request.setServerPort(port);
 	}
 	
 	@Override
