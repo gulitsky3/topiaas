@@ -29,8 +29,6 @@ import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcMethod.MethodParam;
 import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.RequestMapping;
-import io.zbus.rpc.annotation.RequestMappingPatch;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.doc.DocRender;
 import io.zbus.transport.Message;
@@ -38,7 +36,6 @@ import io.zbus.transport.http.Http;
 import io.zbus.transport.http.Http.FormData;
 
 
-@SuppressWarnings("deprecation") 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
 	private Map<String, List<MethodInstance>> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance   
@@ -133,11 +130,7 @@ public class RpcProcessor {
 				info.docEnabled = enableDoc;
 				info.setReturnType(m.getReturnType());
 				
-				RequestMapping p2 = m.getAnnotation(RequestMapping.class); 
 				Route p = m.getAnnotation(Route.class); 
-				if(p== null && p2 != null) {
-					p = new RequestMappingPatch(p2);
-				}
 				
 				if(p == null && defaultExcluded) continue;  
 				if (p != null) { 

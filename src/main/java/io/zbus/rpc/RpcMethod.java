@@ -3,6 +3,8 @@ package io.zbus.rpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 import io.zbus.kit.HttpKit;
 import io.zbus.rpc.annotation.Route;
 
@@ -11,12 +13,15 @@ public class RpcMethod {
 	public String method;   // java method 
 	public List<MethodParam> params = new ArrayList<>(); //param list of (type,name)
 	public String returnType;  
-	@Deprecated
-	public boolean authRequired; 
+	@JSONField(serialize = false)
 	public boolean docEnabled = true;
+	@JSONField(serialize = false)
 	public boolean enabled = true;
+	@JSONField(serialize = false)
 	public boolean ignoreResult = false;
+	@JSONField(serialize = false)
 	public Route urlAnnotation;
+	@JSONField(serialize = false)
 	public List<RpcFilter> filters = new ArrayList<>();
 	
 	public static class MethodParam {
@@ -64,4 +69,5 @@ public class RpcMethod {
 	public void setUrlPath(String module, String method) {
 		this.urlPath = HttpKit.joinPath(module, method);
 	}  
+	
 }

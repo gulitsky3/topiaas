@@ -17,7 +17,6 @@ import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
-import io.zbus.proxy.http.HttpProxyConfig;
 
 public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;
@@ -37,7 +36,6 @@ public class MqServerConfig extends XmlConfig {
 	public boolean verbose = true;   
 	
 	public CorsConfig cors;
-	public HttpProxyConfig httpProxyConfig; 
 	
 	public MqServerConfig() { 
 		
@@ -122,11 +120,6 @@ public class MqServerConfig extends XmlConfig {
 			cors.setAllowedRequestHeaders(allowedRequestHeaders);
 			cors.setAllowedRequestMethods(allowedRequestMethods);
 			cors.setExposeHeaders(exposeHeaders); 
-		}
-		 
-		if (valueOf(xpath.evaluate(HttpProxyConfig.HttpProxyXPath, doc), null) != null) {
-			this.httpProxyConfig = new HttpProxyConfig();
-			this.httpProxyConfig.loadFromXml(doc);
 		}
 	}
 
