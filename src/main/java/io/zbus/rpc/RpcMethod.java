@@ -18,6 +18,7 @@ public class RpcMethod {
 	public static class MethodParam {
 		public String type;
 		public String name; 
+		public boolean fromContext;
 	} 
 	
 	public void addParam(String type, String name) {

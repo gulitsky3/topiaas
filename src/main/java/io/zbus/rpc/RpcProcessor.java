@@ -41,9 +41,11 @@ public class RpcProcessor {
 	private String rootUrl = "/"; 
 	 
 	private boolean stackTraceEnabled = true;   
+	private boolean threadContextEnabled = true;
 	
 	private RpcFilter beforeFilter;
 	private RpcFilter afterFilter; 
+	private RpcFilter exceptionFilter;
 	
 	private Map<String, RpcFilter> filterTable = new HashMap<>(); //RpcFilter table referred by key
 	
@@ -143,6 +145,7 @@ public class RpcProcessor {
 							String paramName = param.name();
 							if("".equals(paramName)) paramName = param.value();
 							info.params.get(i).name = paramName; 
+							info.params.get(i).fromContext = param.ctx();
 							break;
 						}
 					} 
@@ -233,23 +236,33 @@ public class RpcProcessor {
 			}   
 			
 			if(beforeFilter != null) {
-				boolean next = beforeFilter.doFilter(req, response);
+				boolean next = beforeFilter.doFilter(req, response, null);
 				if(!next) return;
 			} 
 			
 			invoke(req, response);
 			
 			if(afterFilter != null) {
-				afterFilter.doFilter(req, response);
+				afterFilter.doFilter(req, response, null);
 			} 
-		} catch (Throwable e) {
-			logger.info(e.getMessage(), e);  
-			Object errorMsg = e.getMessage();
-			if(errorMsg == null) errorMsg = e.getClass().toString(); 
-			response.setBody(errorMsg);
-			//response.setBody(e); 
-			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-			response.setStatus(500);
+		} catch (Throwable t) {
+			logger.info(t.getMessage(), t);   
+			
+			if(exceptionFilter != null) {
+				exceptionFilter.doFilter(req, response, t);
+				
+			} else {
+				Object errorMsg = t.getMessage();
+				if(errorMsg == null) errorMsg = t.getClass().toString(); 
+				response.setBody(errorMsg);
+				response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+				response.setStatus(500); 
+				
+				if(t instanceof RpcException) {
+					RpcException ex = (RpcException)t;
+					response.setStatus(ex.getStatus());
+				}  
+			} 
 		} finally {
 			response.setHeader(Protocol.ID, req.getHeader(Protocol.ID)); //Id Match
 			if(response.getStatus() == null) {
@@ -391,7 +404,7 @@ public class RpcProcessor {
 		Object[] params = target.params; 
 		MethodInstance mi = target.methodInstance; 
 		for(RpcFilter filter : mi.info.filters) {
-			boolean next = filter.doFilter(req, response);
+			boolean next = filter.doFilter(req, response, null); //TODO Exception chain?
 			if(!next) return;
 		} 
 		
@@ -461,9 +474,18 @@ public class RpcProcessor {
 			if(Message.class.isAssignableFrom(paramType)) { //handle Message context injection
 				invokeParams[i] = req;
 				continue;
-			}  
+			}   
 			
 			MethodParam mp = declaredParams.get(i);
+			if(mp.fromContext) {
+				try {
+					invokeParams[i] = convert(req.getContext(), paramType);  
+				} catch (Exception e) {
+					logger.warn(e.getMessage(), e); //ignore context conversion error, set to null
+				}
+				continue;
+			}
+			
 			if(mp.name != null) {
 				if(target.queryMap != null) {
 					Object value = target.queryMap.get(mp.name);
@@ -487,7 +509,10 @@ public class RpcProcessor {
 	}
 	 
 	private void invoke(Message req, Message response) {   
-		try {     
+		try {    
+			if(threadContextEnabled) {
+				InvocationContext.set(req, response);
+			}
 			invoke0(req, response);
 		} catch (Throwable e) {  
 			logger.info(e.getMessage(), e); //no need to print
@@ -501,16 +526,21 @@ public class RpcProcessor {
 			if(!stackTraceEnabled) {
 				t.setStackTrace(new StackTraceElement[0]);
 			}
-			Object errorMsg = t.getMessage();
-			if(errorMsg == null) errorMsg = t.getClass().toString(); 
-			response.setBody(errorMsg);
-			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-			response.setStatus(500); 
 			
-			if(t instanceof RpcException) {
-				RpcException ex = (RpcException)t;
-				response.setStatus(ex.getStatus());
-			}  
+			if(exceptionFilter != null) {
+				exceptionFilter.doFilter(req, response, t);
+			} else {
+				Object errorMsg = t.getMessage();
+				if(errorMsg == null) errorMsg = t.getClass().toString(); 
+				response.setBody(errorMsg);
+				response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+				response.setStatus(500); 
+				
+				if(t instanceof RpcException) {
+					RpcException ex = (RpcException)t;
+					response.setStatus(ex.getStatus());
+				}  
+			} 
 		}  
 	}
 	 
@@ -586,7 +616,15 @@ public class RpcProcessor {
 	public void setRootUrl(String rootUrl) {
 		this.rootUrl = rootUrl;
 	}
+	
+	public void setExceptionFilter(RpcFilter exceptionFilter) {
+		this.exceptionFilter = exceptionFilter;
+	}
 
+	public void setThreadContextEnabled(boolean threadContextEnabled) {
+		this.threadContextEnabled = threadContextEnabled;
+	}
+	
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();
 		TreeMap<String, MethodInstance> methods = new TreeMap<>(this.urlPath2MethodTable);

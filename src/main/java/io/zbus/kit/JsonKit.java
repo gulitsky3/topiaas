@@ -62,7 +62,7 @@ public class JsonKit {
 		} else if (json instanceof byte[]) {
 			return parseObject((byte[])json, clazz);
 		} else {
-			jsonString = JSON.toJSONString(json);
+			jsonString = toJSONString(json);
 		}
 		try {
 			return parseObject(jsonString, clazz);

@@ -9,6 +9,7 @@ import java.util.Random;
 
 import com.alibaba.fastjson.JSON;
 
+import io.zbus.rpc.InvocationContext;
 import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
@@ -180,6 +181,14 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		res.setBody("<h1>request injected</h1>");
 		return res;
 	}
+	
+	public Object getContext(@Param(ctx=true) Map<String, Object> ctx) {
+		return ctx;
+	}
+	
+	public Object threadContext() {
+		return InvocationContext.getRequest().getContext();
+	} 
 }
 
 
