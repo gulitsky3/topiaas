@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.Protocol.MqInfo;
-import io.zbus.mq.db.DbQueue;
 import io.zbus.mq.disk.DiskQueue;
 import io.zbus.mq.memory.MemoryQueue;
 import io.zbus.mq.model.Channel;
@@ -94,8 +93,6 @@ public class MqManager {
 				mq = new MemoryQueue(mqName, creator);
 			} else if (Protocol.DISK.equals(mqType)) {
 				mq = new DiskQueue(mqName, new File(mqDir), creator);
-			} else if(Protocol.DB.equals(mqName)) {
-				mq = new DbQueue(mqName, creator);
 			} else {
 				throw new IllegalArgumentException("mqType(" + mqType + ") Not Support");
 			}  

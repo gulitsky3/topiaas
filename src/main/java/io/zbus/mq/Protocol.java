@@ -47,8 +47,7 @@ public interface Protocol {
 	
 	//Parameter mqType values
 	public static final String MEMORY  = "memory";  
-	public static final String DISK    = "disk";  
-	public static final String DB      = "db";  
+	public static final String DISK    = "disk";
 	
 	public static final int MASK_DELETE_ON_EXIT  = 1 << 0;  
 	public static final int MASK_EXCLUSIVE       = 1 << 1;  
