@@ -8,6 +8,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import io.zbus.kit.FileKit;
+import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route; 
   
 @Route(exclude=true)
@@ -21,7 +22,10 @@ public class JavascriptInvoker {
 	private FileKit fileKit = new FileKit(false);
 	
 	@Route("/") 
-	public Object invoke(String funcName) throws Exception {   
+	public Object invoke(@Param("funcName") String funcName) throws Exception {   
+		if(funcName == null) {
+			throw new IllegalArgumentException("funcName required");
+		}
 		String filePath = String.format("%s/%s.js", jsBasePath, funcName);
 		String js = fileKit.loadFile(filePath); 
 		
