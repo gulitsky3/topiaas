@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.apache.ibatis.jdbc.Null;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,8 @@ import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcMethod.MethodParam;
 import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
+import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.RequestMappingPatch;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.doc.DocRender;
 import io.zbus.transport.Message;
@@ -45,6 +48,8 @@ public class RpcProcessor {
 	 
 	private boolean stackTraceEnabled = true;   
 	private boolean threadContextEnabled = true;
+	
+	private boolean embbedJavascript = true;
 	
 	private RpcFilter beforeFilter;
 	private RpcFilter afterFilter; 
@@ -107,8 +112,13 @@ public class RpcProcessor {
 				info.docEnabled = enableDoc;
 				info.setReturnType(m.getReturnType());
 				
-				Route p = m.getAnnotation(Route.class);
-				if(p == null && defaultExcluded) continue;
+				RequestMapping p2 = m.getAnnotation(RequestMapping.class); 
+				Route p = m.getAnnotation(Route.class); 
+				if(p== null && p2 != null) {
+					p = new RequestMappingPatch(p2);
+				}
+				
+				if(p == null && defaultExcluded) continue;  
 				if (p != null) { 
 					if (p.exclude()) continue; 
 					info.docEnabled = enableDoc && p.docEnabled();
@@ -117,7 +127,7 @@ public class RpcProcessor {
 					if(urlPath != null) {
 						info.urlPath = HttpKit.joinPath(urlPrefix, urlPath);
 					}
-				}    
+				}     
 				info.filters.addAll(classFiltersIncluded);
 				filter = m.getAnnotation(Filter.class);
 				if(filter != null) {
@@ -235,6 +245,11 @@ public class RpcProcessor {
 	}  
 	
 	private String annoPath(Route p) {
+		if(p.path().length() == 0) return p.value();
+		return p.path();
+	} 
+	
+	private String annoPath(RequestMapping p) {
 		if(p.path().length() == 0) return p.value();
 		return p.path();
 	} 
@@ -438,6 +453,7 @@ public class RpcProcessor {
 		matchMethod(target, matched.getValue());
 		
 		Route anno = target.methodInstance.info.urlAnnotation;
+		 
 		if(anno != null) {
 			boolean httpMethodMatched = httpMethodMatched(req, anno);
 			if(!httpMethodMatched) {
@@ -612,6 +628,8 @@ public class RpcProcessor {
 		DocRender render = new DocRender(this); 
 		render.setRootUrl(rootUrl);
 		render.setDocFile(docFile);
+		render.setEmbbedJavascript(this.embbedJavascript);
+		
 		mount(docUrl, render, false, false, false);
 		return this;
 	}   
@@ -697,7 +715,15 @@ public class RpcProcessor {
 	public void setThreadContextEnabled(boolean threadContextEnabled) {
 		this.threadContextEnabled = threadContextEnabled;
 	}
-	
+	 
+	public boolean isEmbbedJavascript() {
+		return embbedJavascript;
+	}
+
+	public void setEmbbedJavascript(boolean embbedJavascript) {
+		this.embbedJavascript = embbedJavascript; 
+	}
+
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();
 		TreeMap<String, List<MethodInstance>> methods = new TreeMap<>(this.urlPath2MethodTable);

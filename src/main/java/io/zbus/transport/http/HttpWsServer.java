@@ -160,11 +160,11 @@ public class HttpWsServer extends Server {
 			if(contentType == null) {
 				contentType = "application/json; charset=utf8";
 			}
-			httpMessage.headers().set("connection", "Keep-Alive");
+			httpMessage.headers().set("Connection", "Keep-Alive");
 			httpMessage.headers().set(Http.CONTENT_TYPE, contentType); 
 			
 			for (Entry<String, String> e : msg.getHeaders().entrySet()) { 
-				httpMessage.headers().set(e.getKey().toLowerCase(), e.getValue());
+				httpMessage.headers().set(e.getKey(), e.getValue());
 			}
 			byte[] body = Http.body(msg);
 			httpMessage.headers().set(Http.CONTENT_LENGTH, body.length+"");
@@ -179,7 +179,7 @@ public class HttpWsServer extends Server {
 				byte[] bytes = decodeWebSocketFrame(ctx, (WebSocketFrame)obj);
 				if(bytes != null) {//ws close may be null
 					Message msg = JsonKit.parseObject(bytes, Message.class);
-					if(!HttpKit.isText(msg.getHeader("content-type"))) {
+					if(!HttpKit.isText(msg.getHeader(Http.CONTENT_TYPE))) {
 						if(msg.getBody() instanceof String) { //NOT TEXT data, but body String typed
 							try {
 								byte[] body = Base64.getDecoder().decode((String)msg.getBody());
@@ -208,6 +208,7 @@ public class HttpWsServer extends Server {
 			io.netty.handler.codec.http.HttpMessage httpMsg = (io.netty.handler.codec.http.HttpMessage) obj;   
 			Message msg = decodeHeaders(httpMsg); 
 			String contentType = msg.getHeader(Http.CONTENT_TYPE);
+			if(contentType != null) contentType = contentType.toLowerCase();
 			
 			//Body
 			ByteBuf body = null;
@@ -255,7 +256,7 @@ public class HttpWsServer extends Server {
 			Iterator<Entry<String, String>> iter = httpMsg.headers().iteratorAsString();
 			while (iter.hasNext()) {
 				Entry<String, String> e = iter.next();
-				msg.setHeader(e.getKey().toLowerCase(), e.getValue()); 
+				msg.setHeader(e.getKey(), e.getValue()); 
 			}  
 	
 			if (httpMsg instanceof HttpRequest) {

@@ -20,6 +20,7 @@ public class DocRender {
 	private final RpcProcessor rpcProcessor;   
 	private String rootUrl;
 	private String docFile = "static/rpc.html";
+	private boolean embbedJavascript = true;
 	
 	public DocRender(RpcProcessor rpcProcessor) {
 		this.rpcProcessor = rpcProcessor;  
@@ -47,7 +48,10 @@ public class DocRender {
 			doc += rowDoc(m, rowIdx++);
 		}
 		doc += "</div>";
-		String js = fileKit.loadFile("static/zbus.min.js");
+		String js = "";
+		if(embbedJavascript) {
+			js = fileKit.loadFile("static/zbus.min.js");
+		}
 		model.put("content", doc); 
 		model.put("zbusjs", js);  
 		String urlPrefix = this.rootUrl;
@@ -93,5 +97,9 @@ public class DocRender {
 
 	public void setDocFile(String docFile) {
 		this.docFile = docFile;
-	}   
+	}  
+	
+	public void setEmbbedJavascript(boolean embbedJavascript) {
+		this.embbedJavascript = embbedJavascript;
+	}
 }

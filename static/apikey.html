@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" /> 
+<script type="text/javascript" src="/static/zbus.min.js"></script>
+</head>
+<body>      
+
+<script type="text/javascript">  
+//1) zbus RpcClient
+const rpc = new RpcClient();     
+rpc.apiKey = "2ba912a8-4a8d-49d2-1a22-198fd285cb06";
+rpc.secretKey = "461277322-943d-4b2f-b9b6-3f860d746ffd";
+rpc.signFields = "url,method,body";
+rpc.authEnabled = true;
+
+rpc.example.plus(1,2).then(res=>{
+	console.log(res); 
+}); 
+
+
+//2) HTTP fetch
+const apiKey = "2ba912a8-4a8d-49d2-1a22-198fd285cb06";
+const secretKey = "461277322-943d-4b2f-b9b6-3f860d746ffd";
+const signFields = "url,method,body"; 
+
+var method = 'POST'; 
+var url = '/example/plus';
+var headers = {  };
+var body = [1,2]; 
+
+signHttpRequest(method, url, headers, body, apiKey, secretKey, signFields); 
+
+fetch(url=url, { 
+	method: method, 
+	headers: headers,
+	body: JSON.stringify(body) //json
+}).then(res => res.text())
+  .then(res=>{
+	console.log(res);
+});
+
+</script>
+</body> 
+</html>

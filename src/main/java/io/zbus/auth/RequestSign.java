@@ -11,6 +11,8 @@ import io.zbus.transport.Message;
 public interface RequestSign {    
 	public static final String APIKEY = "apiKey";
 	public static final String SIGNATURE = "signature";  
+	public static final String SIGN_FIELDS = "signFields";
+	public static final String DEFAULT_SIGN_FIELDS = ""; //"url,method,body,h.*" h stands for headers
 	
 	/**
 	 * Calculate digital signature value of JSON request based on apiKey and secret key

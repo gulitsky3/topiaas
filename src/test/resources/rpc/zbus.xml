@@ -16,37 +16,25 @@
 				<apiKey>3ba912a6-4a8d-49d1-1a66-198ea285cb03</apiKey>
 				<secretKey>123475622-953d-4b2f-a7b6-4f860d126cce</secretKey> 
 			</add>  
-		</auth>   
-		 
+		</auth>  
 		<authExcluedList>
 			<url>/doc/*</url>
-		</authExcluedList>  
+			<url>/index.html</url> 
+			<url>/static/*</url>
+		</authExcluedList>
 		--> 
 	</public>  
 	
-	<!-- address with no ssl and auth, only for private, speed and convenient
+	<!-- address with no ssl and auth, only for private, speed and convenient 
 	<private>
 		<address>0.0.0.0:15555</address> 
 	</private> 
-	 -->
-	<!-- address for monitor -->
+	-->
+	<!-- address for monitor 
 	<monitor>	
-		<address>0.0.0.0:25555</address>
-		<!-- 
-		<auth>
-			<add>
-				<apiKey>2ba912a8-4a8d-49d2-1a22-198fd285cb06</apiKey>
-				<secretKey>461277322-943d-4b2f-b9b6-3f860d746ffd</secretKey> 
-			</add>  
-			<add>
-				<apiKey>3ba912a6-4a8d-49d1-1a66-198ea285cb03</apiKey>
-				<secretKey>123475622-953d-4b2f-a7b6-4f860d126cce</secretKey> 
-			</add>  
-		</auth>  
-		-->  
-	</monitor>  
-	
-	<!-- 跨域配置 -->
+		<address>0.0.0.0:25555</address> 
+	</monitor> 
+	-->
 	<cors>
 		<origin>*</origin>
 		<allowedRequestMethods>GET,POST,PUT,OPTIONS</allowedRequestMethods>
@@ -54,22 +42,23 @@
 		<exposeHeaders></exposeHeaders>
 	</cors>
 	
+	
 	<!-- HTTP 代理
 	<httpProxy>
 		<proxy>
-			<urlPrefix>/test</urlPrefix>
-			<urlRewrite>/not-found</urlRewrite>
-			<backend>http://localhost:15555</backend>
+			<urlPrefix>/example</urlPrefix>
+			<urlRewrite></urlRewrite>
+			<backend>http://localhost:8080</backend>
 		</proxy>
 	</httpProxy>
  	--> 
+	 
  	
-	<!-- MQ location configure -->
-	<staticFileDir cached="false">static</staticFileDir>    
+ 	<staticFileDir cached="false">../static</staticFileDir>     
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   
 	<mqDbUrl></mqDbUrl>   
 	<maxSocketCount>102400</maxSocketCount>   
-	<packageSizeLimit>128M</packageSizeLimit>   
-	<verbose>true</verbose>  
+	<packageSizeLimit>128M</packageSizeLimit>    
+	<verbose>true</verbose> 
 </zbus>
 

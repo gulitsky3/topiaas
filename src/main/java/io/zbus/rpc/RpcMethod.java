@@ -11,6 +11,8 @@ public class RpcMethod {
 	public String method;   // java method 
 	public List<MethodParam> params = new ArrayList<>(); //param list of (type,name)
 	public String returnType;  
+	@Deprecated
+	public boolean authRequired; 
 	public boolean docEnabled = true;
 	public Route urlAnnotation;
 	public List<RpcFilter> filters = new ArrayList<>();

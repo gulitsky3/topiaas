@@ -2,10 +2,16 @@ package io.zbus.mq;
 
 import static io.zbus.kit.ConfigKit.valueOf;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
@@ -31,7 +37,7 @@ public class MqServerConfig extends XmlConfig {
 	public boolean verbose = true;   
 	
 	public CorsConfig cors;
-	public HttpProxyConfig httpProxyConfig;
+	public HttpProxyConfig httpProxyConfig; 
 	
 	public MqServerConfig() { 
 		
@@ -65,6 +71,20 @@ public class MqServerConfig extends XmlConfig {
 			config.auth = new DefaultAuth(provider); 
 		} 
 		
+		String authExcludeXPath = "/zbus/"+serverName+"/authExcluedList";
+		if (valueOf(xpath.evaluate(authXPath, doc), null) != null) { 
+			NodeList list = (NodeList) xpath.compile(authExcludeXPath+"/*").evaluate(doc, XPathConstants.NODESET);
+			if (list != null && list.getLength() > 0) { 
+				for (int i = 0; i < list.getLength(); i++) {
+					Node node = list.item(i);  
+					
+					String url = node.getTextContent(); 
+					if(url != null) {
+						config.authExcludedList.add(url.trim());
+					}
+				}
+			}
+		}  
 		return config;
 	}
 
@@ -270,7 +290,8 @@ public class MqServerConfig extends XmlConfig {
 		public boolean sslEnabled = false;
 		public String sslCertFile;
 		public String sslKeyFile;
-		public RequestAuth auth;
+		public RequestAuth auth; 
+		public List<String> authExcludedList = new ArrayList<>(); //based on URL
 		
 		public ServerConfig() {
 			

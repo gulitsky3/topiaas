@@ -19,6 +19,10 @@ public class JsonKit {
 		return JSON.parseObject(jsonString);
 	} 
 	
+	public static Object parse(String jsonString) {
+		return JSON.parse(jsonString);
+	} 
+	
 	public static Map<String, Object> parseObject(byte[] bytes) {
 		String string;
 		try {
