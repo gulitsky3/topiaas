@@ -300,14 +300,14 @@ public class RpcProcessor {
 			reply(response, 404, String.format("URL=%s Not Found", url)); 
 			return null;
 		}
-//		
-//		if(length == 1) { //root
-//			UrlInfo info = HttpKit.parseUrl(url);
-//			if(info.pathList.size()>0) {
-//				reply(response, 404, String.format("URL=%s Not Found", url)); 
-//				return null; // root / should not with parameters
-//			}
-//		}
+		
+		if(length == 1) { //root
+			UrlInfo info = HttpKit.parseUrl(url);
+			if(info.pathList.size()>0) {
+				reply(response, 404, String.format("URL=%s Not Found", url)); 
+				return null; // root / should not with parameters
+			}
+		}
 		
 		String urlPathMatched = matched.getKey();
 		

@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.handler.ssl.SslContext;
 import io.zbus.kit.ConfigKit;
-import io.zbus.kit.StrKit;
 import io.zbus.mq.MqServerConfig.ServerConfig;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
@@ -26,6 +25,7 @@ public class MqServer extends HttpWsServer {
 	
 	private final MqServerConfig config; 
 	
+	private StaticResource staticResource = new StaticResource();
 	private RpcProcessor rpcProcessor;
 	
 	public MqServer(MqServerConfig config) {  
@@ -69,6 +69,8 @@ public class MqServer extends HttpWsServer {
 		if(monitorServerConfig != null) {
 			monitorServerAdaptor = new MonitorServerAdaptor(adaptor); 
 		}
+		staticResource.setBasePath(config.getStaticFileDir());
+		staticResource.setCacheEnabled(config.isStaticFileCacheEnabled());
 	} 
 	public MqServer(String configFile){
 		this(new MqServerConfig(configFile));
@@ -154,17 +156,8 @@ public class MqServer extends HttpWsServer {
 		String configFile = ConfigKit.option(args, "-conf", "conf/zbus.xml"); 
 		
 		final MqServer server;
-		try{
-			MqServerConfig config = new MqServerConfig(configFile);
-			server = new MqServer(config);
-			if(!StrKit.isEmpty(config.getStaticFileDir())) {
-				RpcProcessor rpcProcessor = new RpcProcessor();
-				StaticResource resource = new StaticResource();
-				resource.setBasePath(config.getStaticFileDir());
-				resource.setCacheEnabled(config.isStaticFileCacheEnabled());
-				rpcProcessor.mount("/", resource);
-				server.setRpcProcessor(rpcProcessor);
-			}
+		try{ 
+			server = new MqServer(configFile); 
 			server.start(); 
 		} catch (Exception e) { 
 			e.printStackTrace(System.err);

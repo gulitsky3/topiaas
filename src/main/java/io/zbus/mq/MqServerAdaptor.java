@@ -45,7 +45,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	protected RequestAuth requestAuth; 
 	protected Map<String, CommandHandler> commandTable = new HashMap<>(); 
 	
-	protected RpcProcessor rpcProcessor;
+	protected RpcProcessor rpcProcessor; 
 	protected MqServerConfig config;
 	 
 	protected IpFilter sessionFilter; 
@@ -58,7 +58,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		subscriptionManager = new SubscriptionManager(mqManager);  
 		
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
-		mqManager.mqDir = config.mqDiskDir;  
+		mqManager.mqDir = config.getMqDiskDir();   
 		 
 		mqManager.loadQueueTable();     
 		 

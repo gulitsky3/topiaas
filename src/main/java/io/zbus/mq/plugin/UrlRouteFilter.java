@@ -1,23 +1,26 @@
 package io.zbus.mq.plugin;
 
-import io.zbus.kit.FileKit;
 import io.zbus.mq.MqManager;
 import io.zbus.mq.MqServerAdaptor;
+import io.zbus.mq.MqServerConfig;
 import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcProcessor;
+import io.zbus.rpc.StaticResource;
 import io.zbus.transport.Message;
-import io.zbus.transport.http.Http;
 
 public class UrlRouteFilter implements Filter { 
-	private MqManager mqManager;
-	private FileKit fileKit; 
+	private MqManager mqManager; 
 	private MqServerAdaptor mqServerAdaptor; 
+	private StaticResource staticResource = new StaticResource(); 
 	
 	@Override
 	public void init(MqServerAdaptor mqServerAdaptor) {
+		MqServerConfig config = mqServerAdaptor.getConfig();
 		this.mqServerAdaptor = mqServerAdaptor;
-		this.mqManager = mqServerAdaptor.getMqManager(); 
-		this.fileKit = new FileKit(mqServerAdaptor.getConfig().isStaticFileCacheEnabled()); 
+		this.mqManager = mqServerAdaptor.getMqManager();  
+		
+		staticResource.setBasePath(config.getStaticFileDir());
+		staticResource.setCacheEnabled(config.isStaticFileCacheEnabled());
 	}
 	 
 	private String match(String url) {
@@ -59,14 +62,10 @@ public class UrlRouteFilter implements Filter {
 			rpcProcessor.process(req, res); 
 			return false;
 		}  
-		 
-		if("/".equals(url)) {  
-			fileKit.render(res, "static/index.html");   
-		} else { 
-			res.setStatus(404);
-			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-			res.setBody(String.format("URL=%s Not Found", url)); 
-		} 
+		
+		//last resolve to static resource
+		Message data = staticResource.file(req);
+		res.replace(data); 
 		return false; 
 	} 
 }
