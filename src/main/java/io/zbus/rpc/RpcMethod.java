@@ -14,6 +14,7 @@ public class RpcMethod {
 	@Deprecated
 	public boolean authRequired; 
 	public boolean docEnabled = true;
+	public boolean enabled = true;
 	public Route urlAnnotation;
 	public List<RpcFilter> filters = new ArrayList<>();
 	

@@ -207,6 +207,14 @@ public class RpcServer implements Closeable {
 	public void setMqType(String mqType) {
 		this.mqType = mqType;
 	}
+	
+	public void setMqMask(Integer mqMask) {
+		this.mqMask = mqMask;
+	}
+	
+	public Integer getMqMask() {
+		return mqMask;
+	}
 
 	public String getChannel() {
 		return channel;

@@ -3,13 +3,10 @@ package io.zbus.kit;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.fastjson.JSONObject;
-
 
 
 public class JsonKitExample { 
-	public static class User extends JSONObject{ 
-		private static final long serialVersionUID = -3503854199033444335L;
+	public static class User{  
 		private String name;
 		private String password;
 		public String getName() {
@@ -31,11 +28,13 @@ public class JsonKitExample {
 	}
 	
 	public static void main(String[] args) {    
-		JSONObject j = new JSONObject();
-		j.put("name", "hong");
+		User user = new User();
+		user.setName("hong");
 		
-		User user = JsonKit.convert(j, User.class);
-		System.out.println(user); 
+		@SuppressWarnings("unchecked")
+		Map<String, Object> map = JsonKit.convert(user, Map.class); 
+		System.out.println(map); 
+		
 	}
 	
 	public static void fixJson() {

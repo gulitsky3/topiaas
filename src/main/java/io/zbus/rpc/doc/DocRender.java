@@ -20,7 +20,7 @@ public class DocRender {
 	private final RpcProcessor rpcProcessor;   
 	private String rootUrl;
 	private String docFile = "static/rpc.html";
-	private boolean embbedJavascript = true;
+	private boolean embbedPageResource = true;
 	
 	public DocRender(RpcProcessor rpcProcessor) {
 		this.rpcProcessor = rpcProcessor;  
@@ -33,6 +33,16 @@ public class DocRender {
 	@Route(path="/apiList", docEnabled=false)
 	public List<RpcMethod> apiList() {  
 		return this.rpcProcessor.rpcMethodList();
+	} 
+	
+	@Route(path="/enableUrl", method="POST")
+	public int enableUrl(String urlPath, boolean status) {
+		return this.rpcProcessor.enableUrl(urlPath, status);
+	} 
+	
+	@Route(path="/rewriteUrl", method="POST")
+	public void rewriteUrl(String rawUrl, String newUrl) {
+		this.rpcProcessor.rewriteUrl(rawUrl, newUrl);
 	} 
 	
 	@Route(path="/", docEnabled=false)
@@ -49,7 +59,7 @@ public class DocRender {
 		}
 		doc += "</div>";
 		String js = "";
-		if(embbedJavascript) {
+		if(embbedPageResource) {
 			js = fileKit.loadFile("static/zbus.min.js");
 		}
 		model.put("content", doc); 
@@ -99,7 +109,7 @@ public class DocRender {
 		this.docFile = docFile;
 	}  
 	
-	public void setEmbbedJavascript(boolean embbedJavascript) {
-		this.embbedJavascript = embbedJavascript;
+	public void setEmbbedPageResource(boolean embbedPageResource) {
+		this.embbedPageResource = embbedPageResource;
 	}
 }
