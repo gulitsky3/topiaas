@@ -64,4 +64,6 @@ public interface InterfaceExample{
 	String nullParam(String nullStr);  
 	
 	Message html();
+	
+	Object callJs();
 }

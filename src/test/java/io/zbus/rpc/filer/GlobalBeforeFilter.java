@@ -4,11 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.zbus.rpc.RpcFilter;
-import io.zbus.rpc.annotation.FilterDef;
-import io.zbus.rpc.annotation.FilterType;
 import io.zbus.transport.Message;
 
-@FilterDef(type=FilterType.GlobalBefore)
+//@FilterDef(type=FilterType.GlobalBefore)
 public class GlobalBeforeFilter implements RpcFilter {
 
 	@Override

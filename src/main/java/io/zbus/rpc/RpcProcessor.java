@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.apache.ibatis.jdbc.Null;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +36,8 @@ import io.zbus.transport.http.Http;
 import io.zbus.transport.http.Http.FormData;
 
 
+@SuppressWarnings("deprecation")
+@Route(exclude=true)
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
 	private Map<String, List<MethodInstance>> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance   
@@ -49,7 +50,7 @@ public class RpcProcessor {
 	private boolean stackTraceEnabled = true;   
 	private boolean threadContextEnabled = true;
 	
-	private boolean embbedJavascript = true;
+	private boolean embbedPageResource = false;
 	
 	private RpcFilter beforeFilter;
 	private RpcFilter afterFilter; 
@@ -231,25 +232,42 @@ public class RpcProcessor {
 			logger.error(e.getMessage(), e);
 		}
 		return this;
+	}   
+	
+	public void unmount(String urlPath) { 
+		this.urlPath2MethodTable.remove(urlPath); 
+	} 
+	 
+	public void unmount(String module, String method) {  
+		String urlPath = HttpKit.joinPath(module, method);
+		unmount(urlPath); 
+	}   
+	 
+	public int enableUrl(String urlPath, boolean status) { 
+		List<MethodInstance> methods = urlPath2MethodTable.get(urlPath);
+		if(methods == null || methods.isEmpty()) return 0;
+		for(MethodInstance mi : methods) {
+			mi.info.enabled = status;
+		}
+		return methods.size();
 	}  
 	
-	public RpcProcessor unmount(String urlPath) { 
-		this.urlPath2MethodTable.remove(urlPath);  
-		return this;
-	} 
-	
-	public RpcProcessor unmount(String module, String method) {  
-		String urlPath = HttpKit.joinPath(module, method);
-		unmount(urlPath);
-		return this;
+	public void rewriteUrl(String rawUrl, String newUrl) { 
+		List<MethodInstance> methods = urlPath2MethodTable.get(rawUrl);
+		if(methods == null) {
+			throw new IllegalArgumentException("Rewrite url error: Not found for " + rawUrl);
+		}
+		
+		List<MethodInstance> newMethods = urlPath2MethodTable.get(rawUrl);
+		if(newMethods != null) {
+			newMethods.addAll(methods);
+			return;
+		}
+		urlPath2MethodTable.remove(rawUrl);
+		urlPath2MethodTable.put(newUrl, methods);  
 	}  
 	
 	private String annoPath(Route p) {
-		if(p.path().length() == 0) return p.value();
-		return p.path();
-	} 
-	
-	private String annoPath(RequestMapping p) {
 		if(p.path().length() == 0) return p.value();
 		return p.path();
 	} 
@@ -474,7 +492,7 @@ public class RpcProcessor {
 		}  
 		
 		MethodTarget target = findMethodByUrl(req, response); 
-		if(target == null) {
+		if(target == null || !target.methodInstance.info.enabled) {
 			reply(response, 404, String.format("URL=%s Not Found", url));
 			return;   
 		}
@@ -628,7 +646,7 @@ public class RpcProcessor {
 		DocRender render = new DocRender(this); 
 		render.setRootUrl(rootUrl);
 		render.setDocFile(docFile);
-		render.setEmbbedJavascript(this.embbedJavascript);
+		render.setEmbbedPageResource(this.embbedPageResource);
 		
 		mount(docUrl, render, false, false, false);
 		return this;
@@ -717,11 +735,11 @@ public class RpcProcessor {
 	}
 	 
 	public boolean isEmbbedJavascript() {
-		return embbedJavascript;
+		return embbedPageResource;
 	}
 
 	public void setEmbbedJavascript(boolean embbedJavascript) {
-		this.embbedJavascript = embbedJavascript; 
+		this.embbedPageResource = embbedJavascript; 
 	}
 
 	public List<RpcMethod> rpcMethodList() { 

@@ -3,7 +3,6 @@ package io.zbus.rpc;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.zbus.mq.MqServer;
 import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
@@ -58,10 +57,12 @@ public class RpcServerSimpleExample {
 		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
+		rpcServer.setChannel("temp");
+		rpcServer.setRouteDisabled(true);
 		
-		//rpcServer.setMqServerAddress("localhost:15555");
-		rpcServer.setMq("/");  
-		rpcServer.setMqServer(new MqServer(15555));
+		rpcServer.setMqServerAddress("localhost:15555");
+		rpcServer.setMq("/"); 
+		//rpcServer.setMqServer(new MqServer(15555));
 		rpcServer.start();  
 	}  
 }

@@ -2,6 +2,7 @@ package io.zbus.rpc.annotation;
 
 import java.lang.annotation.Annotation;
 
+@Deprecated
 public class RequestMappingPatch implements Route {
 	private RequestMapping r;
 	public RequestMappingPatch(RequestMapping r) {

@@ -13,8 +13,7 @@ import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.biz.model.HelpTopic;
 import io.zbus.transport.Message;
 
-
-@Route("/tpl")
+ 
 @Filter("admin")
 public class TemplateExample {
 	@Autowired

@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
 import com.alibaba.fastjson.JSON;
 
 import io.zbus.rpc.InvocationContext;
@@ -18,9 +22,8 @@ import io.zbus.rpc.biz.model.Order;
 import io.zbus.rpc.biz.model.User;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http; 
-
-@Route("/example")
-@Filter("logger")
+ 
+//@Filter("logger")
 public class InterfaceExampleImpl implements InterfaceExample{
 	
 	@Filter(exclude="logger")
@@ -189,6 +192,48 @@ public class InterfaceExampleImpl implements InterfaceExample{
 	public Object threadContext() {
 		return InvocationContext.getRequest().getContext();
 	} 
+	
+	ScriptEngineManager factory = new ScriptEngineManager();
+	ScriptEngine engine = factory.getEngineByName("nashorn");
+	@Override
+	public Object callJs() { 
+		try {  
+			engine.eval(
+					" function hi(){"
+					+ "		var a = 'PROSPER'.toLowerCase(); "
+					+ " 	middle(); "
+					+ " 	//print('Live long and' + a)"
+					+ "} "
+					+ "function middle(){"
+					+ "		var b = 1; "
+					+ "		for(var i=0, max = 5; i<max;i++){"
+					+ "			b++;"
+					+ "		} "
+					+ "		//print('b is '+b);"
+					+ "}"
+					+ "hi();"
+				);
+		} catch (ScriptException ex) {
+			// ...
+		}
+		return null;
+	}
+	
+	private void hi() {
+		"PROSPER".toLowerCase();
+		middle();
+	}
+	private int middle() {
+		int b = 1;
+		for(int i=0, max=5; i<max; i++) {
+			b++;
+		} 
+		return b;
+	}
+	public Object callJava() { 
+		hi();
+		return null;
+	}
 }
 
 
