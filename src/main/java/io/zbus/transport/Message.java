@@ -26,6 +26,7 @@ package io.zbus.transport;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -41,9 +42,9 @@ import com.alibaba.fastjson.annotation.JSONField;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
-import io.zbus.transport.http.Http.FormData;
 import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
+import io.zbus.transport.http.Http.FormData;
 /**
  * Message takes format of standard HTTP:
  * <p> key-value headers  
@@ -80,7 +81,7 @@ public class Message {
 	private Map<String, String> cookies; 
 	
 	@JSONField(serialize=false)
-	private Map<String, String> responseCookies; 
+	private List<Map<String, String>> responseCookies = new ArrayList<Map<String, String>>(); 
 	
 	@JSONField(serialize=false)
 	private int serverPort;
@@ -336,15 +337,30 @@ public class Message {
 		this.setCookie(key, value);
 	}
 	public void setResponseCookie(String name, String value) {
-		this.setResponseCookie(name, value, null, null, null, null, null, null);
+		this.setResponseCookie(name, value, null, null, (Long)null, null, null, null);
 	}
 	public void setResponseCookie(String name, String value, Boolean httpOnly) {
-		this.setResponseCookie(name, value, null, null, null, null, null, httpOnly);
+		this.setResponseCookie(name, value, null, null, (Long)null, null, null, httpOnly);
 	}
 	public void setResponseCookie(String name, String value, Boolean secure, Boolean httpOnly) {
-		this.setResponseCookie(name, value, null, null, null, null, secure, httpOnly);
+		this.setResponseCookie(name, value, null, null, (Long)null, null, secure, httpOnly);
 	}
 	
+	public void setResponseCookie(
+		String name, 
+		String value,
+		String domain,
+		String path,
+		Long expires, 
+		Integer maxAgeSeconds, 
+		Boolean secure, 
+		Boolean httpOnly
+	) {
+		this.setResponseCookie(
+			name, value, domain, path, 
+			expires != null && expires >= 0 ? new Date(expires) : null, 
+			maxAgeSeconds, secure, httpOnly);
+	}
 	public void setResponseCookie(
 		String name, 
 		String value,
@@ -355,7 +371,10 @@ public class Message {
 		Boolean secure, 
 		Boolean httpOnly
 	) {
-		Map<String, String> m = responseCookies();
+		List<Map<String, String>> cookies = responseCookies();
+		Map<String, String> m = new HashMap<String, String>();
+		cookies.add(m);
+		
 		m.put("Name", name);
 		m.put("Value", value);
 		
@@ -400,42 +419,48 @@ public class Message {
 	
 	private void calculateResponseCookieHeader() {
 		if(responseCookies == null) return;
-		String Name = responseCookies.get("Name");
-		if (Name == null || Name.trim().length() == 0) {
-			return;
-		}
-		String Value = responseCookies.get("Value");
-		String Expires = responseCookies.get("Expires");
-		String MaxAge = responseCookies.get("Max-Age");
-		String Domain = responseCookies.get("Domain");
-		String Path = responseCookies.get("Path");
-		String Secure = responseCookies.get("Secure");
-		String HttpOnly = responseCookies.get("HttpOnly");
-//		String SameSite = responseCookies.get("SameSite");
 		
-		List<String> cookieAttrs = new ArrayList<>();
-		cookieAttrs.add(Name+"="+Value);
-		if (Expires != null) {
-			cookieAttrs.add("Expires="+Expires);
+		List<String> setCookies = new ArrayList<>();
+		for (Map<String, String> responseCookie : responseCookies) {
+			String Name = responseCookie.get("Name");
+			if (Name == null || Name.trim().length() == 0) {
+				return;
+			}
+			String Value = responseCookie.get("Value");
+			String Expires = responseCookie.get("Expires");
+			String MaxAge = responseCookie.get("Max-Age");
+			String Domain = responseCookie.get("Domain");
+			String Path = responseCookie.get("Path");
+			String Secure = responseCookie.get("Secure");
+			String HttpOnly = responseCookie.get("HttpOnly");
+	//		String SameSite = responseCookie.get("SameSite");
+			
+			List<String> cookieAttrs = new ArrayList<>();
+			cookieAttrs.add(Name+"="+Value);
+			if (Expires != null) {
+				cookieAttrs.add("Expires="+Expires);
+			}
+			if (MaxAge != null) {
+				cookieAttrs.add("Max-Age="+MaxAge);
+			}
+			if (Domain != null) {
+				cookieAttrs.add("Domain="+Domain);
+			}
+			if (Path != null) {
+				cookieAttrs.add("Path="+Path);
+			}
+			if ("true".equals(Secure))	 {
+				cookieAttrs.add("Secure");
+			}
+			if ("true".equals(HttpOnly))	 {
+				cookieAttrs.add("HttpOnly");
+			}
+			
+			String cookieString = String.join("; ", cookieAttrs);
+			setCookies.add(cookieString);
 		}
-		if (MaxAge != null) {
-			cookieAttrs.add("Max-Age="+MaxAge);
-		}
-		if (Domain != null) {
-			cookieAttrs.add("Domain="+Domain);
-		}
-		if (Path != null) {
-			cookieAttrs.add("Path="+Path);
-		}
-		if ("true".equals(Secure))	 {
-			cookieAttrs.add("Secure");
-		}
-		if ("true".equals(HttpOnly))	 {
-			cookieAttrs.add("HttpOnly");
-		}
-		
-		String cookieString = String.join("; ", cookieAttrs);
-		setHeader("Set-Cookie", cookieString);
+			
+		setHeader("Set-Cookie", setCookies);
 	}
 	
 	@JSONField(deserialize=false, serialize=false)
@@ -445,8 +470,8 @@ public class Message {
 	}
 	
 	@JSONField(deserialize=false, serialize=false)
-	public void setResponseCookies(Map<String, String> cookies) {
-		this.responseCookies = cookies;
+	public void setResponseCookie(Map<String, String> cookie) {
+		this.responseCookies.add(cookie);
 		calculateResponseCookieHeader();
 	}
 	
@@ -455,8 +480,8 @@ public class Message {
 		return new HashMap<>(cookies()); 
     } 
 	@JSONField(deserialize=false, serialize=false)
-	public Map<String, String> getResponseCookies() {
-		return new HashMap<>(responseCookies()); 
+	public List<Map<String, String>> getResponseCookies() {
+		return responseCookies(); 
     } 
 	
 	private Map<String, String> cookies(){
@@ -482,26 +507,49 @@ public class Message {
         return cookies;
 	} 
 	
-	private Map<String, String> responseCookies(){
+	@SuppressWarnings("unchecked")
+	private List<Map<String, String>> responseCookies(){
 		if(responseCookies != null) return responseCookies;
 		
-		String cookieString = getHeader("set-cookie");
-		responseCookies = new HashMap<>();
-        if (StrKit.isEmpty(cookieString)) {
+		responseCookies = new ArrayList<Map<String, String>>();
+		Collection<String> cookieList = null;
+		Object setCookie = this.getHeaderObject("set-cookie");
+		if (setCookie == null) {
             return responseCookies;
         } 
-        String[] cookieStrings = cookieString.split(";"); 
-        for (String cookie : cookieStrings) {
-            if (StrKit.isEmpty(cookie)) {
-                continue;
-            } 
-            int idx = cookie.indexOf("=");
-            String key = cookie.substring(0, idx);
-            String value = cookie.substring(idx+1);
-            if(key != null) key = key.trim();
-            if(value != null) value = value.trim();
-            responseCookies.put(key, value); 
-        } 
+		if (!(setCookie instanceof Collection)) {
+			cookieList = new ArrayList<String>();
+			String cookieStr = String.valueOf(setCookie);
+			if (StrKit.isEmpty(cookieStr)) {
+				return responseCookies;
+			}
+			cookieList.add(cookieStr);
+		} else {
+			cookieList = (Collection<String>)setCookie;
+		}
+		for (String cookieString : cookieList) {
+	        Map<String, String> responseCookie = new HashMap<String, String>();
+	        responseCookies.add(responseCookie);
+	        
+	        String[] cookieAttrs = cookieString.split(";"); 
+	        for (int i = 0; i < cookieAttrs.length; i++) {
+	        	String cookieAttr = cookieAttrs[i];
+	            if (StrKit.isEmpty(cookieAttr)) {
+	                continue;
+	            } 
+	            int idx = cookieAttr.indexOf("=");
+	            String key = cookieAttr.substring(0, idx);
+	            String value = cookieAttr.substring(idx+1);
+	            if(key != null) key = key.trim();
+	            if(value != null) value = value.trim();
+	            if (i == 0) {
+	            	responseCookie.put("Name", key);
+	            	responseCookie.put("Value", value);
+	            } else {
+	            	responseCookie.put(key, value);
+	            }
+	        } 
+		}
         return responseCookies;
 	} 
 	
@@ -582,6 +630,8 @@ public class Message {
 	
 	@JSONField(serialize=false, deserialize=false)
 	public Map<String, Object> getMergedParams() {
+		Map<String, Object> params = new HashMap<String, Object>();
+		
 		// Headers
 		Map<String, Object> headerParams = this.getHeaders();
 		// Body(JSONObject、FormData(Attrs, Files)、QueryString)
@@ -626,7 +676,7 @@ public class Message {
 		Map<String, String> cookieParams = this.getCookies();
 		
 		// 计算params
-		Map<String, Object> params = new HashMap<String, Object>();
+		
 		// params 包括以下这些（相同参数名的时候，后面可以覆盖前面）
 		if (headerParams != null)
 			params.putAll(headerParams);// Headers

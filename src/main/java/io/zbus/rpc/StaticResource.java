@@ -27,7 +27,7 @@ public class StaticResource {
 		if(file.isAbsolute()) {
 			absoluteBasePath = file;
 		} else {
-			absoluteBasePath = new File(System.getProperty("user.dir"), basePath);
+			absoluteBasePath = new File(System.getProperty("user.dir"), basePath).getAbsoluteFile();
 		}
 	}
 	 
@@ -55,14 +55,23 @@ public class StaticResource {
 		String file;
 		// gz first
 		boolean isGzip = false;
+		File tgtFile;
 		File gzip = new File(absoluteBasePath, urlFile+".gz");
 		if (gzip.exists()) {
 			file = gzip.getAbsolutePath();
 			res.setHeader("Content-Encoding", "gzip");
 			isGzip = true;
+			tgtFile = gzip;
 		} else {
 			File fullPath = new File(absoluteBasePath, urlFile);
 			file = fullPath.getAbsolutePath();
+			tgtFile = fullPath;
+		}
+		if (!absoluteBasePath.toPath().startsWith(tgtFile.toPath())) {
+			res.setStatus(404);
+			res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+			res.setBody(urlFile + " Not Found");
+			return res;
 		}
 		 
 		String contentType = HttpKit.contentType(urlFile);
