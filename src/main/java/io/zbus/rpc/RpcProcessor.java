@@ -263,7 +263,7 @@ public class RpcProcessor {
 		Entry<String, MethodInstance> matched = null;
 		for(Entry<String, MethodInstance> e : urlPath2MethodTable.entrySet()) {
 			String key = e.getKey();
-			if(url.startsWith(key)) {
+			if(url.equals(key)||  url.startsWith(key+"/") || url.startsWith(key+"?")) {
 				if(key.length() > length) {
 					length = key.length();
 					matched = e; 
@@ -459,7 +459,7 @@ public class RpcProcessor {
 		try {     
 			invoke0(req, response);
 		} catch (Throwable e) {  
-			logger.debug(e.getMessage(), e); //no need to print
+			logger.info(e.getMessage(), e); //no need to print
 			Throwable t = e;
 			if(t instanceof InvocationTargetException) {
 				t  = ((InvocationTargetException)e).getTargetException();
