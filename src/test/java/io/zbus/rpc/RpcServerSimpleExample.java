@@ -50,15 +50,17 @@ public class RpcServerSimpleExample {
 		
 		
 		//based on MqServer
-		MqServerConfig config = new MqServerConfig();
-		config.setPublicServer("0.0.0.0:15555");
-		config.setMonitorServer("0.0.0.0:25555");
-		config.setVerbose(true); 
-		MqServer mqServer = new MqServer(config); 
-		mqServer.setRpcProcessor(p); 
+//		MqServerConfig config = new MqServerConfig();
+//		config.setPublicServer("0.0.0.0:15555");
+//		config.setMonitorServer("0.0.0.0:25555");
+//		config.setVerbose(true); 
+//		MqServer mqServer = new MqServer(config); 
+//		mqServer.setRpcProcessor(p); 
 		
 		RpcServer rpcServer = new RpcServer(); 
-		rpcServer.setMqServer(mqServer); //embedded in MqServer
+		rpcServer.setMqServerAddress("localhost:15555");
+		rpcServer.setMq("/");
+		//rpcServer.setMqServer(mqServer); //embedded in MqServer
 		rpcServer.setRpcProcessor(p); 
 		rpcServer.start();  
 	} 
