@@ -84,6 +84,10 @@ public class MonitorServerAdaptor extends ServerAdaptor {
 		}
 		
 		@RequestMapping("/")
+		public Object home(Map<String, String> params) { 
+			return query(params);
+		} 
+		
 		public Object query(Map<String, String> params) { 
 			if(params == null) {
 				params = new HashMap<>(); 
