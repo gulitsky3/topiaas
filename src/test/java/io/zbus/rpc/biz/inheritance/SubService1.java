@@ -1,8 +1,8 @@
 package io.zbus.rpc.biz.inheritance;
 
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 
-@RequestMapping
+@Route
 public class SubService1 extends BaseServiceImpl<Integer> implements SubServiceInterface1{
 
 }

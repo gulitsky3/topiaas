@@ -6,7 +6,7 @@ import java.io.IOException;
 import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
@@ -14,16 +14,16 @@ public class StaticResource {
 	private String basePath = "";
 	private FileKit fileKit = new FileKit();
 	
-	@RequestMapping(exclude=true)
+	@Route(exclude=true)
 	public void setBasePath(String basePath) {
 		this.basePath = basePath;
 	}
-	@RequestMapping(exclude=true)
+	@Route(exclude=true)
 	public void setCacheEnabled(boolean cacheEnabled) {
 		this.fileKit.setCacheEnabled(cacheEnabled);
 	}
 	
-	@RequestMapping("/")
+	@Route("/")
 	public Message file(Message req) {
 		Message res = new Message();
 		

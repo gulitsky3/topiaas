@@ -18,10 +18,11 @@ import org.slf4j.LoggerFactory;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
+import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcMethod.MethodParam;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.doc.DocRender;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
@@ -87,7 +88,7 @@ public class RpcProcessor {
 				info.docEnabled = enableDoc;
 				info.setReturnType(m.getReturnType());
 				
-				RequestMapping p = m.getAnnotation(RequestMapping.class);
+				Route p = m.getAnnotation(Route.class);
 				if (p != null) { 
 					if (p.exclude()) continue; 
 					info.docEnabled = enableDoc && p.docEnabled();
@@ -173,7 +174,7 @@ public class RpcProcessor {
 			Method[] methods = service.getClass().getMethods();
 			for (Method m : methods) {
 				String path = HttpKit.joinPath(module, m.getName());
-				RequestMapping p = m.getAnnotation(RequestMapping.class);
+				Route p = m.getAnnotation(Route.class);
 				if (p != null) {
 					if (p.exclude()) continue; 
 					path = annoPath(p); 
@@ -198,7 +199,7 @@ public class RpcProcessor {
 		return this;
 	}  
 	
-	private String annoPath(RequestMapping p) {
+	private String annoPath(Route p) {
 		if(p.path().length() == 0) return p.value();
 		return p.path();
 	} 
@@ -247,7 +248,7 @@ public class RpcProcessor {
 		public Map<String, String> queryMap;
 	}
 	 
-	private boolean httpMethodMatached(Message req, RequestMapping anno) { 
+	private boolean httpMethodMatached(Message req, Route anno) { 
 		if(anno.method().length == 0) {
 			return true;
 		}
@@ -313,7 +314,7 @@ public class RpcProcessor {
 		Object[] params = null; 
 		
 		//TODO more support on URL parameters 
-		RequestMapping anno = target.methodInstance.info.urlAnnotation;
+		Route anno = target.methodInstance.info.urlAnnotation;
 		if(anno != null) {
 			boolean httpMethodMatched = httpMethodMatached(req, anno);
 			if(!httpMethodMatched) {

@@ -7,7 +7,7 @@ import io.zbus.mq.Protocol.MqInfo;
 import io.zbus.mq.plugin.MonitorUrlRouter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 
 public class MonitorServerAdaptor extends MqServerAdaptor {  
@@ -34,12 +34,12 @@ public class MonitorServerAdaptor extends MqServerAdaptor {
 	class MonitorService {
 		private FileKit fileKit = new FileKit();  
 		
-		@RequestMapping(path = "/favicon.ico", docEnabled = false)
+		@Route(path = "/favicon.ico", docEnabled = false)
 		public Message favicon() {
 			return fileKit.loadResource("static/favicon.ico");
 		}
 		
-		@RequestMapping("/")
+		@Route("/")
 		public List<MqInfo> home() {  
 			return mqManager.mqInfoList();
 		}  

@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface RequestMapping { 
+public @interface Route { 
 	String value() default ""; //Alias of path
 	String path() default "";
 	String[] method() default { };

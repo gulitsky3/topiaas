@@ -11,7 +11,7 @@ import com.alibaba.fastjson.JSON;
 
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http; 
 
@@ -166,7 +166,7 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		return res;
 	} 
 	
-	@RequestMapping("/test")
+	@Route("/test")
 	public Message req(Message req) {
 		System.out.println(JSON.toJSONString(req, true));
 		

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.zbus.kit.HttpKit;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 
 public class RpcMethod {
 	public String urlPath;  // java method's url path 
@@ -13,7 +13,7 @@ public class RpcMethod {
 	public String returnType; 
 	public boolean authRequired;
 	public boolean docEnabled = true;
-	public RequestMapping urlAnnotation;
+	public Route urlAnnotation;
 	
 	public static class MethodParam {
 		public String type;
