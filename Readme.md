@@ -6,7 +6,7 @@
            /\\\/    \/\\\////\\\ \/\\\   \/\\\ \/\\\\\\\\\\    
           /\\\/      \/\\\  \/\\\ \/\\\   \/\\\ \////////\\\  
          /\\\\\\\\\\\ \/\\\\\\\\\  \//\\\\\\\\\   /\\\\\\\\\\  
-         \///////////  \/////////    \/////////   \//////////       QQ Group: 467741880
+         \///////////  \/////////    \/////////   \//////////  
 
 # ZBUS = MQ + RPC  
 zbus strives to make Message Queue and Remote Procedure Call fast, light-weighted and easy to build your own service-oriented architecture for many different platforms. Simply put, zbus = mq + rpc.
