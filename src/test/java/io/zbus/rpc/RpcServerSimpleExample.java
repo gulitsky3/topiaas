@@ -5,15 +5,8 @@ import java.util.Map;
 
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
-import io.zbus.transport.Message;
 
-public class RpcServerSimpleExample {   
-	
-	Template template;
-	@Route(exclude=true)
-	public void setTemplate(Template template) {
-		this.template = template;
-	}
+public class RpcServerSimpleExample {    
 	
 	public int plus(int a, int b) {
 		return a+b;
@@ -33,33 +26,12 @@ public class RpcServerSimpleExample {
 		value.put("key1", System.currentTimeMillis());
 		value.put("key2", System.currentTimeMillis());
 		return value;
-	}
-	 
-	@Route("/")
-	public Message home(Message req) {
-		System.out.println(req);
-		
-		Map<String, Object> data = new HashMap<String, Object>();
-        data.put("user", "Big Joe");   
-        Map<String, Object> product = new HashMap<>();
-        product.put("url", "/my");
-        product.put("name", "Google");
-        data.put("latestProduct", product); 
-        
-		return template.render("home.html", data); 
-	}   
+	} 
 	 
 	@SuppressWarnings("resource")
-	public static void main(String[] args) throws Exception {   
-		Template template = new Template();
-		template.setTemplateDir("static");
-		template.setUrlPrefix("/test");
-		
-		RpcServerSimpleExample example = new RpcServerSimpleExample();
-		example.setTemplate(template);
-		
+	public static void main(String[] args) throws Exception {    
 		RpcProcessor p = new RpcProcessor();    
-		p.mount("/", example);      
+		p.mount("/", RpcServerSimpleExample.class);      
 		 
 		
 		RpcServer rpcServer = new RpcServer(); 
