@@ -51,12 +51,12 @@
 	</cors>
 	
 	
-	<!-- HTTP 代理 
+	<!-- HTTP 代理
 	<httpProxy>
 		<proxy>
-			<urlPrefix>/nb/</urlPrefix>
+			<urlPrefix>/test</urlPrefix>
 			<urlRewrite>/</urlRewrite>
-			<backend>http://localhost:8888</backend>
+			<backend>http://localhost:15555</backend>
 		</proxy>
 	</httpProxy>
  	-->
