@@ -70,7 +70,7 @@ public class DocRender {
 		int size = m.params.size(); 
 		for(int i=0;i<size;i++) { 
 			MethodParam p = m.params.get(i);
-			paramList += p.type; 
+			paramList += p.type.getName(); 
 			if(p.name != null)  paramList += " " + p.name;  
 			paramList += ", "; 
 		} 
