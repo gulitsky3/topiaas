@@ -1,0 +1,15 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"> 
+ 	<bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+ 	
+ 	<import resource="mysql.xml"/>  
+ 	<import resource="spring-context.xml"/>  
+ 	
+	<bean class="io.zbus.rpc.RpcServer"> 
+		<property name="mqServerAddress" value="localhost:15555"/>  
+		<property name="mq" value="/"/>   
+	</bean>  
+	
+</beans>

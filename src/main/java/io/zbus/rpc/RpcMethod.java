@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.zbus.kit.HttpKit;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 
 public class RpcMethod {
 	public String urlPath;  // java method's url path 
 	public String method;   // java method 
 	public List<MethodParam> params = new ArrayList<>(); //param list of (type,name)
-	public String returnType; 
-	public boolean authRequired;
+	public String returnType;  
 	public boolean docEnabled = true;
-	public RequestMapping urlAnnotation;
+	public Route urlAnnotation;
+	public List<RpcFilter> filters = new ArrayList<>();
 	
 	public static class MethodParam {
 		public String type;
@@ -54,8 +54,7 @@ public class RpcMethod {
 	public RpcMethod(RpcMethod m) { 
 		this.method = m.method;
 		this.params = new ArrayList<>(m.params);  
-		this.returnType = m.returnType;
-		this.authRequired = m.authRequired;
+		this.returnType = m.returnType; 
 	} 
 	
 	public String getUrlPath() {

@@ -10,7 +10,7 @@ import io.zbus.kit.HttpKit;
 import io.zbus.rpc.RpcMethod;
 import io.zbus.rpc.RpcMethod.MethodParam;
 import io.zbus.rpc.RpcProcessor;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
@@ -23,12 +23,12 @@ public class DocRender {
 		this.rpcProcessor = rpcProcessor;  
 	}   
 	
-	@RequestMapping(exclude=true)
+	@Route(exclude=true)
 	public void setRootUrl(String rootUrl) {
 		this.rootUrl = rootUrl;
 	}
 	
-	@RequestMapping(path="/", docEnabled=false)
+	@Route(path="/", docEnabled=false)
 	public Message index() throws IOException { 
 		Message result = new Message(); 
 		Map<String, Object> model = new HashMap<String, Object>(); 

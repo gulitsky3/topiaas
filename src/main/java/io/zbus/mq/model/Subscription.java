@@ -8,6 +8,7 @@ public class Subscription {
 	public String mq;
 	public String channel;
 	public String clientId; 
+	public String clientAddress;
 	public Integer window; 
 	
 	public void setFilter(String filter) {

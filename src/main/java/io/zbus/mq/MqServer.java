@@ -8,6 +8,7 @@ import io.netty.handler.ssl.SslContext;
 import io.zbus.kit.ConfigKit;
 import io.zbus.mq.MqServerConfig.ServerConfig;
 import io.zbus.rpc.RpcProcessor;
+import io.zbus.rpc.StaticResource;
 import io.zbus.transport.Ssl;
 import io.zbus.transport.http.HttpWsServer; 
 
@@ -24,6 +25,7 @@ public class MqServer extends HttpWsServer {
 	
 	private final MqServerConfig config; 
 	
+	private StaticResource staticResource = new StaticResource();
 	private RpcProcessor rpcProcessor;
 	
 	public MqServer(MqServerConfig config) {  
@@ -36,6 +38,8 @@ public class MqServer extends HttpWsServer {
 			if(publicServerConfig.auth != null) {
 				publicServerAdaptor.setRequestAuth(publicServerConfig.auth);
 			}
+			
+			publicServerAdaptor.onInit(); 
 		}
 		
 		privateServerConfig = config.privateServer;
@@ -49,6 +53,8 @@ public class MqServer extends HttpWsServer {
 			if(privateServerConfig.auth != null) {
 				privateServerAdaptor.setRequestAuth(privateServerConfig.auth);
 			}
+			
+			privateServerAdaptor.onInit();
 		}  
 		
 		MqServerAdaptor adaptor = this.publicServerAdaptor;
@@ -56,13 +62,15 @@ public class MqServer extends HttpWsServer {
 			adaptor = this.privateServerAdaptor;
 		}
 		if(adaptor == null) {
-			throw new IllegalStateException("Both public and private server missing");
+			adaptor = publicServerAdaptor = new MqServerAdaptor(this.config); 
 		}
 		
 		monitorServerConfig = config.monitorServer;
 		if(monitorServerConfig != null) {
 			monitorServerAdaptor = new MonitorServerAdaptor(adaptor); 
 		}
+		staticResource.setBasePath(config.getStaticFileDir());
+		staticResource.setCacheEnabled(config.isStaticFileCacheEnabled());
 	} 
 	public MqServer(String configFile){
 		this(new MqServerConfig(configFile));
@@ -100,7 +108,7 @@ public class MqServer extends HttpWsServer {
 	}
 	
 	public void start() {
-		if(publicServerAdaptor != null) { 
+		if(publicServerAdaptor != null && publicServerConfig != null) { 
 			SslContext sslContext = null;
 			if (publicServerConfig.sslEnabled){  
 				try{  
@@ -114,7 +122,7 @@ public class MqServer extends HttpWsServer {
 			this.start(publicServerConfig.address, publicServerAdaptor, sslContext); 
 		} 
 		
-		if(privateServerAdaptor != null) { 
+		if(privateServerAdaptor != null && privateServerConfig != null) { 
 			SslContext sslContext = null;
 			if (privateServerConfig.sslEnabled){  
 				try{  
@@ -128,7 +136,7 @@ public class MqServer extends HttpWsServer {
 			this.start(privateServerConfig.address, privateServerAdaptor, sslContext); 
 		}  
 		
-		if(monitorServerAdaptor != null) {
+		if(monitorServerAdaptor != null & monitorServerConfig != null) {
 			SslContext sslContext = null;
 			if (monitorServerConfig.sslEnabled){  
 				try{  
@@ -148,8 +156,8 @@ public class MqServer extends HttpWsServer {
 		String configFile = ConfigKit.option(args, "-conf", "conf/zbus.xml"); 
 		
 		final MqServer server;
-		try{
-			server = new MqServer(configFile);
+		try{ 
+			server = new MqServer(configFile); 
 			server.start(); 
 		} catch (Exception e) { 
 			e.printStackTrace(System.err);

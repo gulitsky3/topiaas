@@ -119,7 +119,8 @@ public class WebsocketClient extends AbastractClient {
 		}  
 	}  
 	
-	public synchronized void connect(){    
+	public synchronized void connect(){  
+		if(this.ws != null) return; //on the way
 		connectUnsafe();
 	}
 	

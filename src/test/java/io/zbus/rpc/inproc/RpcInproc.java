@@ -3,7 +3,6 @@ package io.zbus.rpc.inproc;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.zbus.mq.MqServer;
-import io.zbus.mq.MqServerConfig;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
@@ -14,10 +13,9 @@ public class RpcInproc {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {
 		RpcProcessor p = new RpcProcessor();
-		p.mount("example", InterfaceExampleImpl.class);
-		
-		MqServerConfig config = new MqServerConfig();
-		MqServer server = new MqServer(config);
+		p.mount("/example", InterfaceExampleImpl.class);
+		 
+		MqServer server = new MqServer();
 		server.setRpcProcessor(p);
 		
 		InprocClient rpc = new InprocClient(server.getServerAdaptor());

@@ -2,6 +2,7 @@ package io.zbus.mq.disk;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public class DiskQueue extends AbstractMessageQueue {
 		info.type = type();
 		info.mask = getMask();
 		info.messageDepth = size(); 
-		info.channelCount = channels().size();  
+		info.channelList = new ArrayList<>(channels().values()); 
 		info.creator = index.getCreator();
 		info.createdAt = index.getCreatedTime();
 		return info;

@@ -54,10 +54,14 @@ public class SubscriptionManager {
 		if(mq != null) {
 			Integer mask = mq.getMask();
 			if(mask != null && (Protocol.MASK_DELETE_ON_EXIT & mask) != 0) {
-				try {
-					messageQueueManager.removeQueue(mq.name(), null);
-				} catch (IOException e) {
-					logger.error(e.getMessage(), e);
+				String channelKey = key(sub.mq, sub.channel);
+				List<Subscription> subs = channel2Subscription.get(channelKey);
+				if(subs == null || subs.size()<=1) {
+					try { 
+						messageQueueManager.removeQueue(mq.name(), null); 
+					} catch (IOException e) {
+						logger.error(e.getMessage(), e);
+					}
 				}
 			}
 		}

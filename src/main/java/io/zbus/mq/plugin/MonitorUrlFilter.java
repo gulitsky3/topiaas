@@ -7,12 +7,11 @@ import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.mq.MqServerAdaptor;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
-import io.zbus.transport.Session;
 
-public class MonitorUrlRouter implements UrlRouter {   
+public class MonitorUrlFilter implements Filter {   
 	private RpcProcessor rpcProcessor; 
 	
-	public MonitorUrlRouter(RpcProcessor rpcProcessor) {
+	public MonitorUrlFilter(RpcProcessor rpcProcessor) {
 		this.rpcProcessor = rpcProcessor;
 	} 
 	
@@ -22,9 +21,9 @@ public class MonitorUrlRouter implements UrlRouter {
 	}
 	
 	@Override
-	public boolean route(Message req, Session sess) { 
+	public boolean doFilter(Message req, Message res) { 
 		String url = req.getUrl();
-		if(url == null) return false;    
+		if(url == null) return true;     
 		
 		if(url.startsWith("/?") || url.startsWith("?")) { //special case for headers injection
 			UrlInfo info = HttpKit.parseUrl(url);
@@ -38,20 +37,18 @@ public class MonitorUrlRouter implements UrlRouter {
 						req.setHeader(key, value);
 					}
 				} 
-				return false;
+				return true;
 			}
 		}
 		
 		if(rpcProcessor != null) {
-			if(rpcProcessor.matchUrl(url)) {
-				Message res = new Message();
-				rpcProcessor.process(req, res);
-				sess.write(res); 
-				return true;
+			if(rpcProcessor.matchUrl(url)) { 
+				rpcProcessor.process(req, res); 
+				return false;
 			} 
 		} 
 		
-		return false;
+		return true;
 	} 
 	
 	public void setRpcProcessor(RpcProcessor rpcProcessor) {

@@ -124,7 +124,5 @@ public class MemoryChannelReader implements ChannelReader {
 		info.filter = channel.filter;
 		info.mask = channel.mask;
 		return info;
-	}
-	
-	
+	} 
 }

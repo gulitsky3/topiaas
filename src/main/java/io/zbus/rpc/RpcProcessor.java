@@ -15,17 +15,22 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
+import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcMethod.MethodParam;
-import io.zbus.rpc.annotation.Auth;
+import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.doc.DocRender;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
-import io.zbus.transport.http.Http.FileForm;
+import io.zbus.transport.http.Http.FormData;
 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
@@ -38,8 +43,9 @@ public class RpcProcessor {
 	private boolean stackTraceEnabled = true;   
 	
 	private RpcFilter beforeFilter;
-	private RpcFilter afterFilter;
-	private RpcFilter authFilter;   
+	private RpcFilter afterFilter; 
+	
+	private Map<String, RpcFilter> filterTable = new HashMap<>(); //RpcFilter table referred by key
 	
 	public RpcProcessor mount(String urlPrefix, Object service) { 
 		return mount(urlPrefix, service, true, true, true);
@@ -63,12 +69,18 @@ public class RpcProcessor {
 				service = ((Class<?>)service).newInstance();
 			} 
 			
-			Method[] methods = service.getClass().getMethods();
-			boolean classAuthEnabled = defaultAuth;
-			Auth classAuth = service.getClass().getAnnotation(Auth.class);
-			if(classAuth != null) {
-				classAuthEnabled = !classAuth.exclude();
+			List<RpcFilter> classFiltersIncluded = new ArrayList<>();  
+			Filter filter = service.getClass().getAnnotation(Filter.class); 
+			if(filter != null) {
+				for(String name : filter.value()) {
+					RpcFilter rpcFilter = filterTable.get(name);
+					if(rpcFilter != null) {
+						classFiltersIncluded.add(rpcFilter);
+					}
+				}
 			}
+			
+			Method[] methods = service.getClass().getMethods(); 
 			
 			for (Method m : methods) {
 				if (m.getDeclaringClass() == Object.class) continue;  
@@ -87,7 +99,7 @@ public class RpcProcessor {
 				info.docEnabled = enableDoc;
 				info.setReturnType(m.getReturnType());
 				
-				RequestMapping p = m.getAnnotation(RequestMapping.class);
+				Route p = m.getAnnotation(Route.class);
 				if (p != null) { 
 					if (p.exclude()) continue; 
 					info.docEnabled = enableDoc && p.docEnabled();
@@ -96,15 +108,26 @@ public class RpcProcessor {
 					if(urlPath != null) {
 						info.urlPath = HttpKit.joinPath(urlPrefix, urlPath);
 					}
-				} 
-				
-				Auth auth = m.getAnnotation(Auth.class);
-				boolean authRequired = classAuthEnabled;
-				if(auth != null) {
-					authRequired = !auth.exclude();
+				}    
+				info.filters.addAll(classFiltersIncluded);
+				filter = m.getAnnotation(Filter.class);
+				if(filter != null) {
+					for(String name : filter.value()) {
+						RpcFilter rpcFilter = filterTable.get(name);
+						if(rpcFilter != null) {
+							if(!info.filters.contains(rpcFilter)) {
+								info.filters.add(rpcFilter);
+							}
+						}
+					}
+					for(String name : filter.exclude()) {
+						RpcFilter rpcFilter = filterTable.get(name);
+						if(rpcFilter != null) {
+							info.filters.remove(rpcFilter);
+						}
+					}
 				}
-				info.authRequired = authRequired;
-
+				
 				m.setAccessible(true);  
 				 
 				for (Class<?> t : m.getParameterTypes()) {
@@ -173,7 +196,7 @@ public class RpcProcessor {
 			Method[] methods = service.getClass().getMethods();
 			for (Method m : methods) {
 				String path = HttpKit.joinPath(module, m.getName());
-				RequestMapping p = m.getAnnotation(RequestMapping.class);
+				Route p = m.getAnnotation(Route.class);
 				if (p != null) {
 					if (p.exclude()) continue; 
 					path = annoPath(p); 
@@ -198,7 +221,7 @@ public class RpcProcessor {
 		return this;
 	}  
 	
-	private String annoPath(RequestMapping p) {
+	private String annoPath(Route p) {
 		if(p.path().length() == 0) return p.value();
 		return p.path();
 	} 
@@ -244,10 +267,10 @@ public class RpcProcessor {
 	private class MethodTarget{
 		public MethodInstance methodInstance;
 		public Object[] params;
-		public Map<String, String> queryMap;
+		public Map<String, Object> queryMap;
 	}
 	 
-	private boolean httpMethodMatached(Message req, RequestMapping anno) { 
+	private boolean httpMethodMatched(Message req, Route anno) { 
 		if(anno.method().length == 0) {
 			return true;
 		}
@@ -311,11 +334,10 @@ public class RpcProcessor {
 		MethodTarget target = new MethodTarget(); 
 		target.methodInstance = matched.getValue();
 		Object[] params = null; 
-		
-		//TODO more support on URL parameters 
-		RequestMapping anno = target.methodInstance.info.urlAnnotation;
+		 
+		Route anno = target.methodInstance.info.urlAnnotation;
 		if(anno != null) {
-			boolean httpMethodMatched = httpMethodMatached(req, anno);
+			boolean httpMethodMatched = httpMethodMatched(req, anno);
 			if(!httpMethodMatched) {
 				reply(response, 405, String.format("Method(%s) Not Allowd", req.getMethod())); 
 				return null;
@@ -324,17 +346,27 @@ public class RpcProcessor {
 		
 		Object body = req.getBody(); //assumed to be params 
 		if(body != null) {
-			if(!(body instanceof FileForm)) { //may be upload files
-				params = JsonKit.convert(body, Object[].class); 
-			} 
+			if(body instanceof JSONObject || body instanceof FormData) { 
+				FormData form = JsonKit.convert(body, FormData.class); 
+				req.setBody(form);
+				if(form.files.isEmpty()) { //if no files upload, attributes same as queryString
+					target.queryMap = form.attributes;
+				} 
+			} else {  
+				JSON paramObject = JsonKit.convert(body, JSON.class);
+				if(paramObject instanceof JSONArray) {
+					params = JsonKit.convert(paramObject, Object[].class);
+				} else {
+					target.queryMap = (JSONObject)paramObject; 
+				}
+			}
 		}   
 		if(params == null) { 
 			String subUrl = url.substring(urlPathMatched.length());
 			UrlInfo info = HttpKit.parseUrl(subUrl);
 			List<Object> paramList = new ArrayList<>(info.pathList); 
 			if(!info.queryParamMap.isEmpty()) {
-				target.queryMap = info.queryParamMap;
-				//paramList.add(info.queryParamMap);
+				target.queryMap = new HashMap<>(info.queryParamMap); 
 			}
 			params = paramList.toArray();
 		} 
@@ -358,11 +390,10 @@ public class RpcProcessor {
 		
 		Object[] params = target.params; 
 		MethodInstance mi = target.methodInstance; 
-		//Authentication step in if required
-		if(authFilter != null && mi.info.authRequired) { 
-			boolean next = authFilter.doFilter(req, response);
+		for(RpcFilter filter : mi.info.filters) {
+			boolean next = filter.doFilter(req, response);
 			if(!next) return;
-		}  
+		} 
 		
 		Object data = null;
 		if(mi.reflectedMethod != null) {
@@ -388,7 +419,7 @@ public class RpcProcessor {
 						}  
 					}  
 					if(target.queryMap != null) {
-						for(Entry<String, String> e : target.queryMap.entrySet()) {
+						for(Entry<String, Object> e : target.queryMap.entrySet()) {
 							if(mapParams.containsKey(e.getKey())) continue; //path match first
 							mapParams.put(e.getKey(), e.getValue());
 						}
@@ -435,7 +466,7 @@ public class RpcProcessor {
 			MethodParam mp = declaredParams.get(i);
 			if(mp.name != null) {
 				if(target.queryMap != null) {
-					String value = target.queryMap.get(mp.name);
+					Object value = target.queryMap.get(mp.name);
 					if(value != null) { 
 						invokeParams[i] = convert(value, paramType);    
 						continue;
@@ -499,12 +530,7 @@ public class RpcProcessor {
 	public RpcProcessor setAfterFilter(RpcFilter afterFilter) {
 		this.afterFilter = afterFilter;
 		return this;
-	} 
-
-	public RpcProcessor setAuthFilter(RpcFilter authFilter) {
-		this.authFilter = authFilter;
-		return this;
-	} 
+	}  
 
 	public boolean isStackTraceEnabled() {
 		return stackTraceEnabled;
@@ -535,7 +561,15 @@ public class RpcProcessor {
 				mount(e.getKey(), svc);
 			}
 		}
-	}   
+	}  
+	
+	public Map<String, RpcFilter> getFilterTable() {
+		return filterTable;
+	}
+	
+	public void setFilterTable(Map<String, RpcFilter> filterTable) {
+		this.filterTable = filterTable;
+	}
 	
 	public String getDocUrl() {
 		return docUrl;

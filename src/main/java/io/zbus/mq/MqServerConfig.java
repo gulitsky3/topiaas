@@ -11,7 +11,6 @@ import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
-import io.zbus.mq.plugin.UrlRouter;
 
 public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;
@@ -25,19 +24,10 @@ public class MqServerConfig extends XmlConfig {
 	public String mqDbUser;
 	public String mqDbPassword;
 	
-	/**
-	 * URL mappting to MQ, nullable to default
-	 */
-	public UrlRouter urlRouter;       
-	/**
-	 * In URL match, match rpc first over MQ, default to false
-	 */
-	public boolean urlMatchLocalFirst = false; 
-	public boolean verbose = true;  
-	/**
-	 * File cached for FileKit to load static files
-	 */
-	public boolean fileCacheEnabled = false;
+	public String staticFileDir; 
+	public boolean staticFileCacheEnabled = false;
+	 
+	public boolean verbose = true;   
 	
 	public MqServerConfig() { 
 		
@@ -92,6 +82,8 @@ public class MqServerConfig extends XmlConfig {
 			this.packageSizeLimit = Integer.valueOf(size);
 		} 
 		this.verbose = valueOf(xpath.evaluate("/zbus/verbose", doc), true);
+		this.staticFileDir = valueOf(xpath.evaluate("/zbus/staticFileDir", doc), null);
+		this.staticFileCacheEnabled = valueOf(xpath.evaluate("/zbus/staticFileDir/@cached", doc), false);
 	}
 
 	public ServerConfig getPublicServer() {
@@ -142,6 +134,14 @@ public class MqServerConfig extends XmlConfig {
 
 	public void setPackageSizeLimit(int packageSizeLimit) {
 		this.packageSizeLimit = packageSizeLimit;
+	} 
+
+	public String getStaticFileDir() {
+		return staticFileDir;
+	}
+
+	public void setStaticFileDir(String staticFileDir) {
+		this.staticFileDir = staticFileDir;
 	}
 
 	public String getMqDiskDir() {
@@ -183,31 +183,16 @@ public class MqServerConfig extends XmlConfig {
 
 	public void setMqDbPassword(String mqDbPassword) {
 		this.mqDbPassword = mqDbPassword;
+	}  
+	
+	public boolean isStaticFileCacheEnabled() {
+		return staticFileCacheEnabled;
 	}
 
-	public UrlRouter getUrlRouter() {
-		return urlRouter;
+	public void setStaticFileCacheEnabled(boolean staticFileCacheEnabled) {
+		this.staticFileCacheEnabled = staticFileCacheEnabled;
 	}
 
-	public void setUrlRouter(UrlRouter urlRouter) {
-		this.urlRouter = urlRouter;
-	}
-
-	public boolean isUrlMatchLocalFirst() {
-		return urlMatchLocalFirst;
-	}
-
-	public void setUrlMatchLocalFirst(boolean urlMatchLocalFirst) {
-		this.urlMatchLocalFirst = urlMatchLocalFirst;
-	}
-
-	public boolean isFileCacheEnabled() {
-		return fileCacheEnabled;
-	}
-
-	public void setFileCacheEnabled(boolean fileCacheEnabled) {
-		this.fileCacheEnabled = fileCacheEnabled;
-	} 
 
 	public static class ServerConfig{
 		public String address;
@@ -263,6 +248,7 @@ public class MqServerConfig extends XmlConfig {
 		public void setAuth(RequestAuth auth) {
 			this.auth = auth;
 		}
+		
 		
 	}
 }

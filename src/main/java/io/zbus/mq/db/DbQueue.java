@@ -1,6 +1,7 @@
 package io.zbus.mq.db;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.zbus.mq.Protocol;
@@ -22,7 +23,8 @@ public class DbQueue extends AbstractMessageQueue{
 		info.type = type();
 		info.mask = getMask();
 		info.messageDepth = size(); 
-		info.channelCount = channels().size();  
+		info.channelList = new ArrayList<>(channels().values()); 
+		
 		return info;
 	}
 	

@@ -96,6 +96,7 @@ public class HttpKit {
 	static { 
 		MIME_TYPES.put("js", "application/javascript"); 
 		MIME_TYPES.put("json", "application/json"); 
+		MIME_TYPES.put("xml", "application/xml"); 
 		MIME_TYPES.put("css", "text/css"); 
 		MIME_TYPES.put("htm", "text/html"); 
 		MIME_TYPES.put("html", "text/html"); 

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class Http {
 	public static final String CONTENT_LENGTH        = "content-length";
 	public static final String CONTENT_TYPE          = "content-type";     
 	public static final String CONTENT_TYPE_JSON     = "application/json; charset=utf8"; 
-	public static final String CONTENT_TYPE_UPLOAD   = "multipart/form-data";
+	public static final String CONTENT_TYPE_FORM     = "multipart/form-data";
 	
 	private static final byte[] CLCR = "\r\n".getBytes();
 	private static final byte[] KV_SPLIT = ": ".getBytes();
@@ -223,15 +224,14 @@ public class Http {
 	
 	private static void writeHttpLine(Message msg, OutputStream out) throws IOException{
 		if(msg.getStatus() != null){
-			String statusText = msg.getStatusText();
-			if(statusText == null) {
-				HttpResponseStatus s = HttpResponseStatus.valueOf(msg.getStatus());
-				if(s != null){
-					statusText = s.reasonPhrase();
-				} else {
-					statusText = "Unknown Status";
-				}
-			}
+			String statusText = "";
+			HttpResponseStatus s = HttpResponseStatus.valueOf(msg.getStatus());
+			if(s != null){
+				statusText = s.reasonPhrase();
+			} else {
+				statusText = "Unknown Status";
+			} 
+			
 			out.write(PREFIX);
 			out.write(String.format("%d", msg.getStatus()).getBytes());
 			out.write(BLANK);
@@ -254,8 +254,25 @@ public class Http {
 		public byte[] data;
 	}
 	
-	public static class FileForm {
-		public Map<String, String> attributes = new HashMap<String, String>();
+	public static class FormData {
+		public Map<String, Object> attributes = new HashMap<String, Object>();
 		public Map<String, List<FileUpload>> files = new HashMap<String, List<FileUpload>>();
+		
+		@SuppressWarnings("unchecked")
+		public void addAttribute(String key, Object value) {
+			Object exists = attributes.get(key); 
+			if(exists != null) {
+				List<Object> values;
+				if(exists instanceof List) {
+					values = (List<Object>)exists;
+				} else{
+					values = new ArrayList<>();
+					values.add(exists);
+				} 
+				values.add(value);
+				value = values;
+			}
+			attributes.put(key, value);
+		}
 	}
 }

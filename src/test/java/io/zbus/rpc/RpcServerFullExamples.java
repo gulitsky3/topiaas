@@ -5,7 +5,7 @@ import java.util.Map;
 
 import io.zbus.kit.FileKit;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
 
@@ -17,7 +17,7 @@ public class RpcServerFullExamples {
 		return a+b;
 	} 
 	
-	@RequestMapping(path="/abc") //default path could be changed
+	@Route("/abc") //default path could be changed
 	public Object json() {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key", System.currentTimeMillis());
@@ -28,7 +28,7 @@ public class RpcServerFullExamples {
 	 * Example of returning HTTP message type
 	 * @return
 	 */
-	@RequestMapping("/home") //Test: change to /  
+	@Route("/home") //Test: change to /  
 	public Message home() { 
 		Message res = new Message();
 		res.setStatus(200);
@@ -53,12 +53,12 @@ public class RpcServerFullExamples {
 	} 
 	
 	
-	@RequestMapping("/showUpload")
+	@Route("/showUpload")
 	public Message showUpload() { 
-		return fileKit.loadResource("page/upload.html"); 
+		return fileKit.render("page/upload.html"); 
 	}
 	
-	@RequestMapping("/upload")
+	@Route("/upload")
 	public Message doUpload(Message req) {  
 		FileKit.saveUploadedFile(req, "/tmp/upload");
 		Message res = new Message();
@@ -70,11 +70,12 @@ public class RpcServerFullExamples {
 		return res;
 	}  
 	
-	@RequestMapping(path="/favicon.ico", docEnabled=false)
+	@Route(path="/favicon.ico", docEnabled=false)
 	public Message favicon() { 
-		return fileKit.loadResource("static/favicon.ico"); 
+		return fileKit.render("static/favicon.ico"); 
 	}
 	 
+	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {  
 		RpcProcessor p = new RpcProcessor();   
 		//1) mount two java class to different root URLs
@@ -95,15 +96,13 @@ public class RpcServerFullExamples {
 		spec.addParam(Integer.class, "age"); 
 		
 		spec.returnType = Map.class.getName(); 
-		p.mount(spec, new GenericService());   
+		p.mount(spec, new GenericService());    
 		
-		//4) Enable doc on methods, optional
-		p.setDocUrl("/"); //serve as home page at your service
-		p.mountDoc();
+		RpcServer rpcServer = new RpcServer(); 
+		rpcServer.setRpcProcessor(p); 
 		
-		//Start RpcServer, capable of different modes: embedded, remote MQ, InProc
-		RpcServer rpcServer = RpcServerBuilder.embedded();
-		rpcServer.setRpcProcessor(p);
+		rpcServer.setMqServerAddress("localhost:15555");
+		rpcServer.setMq("/");  
 		rpcServer.start();  
 	}  
 }
