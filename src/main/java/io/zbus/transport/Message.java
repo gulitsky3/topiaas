@@ -201,6 +201,7 @@ public class Message {
 		final int maxBodyLengthPrint = 10240;
 		if(this.body instanceof String) {
 			String s = (String)this.body;
+			body = s;
 			if(s.length() > maxBodyLengthPrint) {
 				body = s.substring(0, maxBodyLengthPrint) + " ...";
 			}
