@@ -25,6 +25,7 @@ package io.zbus.transport;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -201,6 +202,26 @@ public class Message {
 		}
 		return urlInfo.queryParamString;
 	}
+	
+	public Map<String, Object> cookies() {
+		String cookieString = getHeader("cookie");
+        Map<String, Object> ret = new HashMap<>();
+        if (StrKit.isEmpty(cookieString)) {
+            return ret;
+        } 
+        String[] cookies = cookieString.split(";"); 
+        for (String cookie : cookies) {
+            if (StrKit.isEmpty(cookie)) {
+                continue;
+            } 
+            String[] kv = cookie.split("="); 
+            if (kv.length < 2) {
+                continue;
+            }  
+            ret.put(kv[0].trim(), kv[1].trim()); 
+        } 
+        return ret;
+    }
 	
 	public List<String> getParamArray(String key) {
 		if(url == null) return new ArrayList<>();

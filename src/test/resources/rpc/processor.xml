@@ -33,7 +33,7 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	<bean class="io.zbus.rpc.filer.GlobalExceptionFilter"/>  <!-- global filter can not be excluded --> 
 	
 	<bean id="adminFilter" class="io.zbus.rpc.filer.AdminLoginFilter"/> 
-	<bean id="loginFilter" class="io.zbus.rpc.filer.SimpleUserLoginFilter"/> 
+	<bean id="loginFilter" class="io.zbus.rpc.filer.LoginFilter"/> 
 	<bean id="loggerFilter" class="io.zbus.rpc.filer.LoggerFilter"/>  
 	
 	
@@ -64,8 +64,7 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 			<map>  
                 <entry key="/db/*"> <!-- support pattern(*) and full match -->
                 	<list>
-                        <ref bean="adminFilter"/>
-                        <ref bean="loggerFilter"/>
+                        <ref bean="loginFilter"/> 
                     </list>
                 </entry> 
             </map>
