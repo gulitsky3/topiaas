@@ -115,6 +115,7 @@ public class RpcServerFullExamples {
 		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
+		p.setDocFile("rpc.html");
 		
 		rpcServer.setMqServerAddress("zbus.io");
 		rpcServer.setMq("/");  

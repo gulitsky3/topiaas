@@ -39,6 +39,7 @@ public class RpcProcessor {
 	
 	private boolean docEnabled = true;  
 	private String docUrl = "/doc"; 
+	private String docFile = "static/rpc.html";
 	private String rootUrl = "/"; 
 	 
 	private boolean stackTraceEnabled = true;   
@@ -605,6 +606,7 @@ public class RpcProcessor {
 		if(!this.docEnabled) return this;
 		DocRender render = new DocRender(this); 
 		render.setRootUrl(rootUrl);
+		render.setDocFile(docFile);
 		mount(docUrl, render, false, false, false);
 		return this;
 	}   
@@ -672,8 +674,17 @@ public class RpcProcessor {
 
 	public void setRootUrl(String rootUrl) {
 		this.rootUrl = rootUrl;
-	}
+	} 
 	
+	
+	public String getDocFile() {
+		return docFile;
+	}
+
+	public void setDocFile(String docFile) {
+		this.docFile = docFile;
+	}
+
 	public void setExceptionFilter(RpcFilter exceptionFilter) {
 		this.exceptionFilter = exceptionFilter;
 	}

@@ -14,16 +14,17 @@ import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
+@Route(exclude=true) //Exclude by default
 public class DocRender { 
 	private FileKit fileKit = new FileKit();
 	private final RpcProcessor rpcProcessor;   
 	private String rootUrl;
+	private String docFile = "static/rpc.html";
 	
 	public DocRender(RpcProcessor rpcProcessor) {
 		this.rpcProcessor = rpcProcessor;  
 	}   
-	
-	@Route(exclude=true)
+	 
 	public void setRootUrl(String rootUrl) {
 		this.rootUrl = rootUrl;
 	}
@@ -43,14 +44,15 @@ public class DocRender {
 		doc += "</div>";
 		String js = fileKit.loadFile("static/zbus.min.js");
 		model.put("content", doc); 
-		model.put("zbusjs", js); 
+		model.put("zbusjs", js);  
 		String urlPrefix = this.rootUrl;
 		if(urlPrefix.endsWith("/")) {
 			urlPrefix = urlPrefix.substring(0, urlPrefix.length()-1);
 		}
 		model.put("urlPrefix", urlPrefix);  
 		
-		String body = fileKit.loadFile("static/rpc.html", model);
+		
+		String body = fileKit.loadFile(docFile, model);
 		result.setBody(body);
 		result.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 		return result;
@@ -78,7 +80,13 @@ public class DocRender {
 			paramList = paramList.substring(0, paramList.length()-2);
 		}     
 		return String.format(fmt, methodLink, methodLink, m.returnType, methodLink, method, paramList);
-	} 
-	
-	
+	}
+
+	public String getDocFile() {
+		return docFile;
+	}
+
+	public void setDocFile(String docFile) {
+		this.docFile = docFile;
+	}   
 }
