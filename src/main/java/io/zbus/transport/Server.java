@@ -89,6 +89,7 @@ public class Server implements Closeable {
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(bossGroup, workGroup)
 		 .option(ChannelOption.SO_BACKLOG, maxSocketCount) 
+		 .option(ChannelOption.SO_LINGER, 0) 
 		 .channel(NioServerSocketChannel.class) 
 		 .handler(new LoggingHandler(LogLevel.DEBUG))
 		 .childHandler(new SocketChannelInitializer(ioAdaptor, sslContext));
