@@ -132,7 +132,7 @@ public class MqServer extends HttpWsServer {
 			}
 			logger.info("Starting mointor server @" + monitorServerConfig.address);
 			this.start(monitorServerConfig.address, monitorServerAdaptor, sslContext); 
-		} 
+		}  
 	}
 	 
 	

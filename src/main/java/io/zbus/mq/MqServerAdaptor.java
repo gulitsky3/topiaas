@@ -42,7 +42,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		mqManager.mqDir = config.mqDiskDir; 
 		verbose = config.verbose;
 		
-		mqManager.loadQueueTable(); 
+		mqManager.loadQueueTable();   
 		
 		commandTable = new HashMap<>();
 		commandTable.put(Protocol.PUB, pubHandler);
@@ -171,10 +171,13 @@ public class MqServerAdaptor extends ServerAdaptor {
 		String mq = req.getHeader(Protocol.MQ); 
 		if(mq == null) { 
 			if(info.pathList.size() > 0) {
-				mq = info.pathList.get(0); 
-				req.setHeader(Protocol.MQ, mq);
-			}
-		}  
+				mq = info.pathList.get(0);  
+			} else {
+				mq = "/";
+			} 
+			req.setHeader(Protocol.MQ, mq);
+		} 
+		
 		//Assumed to be RPC
 		if(req.getHeader(Protocol.CMD) == null) { // RPC assumed
 			req.setHeader(Protocol.CMD, Protocol.PUB);
@@ -250,6 +253,10 @@ public class MqServerAdaptor extends ServerAdaptor {
 		
 		MessageQueue mq = mqManager.get(mqName);
 		if(mq == null) { 
+			if(mqName.equals("/")) {
+				reply(req, 200, "<h1>Welcome to zbus</h1>", sess);
+				return;
+			}
 			reply(req, 404, "MQ(" + mqName + ") Not Found", sess);
 			return; 
 		} 
@@ -391,7 +398,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		Message res = new Message();
 		res.setStatus(status);
 		res.setBody(message);  
-		res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+		res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 		reply(req, res, sess);
 	}
 	
