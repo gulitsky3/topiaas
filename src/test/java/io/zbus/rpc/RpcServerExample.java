@@ -56,7 +56,7 @@ public class RpcServerExample {
 		StaticResource resource = new StaticResource();
 		resource.setBasePath("/tmp");
 		p.setDocModule("m");
-		p.addModule("", RpcServerExample.class); 
+		p.addModule("example", RpcServerExample.class); 
 		p.addModule("static", resource);
 		
 		RpcServer server = new RpcServer();      

@@ -407,11 +407,20 @@ var RpcInfoTemplate = `
 <meta http-equiv="Content-type" content="text/html; charset=utf-8">
 <title>{0} JS</title>
 {1}
+
+<script>  
+var rpc; 
+function init(){
+	rpc = new RpcClient(null,"{0}"); 
+} 
+<\/script> 
+<script async src="http://zbus.io/static/zbus.js" onload="init()"><\/script>
+
 </head>
-<body>
+
 <div>
 <div class="url">
-    <span>URL={0}/[module]/[method]/[param1]/[param2]/...</span> 
+    <span>URL=/{0}/[module]/[method]/[param1]/[param2]/...</span> 
 </div>
 <table class="table">
 <thead>
@@ -458,10 +467,10 @@ tr { display: table-row;  vertical-align: inherit; border-color: inherit; }
 
 var RpcMethodTemplate = `
 <tr> 
-    <td class="urlPath"><a href="{0}"/ target="_blank">{0}</a></td>
+    <td class="urlPath"><a href="{0}">{0}</a></td>
     <td class="returnType"></td>
     <td class="methodParams">
-        <code><strong><a href="{0}"/ target="_blank">{1}</a></strong>({2})</code>
+        <code><strong><a href="{0}">{1}</a></strong>({2})</code>
     </td> 
 </tr>
 `;
@@ -511,7 +520,7 @@ function _reply(res, status, message){
 class RpcProcessor {
     constructor() {   
         this.urlPath2Methods = {};  
-        this.urlPrefix = "/";
+        this.urlPrefix = "";
     } 
  
     _matchMethod(module, method){
@@ -564,6 +573,9 @@ class RpcProcessor {
 
         var params = [];
         if(req.body){
+            if(!(req.body instanceof Array)){
+                req.body = JSON.parse(req.body);
+            } 
             params = req.body;
         }  else {
             var subUrl = url.substr(urlPath.length);
@@ -672,7 +684,7 @@ class RpcServer {
             this.channel = this.mq;
         }
         var processor = this.processor;
-        processor.urlPrefix = "/"+this.mq;
+        processor.urlPrefix = this.mq;
         processor.enableDoc(this.docEnabled);
 
         for (var i = 0; i < this.clientCount; i++) {

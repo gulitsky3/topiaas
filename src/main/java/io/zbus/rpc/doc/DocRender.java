@@ -43,6 +43,9 @@ public class DocRender {
 			urlPrefix = urlPrefix.substring(0, urlPrefix.length()-1);
 		}
 		model.put("urlPrefix", urlPrefix);
+		String mq = urlPrefix;
+		if(mq.startsWith("/")) mq = mq.substring(1); 
+		model.put("mq", mq);
 		
 		String body = fileKit.loadFile("static/rpc.htm", model);
 		result.setBody(body);
