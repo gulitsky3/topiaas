@@ -120,11 +120,11 @@ public class FileKit {
 			String key = e.getKey();
 			Object val = e.getValue();
 			
-			key = "\\{\\{"+key+"\\}\\}"; 
+			key = "{{"+key+"}}"; 
 			if(val == null){
 				val = "";
 			}
-			template = template.replaceAll(key, val.toString()); 
+			template = template.replace(key, val.toString()); 
 		}
 		
 		return template;

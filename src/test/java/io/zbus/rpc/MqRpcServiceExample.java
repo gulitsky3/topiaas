@@ -8,7 +8,7 @@ public class MqRpcServiceExample {
 	public static void main(String[] args) throws Exception {  
 		  
 		RpcProcessor p = new RpcProcessor();
-		p.addModule(InterfaceExampleImpl.class);  
+		p.addModule("example", InterfaceExampleImpl.class);  
 		
 		
 		RpcServer server = new RpcServer();

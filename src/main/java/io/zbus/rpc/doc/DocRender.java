@@ -21,6 +21,14 @@ public class DocRender {
 		this.rpcProcessor = rpcProcessor; 
 		this.docRootPath = docRootPath;
 	}
+	
+	@RequestMapping("/favicon.ico")
+	public Message favicon() throws IOException { 
+		Message res = new Message();
+		res.setStatus(200); 
+		
+		return res;
+	}
  
 	@RequestMapping("/")
 	public Message index() throws IOException { 
@@ -35,7 +43,9 @@ public class DocRender {
 			doc += rowDoc(m, rowIdx++);
 		}
 		doc += "</div>";
+		String js = fileKit.loadFile("zbus.js");
 		model.put("content", doc); 
+		model.put("zbusjs", js); 
 		String urlPrefix = docRootPath;
 		if(urlPrefix.endsWith("/")) {
 			urlPrefix = urlPrefix.substring(0, urlPrefix.length()-1);

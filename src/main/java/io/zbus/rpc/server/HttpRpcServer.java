@@ -2,6 +2,7 @@ package io.zbus.rpc.server;
 
 import java.io.IOException;
 
+import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
@@ -40,6 +41,10 @@ public class HttpRpcServer extends HttpWsServer {
 				throw new IllegalStateException("Not support message type");
 			}
 			request = (Message) msg;  
+			
+			if(Protocol.PING.equals(request.getHeader(Protocol.CMD))) {
+				return; //ignore
+			}
 			Message response = new Message();
 			processor.process(request, response);
 			if(response.getStatus() == null) {
