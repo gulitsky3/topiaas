@@ -138,7 +138,7 @@ public class HttpProxy implements Closeable {
 					} 
 					
 					try {
-						if(connectionOk) {
+						if(connectionOk) { 
 							response = proxyClient.request(request, timeoutInSeconds, TimeUnit.SECONDS);
 						}
 						//TODO

@@ -50,15 +50,17 @@
 		<exposeHeaders></exposeHeaders>
 	</cors>
 	<!-- 
+	
 	<httpProxy>
 		<proxy>
 			<location>/nginx</location>
 			<backend>http://111.230.136.74:15555/nginx</backend>
 		</proxy>
 	</httpProxy>
-	 -->
+	-->
+	 
  	
- 	<staticFileDir cached="false">static</staticFileDir>     
+ 	<staticFileDir cached="false">../static</staticFileDir>     
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   
 	<mqDbUrl></mqDbUrl>   
 	<maxSocketCount>102400</maxSocketCount>   

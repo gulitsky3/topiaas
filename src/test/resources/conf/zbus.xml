@@ -52,8 +52,8 @@
 	
 	<httpProxy>
 		<proxy>
-			<location>/nginx</location>
-			<backend>http://111.230.136.74:15555/nginx</backend>
+			<location>/f5query</location>
+			<backend>http://mw.cmft.com:8080/f5query</backend>
 		</proxy>
 	</httpProxy>
  	
