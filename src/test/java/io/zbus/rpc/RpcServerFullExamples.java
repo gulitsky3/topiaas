@@ -51,8 +51,7 @@ public class RpcServerFullExamples {
 		value.put("key2", "hi");
 		return value;
 	} 
-	
-	
+	 
 	@Route("/showUpload")
 	public Message showUpload() { 
 		return fileKit.render("page/upload.html"); 
