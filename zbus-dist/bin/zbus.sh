@@ -1,7 +1,7 @@
 #/usr/bin
 #cat zbus.sh | col -b > zbus2.sh  ==> fix win=>lin
 if [ -z ${JAVA_HOME} ]; then
-JAVA_HOME=/apps/jdk7
+JAVA_HOME=/apps/jdk
 fi
 ZBUS_HOME=../
 JAVA_OPTS="-Dfile.encoding=UTF-8 -server -Xms64m -Xmx1024m -XX:+UseParallelGC"
