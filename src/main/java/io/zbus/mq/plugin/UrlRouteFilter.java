@@ -41,6 +41,8 @@ public class UrlRouteFilter implements Filter {
 	
 	@Override
 	public boolean doFilter(Message req, Message res) { 
+		String cmd = req.getHeader(Protocol.CMD);
+		if(cmd != null) return true; //cmd 
 		String url = req.getUrl();
 		if(url == null) return true;      
 		
