@@ -1,4 +1,4 @@
-package io.zbus.rpc.spring;
+package io.zbus.rpc.biz;
 
 import java.util.HashMap;
 import java.util.List;
@@ -6,24 +6,26 @@ import java.util.Map;
 
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import io.zbus.rpc.Template;
+import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Route;
-import io.zbus.rpc.biz.HelpTopic;
+import io.zbus.rpc.biz.model.HelpTopic;
 import io.zbus.transport.Message;
 
-public class RpcServerSpring {
+
+@Route("/tpl")
+@Filter("admin")
+public class TemplateExample {
 	@Autowired
 	Template template;
 	
 	@Autowired
 	SqlSession sqlSession; 
 	
-	@Route("/")
-	public Message home(Message req) {
-		System.out.println(req);
-		
+	@Route("/") 
+	@Filter("logger")
+	public Message home(Message req) { 
 		Map<String, Object> data = new HashMap<String, Object>();
         data.put("user", "Big Joe");   
         Map<String, Object> product = new HashMap<>();
@@ -36,11 +38,5 @@ public class RpcServerSpring {
 	
 	public List<HelpTopic> db(){ 
 		return sqlSession.selectList("io.zbus.rpc.biz.db.test"); 
-	} 
-	
-	@SuppressWarnings("resource")
-	public static void main(String[] args) throws Exception {  
-		new ClassPathXmlApplicationContext("rpc/spring-server-remote.xml");      
-	}
-
+	}   
 }

@@ -10,6 +10,6 @@
 		<setting name="useGeneratedKeys" value="true"/>
 	</settings> 
 	<typeAliases>
-		<package name="io.zbus.rpc.biz"/>
+		<package name="io.zbus.rpc.biz.model"/>
 	</typeAliases>
 </configuration> 

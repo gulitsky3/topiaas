@@ -3,6 +3,9 @@ package io.zbus.rpc.biz;
 import java.util.List;
 import java.util.Map;
 
+import io.zbus.rpc.biz.model.MyEnum;
+import io.zbus.rpc.biz.model.Order;
+import io.zbus.rpc.biz.model.User;
 import io.zbus.transport.Message;
 
 public interface InterfaceExample{

@@ -18,37 +18,21 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	
 	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">  
 	  <constructor-arg ref="sqlSessionFactory"/>
-	</bean>  
+	</bean>   
 	
-	<bean id="db" class="org.mybatis.spring.mapper.MapperFactoryBean">
-	  <property name="mapperInterface" value="io.zbus.rpc.biz.DbInterface" />
-	  <property name="sqlSessionFactory" ref="sqlSessionFactory" /> 
-	</bean>     
-	
-	<bean id="template" class="io.zbus.rpc.Template">
+	<bean class="io.zbus.rpc.Template">
 		<property name="templateDir" value="static" />
 		<property name="defaultEncoding" value="UTF8" />
-		<property name="urlPrefix" value="/example" />
+		<property name="urlPrefix" value="/tpl" />
 	</bean>
 	
-	<bean id="sql" class="io.zbus.rpc.biz.DbExample"/>
-	 
-	<bean id="example" class="io.zbus.rpc.biz.InterfaceExampleImpl"/>
-	<bean id="spring" class="io.zbus.rpc.spring.RpcServerSpring"/>  
+	<bean class="io.zbus.rpc.biz.DbExample"/> 
+	<bean class="io.zbus.rpc.biz.InterfaceExampleImpl"/>  
+	<bean class="io.zbus.rpc.biz.TemplateExample"/>  
 	
-	
-	<bean id="rpcProcessor" class="io.zbus.rpc.RpcProcessor" > 
-		<property name="docUrl" value="/"/>  
-		<property name="moduleTable">
-			<map>
-				<entry key="/example">
-					<list>
-                        <ref bean="example"/>
-                        <ref bean="spring"/>
-                    </list>
-				</entry>
-				<entry key="/db" value-ref="db"/>  
-			</map>
-		</property>
-	</bean>  
+	<!-- Filter Config -->
+	<bean class="io.zbus.rpc.filer.GlobalBeforeFilter"/>  
+	<bean class="io.zbus.rpc.filer.AdminLoginFilter"/> 
+	<bean class="io.zbus.rpc.filer.SimpleUserLoginFilter"/> 
+	<bean class="io.zbus.rpc.filer.LoggerFilter"/> 
 </beans>

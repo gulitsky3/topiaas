@@ -24,7 +24,7 @@ import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
 import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcMethod.MethodParam;
-import io.zbus.rpc.annotation.Auth;
+import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.doc.DocRender;
@@ -43,8 +43,9 @@ public class RpcProcessor {
 	private boolean stackTraceEnabled = true;   
 	
 	private RpcFilter beforeFilter;
-	private RpcFilter afterFilter;
-	private RpcFilter authFilter;   
+	private RpcFilter afterFilter; 
+	
+	private Map<String, RpcFilter> filterTable = new HashMap<>(); //RpcFilter table referred by key
 	
 	public RpcProcessor mount(String urlPrefix, Object service) { 
 		return mount(urlPrefix, service, true, true, true);
@@ -68,12 +69,18 @@ public class RpcProcessor {
 				service = ((Class<?>)service).newInstance();
 			} 
 			
-			Method[] methods = service.getClass().getMethods();
-			boolean classAuthEnabled = defaultAuth;
-			Auth classAuth = service.getClass().getAnnotation(Auth.class);
-			if(classAuth != null) {
-				classAuthEnabled = !classAuth.exclude();
+			List<RpcFilter> classFiltersIncluded = new ArrayList<>();  
+			Filter filter = service.getClass().getAnnotation(Filter.class); 
+			if(filter != null) {
+				for(String name : filter.value()) {
+					RpcFilter rpcFilter = filterTable.get(name);
+					if(rpcFilter != null) {
+						classFiltersIncluded.add(rpcFilter);
+					}
+				}
 			}
+			
+			Method[] methods = service.getClass().getMethods(); 
 			
 			for (Method m : methods) {
 				if (m.getDeclaringClass() == Object.class) continue;  
@@ -101,15 +108,26 @@ public class RpcProcessor {
 					if(urlPath != null) {
 						info.urlPath = HttpKit.joinPath(urlPrefix, urlPath);
 					}
-				} 
-				
-				Auth auth = m.getAnnotation(Auth.class);
-				boolean authRequired = classAuthEnabled;
-				if(auth != null) {
-					authRequired = !auth.exclude();
+				}    
+				info.filters.addAll(classFiltersIncluded);
+				filter = m.getAnnotation(Filter.class);
+				if(filter != null) {
+					for(String name : filter.value()) {
+						RpcFilter rpcFilter = filterTable.get(name);
+						if(rpcFilter != null) {
+							if(!info.filters.contains(rpcFilter)) {
+								info.filters.add(rpcFilter);
+							}
+						}
+					}
+					for(String name : filter.exclude()) {
+						RpcFilter rpcFilter = filterTable.get(name);
+						if(rpcFilter != null) {
+							info.filters.remove(rpcFilter);
+						}
+					}
 				}
-				info.authRequired = authRequired;
-
+				
 				m.setAccessible(true);  
 				 
 				for (Class<?> t : m.getParameterTypes()) {
@@ -372,11 +390,10 @@ public class RpcProcessor {
 		
 		Object[] params = target.params; 
 		MethodInstance mi = target.methodInstance; 
-		//Authentication step in if required
-		if(authFilter != null && mi.info.authRequired) { 
-			boolean next = authFilter.doFilter(req, response);
+		for(RpcFilter filter : mi.info.filters) {
+			boolean next = filter.doFilter(req, response);
 			if(!next) return;
-		}  
+		} 
 		
 		Object data = null;
 		if(mi.reflectedMethod != null) {
@@ -513,12 +530,7 @@ public class RpcProcessor {
 	public RpcProcessor setAfterFilter(RpcFilter afterFilter) {
 		this.afterFilter = afterFilter;
 		return this;
-	} 
-
-	public RpcProcessor setAuthFilter(RpcFilter authFilter) {
-		this.authFilter = authFilter;
-		return this;
-	} 
+	}  
 
 	public boolean isStackTraceEnabled() {
 		return stackTraceEnabled;
@@ -549,7 +561,15 @@ public class RpcProcessor {
 				mount(e.getKey(), svc);
 			}
 		}
-	}   
+	}  
+	
+	public Map<String, RpcFilter> getFilterTable() {
+		return filterTable;
+	}
+	
+	public void setFilterTable(Map<String, RpcFilter> filterTable) {
+		this.filterTable = filterTable;
+	}
 	
 	public String getDocUrl() {
 		return docUrl;

@@ -9,16 +9,20 @@ import java.util.Random;
 
 import com.alibaba.fastjson.JSON;
 
-import io.zbus.rpc.annotation.Auth;
+import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
+import io.zbus.rpc.biz.model.MyEnum;
+import io.zbus.rpc.biz.model.Order;
+import io.zbus.rpc.biz.model.User;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http; 
 
-@Auth(exclude=true)
+@Route("/example")
+@Filter("logger")
 public class InterfaceExampleImpl implements InterfaceExample{
 	
-	@Auth(exclude=false)
+	@Filter(exclude="logger")
 	public String echo(String string) { 
 		return string;
 	}

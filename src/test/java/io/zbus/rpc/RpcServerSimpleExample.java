@@ -3,16 +3,20 @@ package io.zbus.rpc;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.zbus.rpc.annotation.Filter;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 
+@Route(value="/")
+@Filter("login")
 public class RpcServerSimpleExample {    
 	
 	public int plus(int a, int b) {
 		return a+b;
 	}  
 	
+	@Filter(exclude = "login")
 	public Map<String, Object> p(@Param("name") String name, @Param("age")int age) {
 		Map<String, Object> value = new HashMap<>();
 		value.put("name", name);
@@ -41,7 +45,7 @@ public class RpcServerSimpleExample {
 	
 	 
 	@SuppressWarnings("resource")
-	public static void main(String[] args) throws Exception {    
+	public static void main(String[] args) throws Exception {     
 		RpcProcessor p = new RpcProcessor();    
 		p.mount("/", RpcServerSimpleExample.class);      
 		
