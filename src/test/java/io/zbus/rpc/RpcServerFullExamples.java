@@ -8,6 +8,7 @@ import io.zbus.mq.MqServer;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
+import io.zbus.rpc.biz.model.User;
 import io.zbus.transport.Message;
 
 public class RpcServerFullExamples {  
@@ -25,6 +26,11 @@ public class RpcServerFullExamples {
 		value.put("key", System.currentTimeMillis());
 		return value;
 	}
+	
+	
+	public Object p(User p) {
+		return p;
+	}
 	 
 	/**
 	 * Example of returning HTTP message type
@@ -36,6 +42,16 @@ public class RpcServerFullExamples {
 		res.setStatus(200);
 		res.setHeader("content-type", "text/html; charset=utf8"); 
 		res.setBody("<h1>java home page</h1>");
+		
+		return res;
+	}  
+	
+	
+	public Message test2() { 
+		Message res = new Message();
+		res.setStatus(200);
+		res.setHeader("Content-Type", "application/json; charset=utf-8"); 
+		res.setBodyString("test");
 		
 		return res;
 	}  

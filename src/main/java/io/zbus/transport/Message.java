@@ -58,7 +58,10 @@ public class Message {
 	protected Integer status; //null: request, otherwise: response  
 	
 	protected TreeMap<String, Object> headers = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
-	protected Object body;  
+	protected Object body; 
+	
+	@JSONField(serialize=false)
+	private boolean bodyAsRawString = false;
 	
 	@JSONField(serialize=false)
 	private Object context;
@@ -86,7 +89,8 @@ public class Message {
 		this.method = msg.method;
 		this.status = msg.status; 
 		this.headers = msg.headers;
-		this.body = msg.body;
+		this.body = msg.body; 
+		this.bodyAsRawString = msg.bodyAsRawString;
 	}  
 	
 	public String getUrl(){
@@ -188,7 +192,12 @@ public class Message {
 	
 	public void setBody(Object body) { 
 		this.body = body; 
-	}  
+	}   
+	
+	public void setBodyString(String body) { 
+		this.body = body; 
+		this.bodyAsRawString = true;
+	}   
 	 
 	
 	public Object getParam(String key) {
@@ -348,6 +357,11 @@ public class Message {
 		this.context = context;
 	}
 	
+	@JSONField(deserialize=false, serialize=false)
+	public boolean isBodyAsRawString() {
+		return bodyAsRawString;
+	}
+	
 	@Override
 	public String toString() {
 		JSONObject json = new JSONObject();
@@ -388,7 +402,7 @@ public class Message {
 		json.put("status", this.status);
 		json.put("url", this.url);
 		json.put("method", this.method);
-		json.put("headers", this.headers);
+		json.put("headers", this.headers); 
 		json.put("body", this.body);
 		 
 		return JsonKit.toJSONString(json, prettyFormat);

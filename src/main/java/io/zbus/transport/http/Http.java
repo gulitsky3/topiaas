@@ -1,5 +1,6 @@
 package io.zbus.transport.http;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +38,11 @@ public class Http {
 		}  
 		
 		if(contentType != null && contentType.startsWith("application/json")) {
-			body = JsonKit.toJSONBytes(msg.getBody(), charset);
+			if(msg.isBodyAsRawString() && msg.getBody() != null && msg.getBody() instanceof String) { //body is raw string
+				body = ((String)msg.getBody()).getBytes(Charset.forName(charset));
+			} else {
+				body = JsonKit.toJSONBytes(msg.getBody(), charset);
+			}
 		}  else {
 			if(bodyObj != null) {
 				if(bodyObj instanceof byte[]) { 
