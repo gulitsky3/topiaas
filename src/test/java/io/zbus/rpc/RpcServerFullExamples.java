@@ -51,7 +51,7 @@ public class RpcServerFullExamples {
 		Message res = new Message();
 		res.setStatus(200);
 		res.setHeader("Content-Type", "application/json; charset=utf-8"); 
-		res.setBodyString("test");
+		res.setBody("test");
 		
 		return res;
 	}  

@@ -13,9 +13,8 @@ import io.zbus.rpc.annotation.FilterType;
 import io.zbus.rpc.annotation.Route;
 
 public class Spring {   
-	
-	@SuppressWarnings("resource")
-	public static void run(String xmlConfig) {  
+	 
+	public static ApplicationContext run(String xmlConfig) {  
 		ApplicationContext ctx = new ClassPathXmlApplicationContext(xmlConfig);    
 		RpcProcessor rpcProcessor = null;
 		try {
@@ -80,5 +79,6 @@ public class Spring {
 		} finally {
 			rpcServer.start();
 		}
+		return ctx;
 	}
 }
