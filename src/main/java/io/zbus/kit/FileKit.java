@@ -205,6 +205,7 @@ public class FileKit {
 		}  
 		return res;
 	}
+	
 	public void render(Message res, String resource) {
 		render(res, resource, new HashMap<>());
 	}

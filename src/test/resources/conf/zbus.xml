@@ -43,6 +43,7 @@
 	</monitor>  
  	
 	<!-- MQ location configure -->
+	<staticFileDir cached="false">../static</staticFileDir>    
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   
 	<mqDbUrl></mqDbUrl>   
 	<maxSocketCount>102400</maxSocketCount>   

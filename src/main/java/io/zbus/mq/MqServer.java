@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.handler.ssl.SslContext;
 import io.zbus.kit.ConfigKit;
+import io.zbus.kit.StrKit;
 import io.zbus.mq.MqServerConfig.ServerConfig;
 import io.zbus.rpc.RpcProcessor;
+import io.zbus.rpc.StaticResource;
 import io.zbus.transport.Ssl;
 import io.zbus.transport.http.HttpWsServer; 
 
@@ -153,7 +155,16 @@ public class MqServer extends HttpWsServer {
 		
 		final MqServer server;
 		try{
-			server = new MqServer(configFile);
+			MqServerConfig config = new MqServerConfig(configFile);
+			server = new MqServer(config);
+			if(!StrKit.isEmpty(config.getStaticFileDir())) {
+				RpcProcessor rpcProcessor = new RpcProcessor();
+				StaticResource resource = new StaticResource();
+				resource.setBasePath(config.getStaticFileDir());
+				resource.setCacheEnabled(config.isStaticFileCacheEnabled());
+				rpcProcessor.mount("/", resource);
+				server.setRpcProcessor(rpcProcessor);
+			}
 			server.start(); 
 		} catch (Exception e) { 
 			e.printStackTrace(System.err);

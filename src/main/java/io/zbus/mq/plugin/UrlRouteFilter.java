@@ -8,8 +8,7 @@ import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
-public class UrlRouteFilter implements Filter {
-	private boolean urlMatchLocalFirst = false; 
+public class UrlRouteFilter implements Filter { 
 	private MqManager mqManager;
 	private FileKit fileKit; 
 	private MqServerAdaptor mqServerAdaptor; 
@@ -18,8 +17,7 @@ public class UrlRouteFilter implements Filter {
 	public void init(MqServerAdaptor mqServerAdaptor) {
 		this.mqServerAdaptor = mqServerAdaptor;
 		this.mqManager = mqServerAdaptor.getMqManager(); 
-		this.fileKit = new FileKit(mqServerAdaptor.getConfig().fileCacheEnabled);
-		this.urlMatchLocalFirst = mqServerAdaptor.getConfig().urlMatchLocalFirst; 
+		this.fileKit = new FileKit(mqServerAdaptor.getConfig().isStaticFileCacheEnabled()); 
 	}
 	 
 	private String match(String url) {
@@ -41,17 +39,7 @@ public class UrlRouteFilter implements Filter {
 	@Override
 	public boolean doFilter(Message req, Message res) { 
 		String url = req.getUrl();
-		if(url == null) return true;    
-		
-		RpcProcessor rpcProcessor = mqServerAdaptor.getRpcProcessor(); 
-		if(urlMatchLocalFirst) {
-			if(rpcProcessor != null) {
-				if(rpcProcessor.matchUrl(url)) {  
-					rpcProcessor.process(req, res); 
-					return false;
-				} 
-			} 
-		}
+		if(url == null) return true;      
 		
 		String mq = match(url); 
 		if(mq != null) {
@@ -66,14 +54,11 @@ public class UrlRouteFilter implements Filter {
 			return true;
 		} 
 		
-		if(!urlMatchLocalFirst) {
-			if(rpcProcessor != null) {
-				if(rpcProcessor.matchUrl(url)) {  
-					rpcProcessor.process(req, res); 
-					return false;
-				} 
-			} 
-		} 
+		RpcProcessor rpcProcessor = mqServerAdaptor.getRpcProcessor();  
+		if(rpcProcessor != null) {
+			rpcProcessor.process(req, res); 
+			return false;
+		}  
 		 
 		if("/".equals(url)) {  
 			fileKit.render(res, "static/index.html");   

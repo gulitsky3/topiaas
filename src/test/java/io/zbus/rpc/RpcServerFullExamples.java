@@ -96,12 +96,7 @@ public class RpcServerFullExamples {
 		spec.addParam(Integer.class, "age"); 
 		
 		spec.returnType = Map.class.getName(); 
-		p.mount(spec, new GenericService());   
-		
-		//4) Enable doc on methods, optional
-		p.setDocUrl("/"); //serve as home page at your service
-		p.mountDoc();
-		 
+		p.mount(spec, new GenericService());    
 		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 

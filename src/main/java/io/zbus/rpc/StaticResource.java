@@ -28,11 +28,14 @@ public class StaticResource {
 		Message res = new Message();
 		
 		UrlInfo info = HttpKit.parseUrl(req.getUrl());
-		String file = HttpKit.joinPath(basePath ,info.urlPath );
-		if(!new File(basePath).isAbsolute()) {
-			file = file.substring(1); //remove first /
-		} 
-		
+		String urlFile = info.urlPath;
+		if(urlFile == null) { //missing replace with default
+			urlFile = "index.html";
+		}
+		//String file = HttpKit.joinPath(basePath ,urlFile); //TODO security issue
+		File fullPath = new File(basePath, urlFile);
+		String file = fullPath.getPath();
+		 
 		String contentType = HttpKit.contentType(file);
 		if(contentType == null) {
 			contentType = "application/octet-stream";
@@ -50,7 +53,7 @@ public class StaticResource {
 		} catch (IOException e) {
 			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
-			res.setBody(info.urlPath + " Not Found");
+			res.setBody(urlFile + " Not Found");
 		}  
 		return res;
 	}
