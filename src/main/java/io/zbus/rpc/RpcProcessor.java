@@ -26,14 +26,12 @@ import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
 public class RpcProcessor {
-	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);  
-	//2 addressing paths: 1) REST, from URL path  2) RPC, {module: xx,  method: xx }
-	protected Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();             //path => MethodInstance 
-	protected Map<String, Map<String, MethodInstance>> module2MethodTable = new HashMap<>(); //module =>{method => MethodInstance}
+	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
+	protected Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance  
 	
 	protected String docUrlPrefix = "/";
 	protected boolean docEnabled = true; 
-	protected String docModule = "index";
+	protected String docModule = "";
 	protected boolean docAuthRequired = false;
 	
 	protected boolean stackTraceEnabled = true; 
@@ -89,6 +87,7 @@ public class RpcProcessor {
 				
 				RpcMethod info = new RpcMethod();
 				String methodName =  m.getName();
+				//default path
 				String urlPath = HttpKit.joinPath(module, methodName);
 				
 				RequestMapping p = m.getAnnotation(RequestMapping.class);
@@ -109,8 +108,7 @@ public class RpcProcessor {
 				m.setAccessible(true);
 				
 				
-				info.urlPath = urlPath;
-				info.module = module;
+				info.setUrlPath(urlPath); 
 				info.method = methodName;
 				info.authRequired = authRequired;
 				info.docEnabled = enableDoc;
@@ -151,9 +149,9 @@ public class RpcProcessor {
 	
 	public RpcProcessor addMethod(MethodInstance mi) { 
 		RpcMethod spec = mi.info;
-		String urlPath = spec.urlPath;
+		String urlPath = spec.getUrlPath();
 		if(urlPath == null) {
-			urlPath = HttpKit.joinPath(spec.module, spec.method);;
+			throw new IllegalArgumentException("urlPath can not be null");
 		}   
 		
 		boolean exists = this.urlPath2MethodTable.containsKey(urlPath);
@@ -166,27 +164,6 @@ public class RpcProcessor {
 			}
 		} else {
 			this.urlPath2MethodTable.put(urlPath, mi); 
-		}
-		String module = spec.module;
-		if(module == null) module = "/";
-		
-		Map<String, MethodInstance> methodTable = this.module2MethodTable.get(module);
-		if(methodTable == null) {
-			methodTable = new HashMap<>();
-			this.module2MethodTable.put(module, methodTable);
-		}
-		
-		String methodName = spec.method;
-		exists = methodTable.containsKey(methodName);
-		if(exists) { 
-			if(overrideMethod) {
-				logger.warn(String.format("module=%s, method=%s overridden", module, methodName));
-				this.urlPath2MethodTable.put(urlPath, mi); 
-			} else { 
-				logger.warn(String.format("module=%s, method=%s exists, new ignored", module, methodName));
-			} 
-		} else {
-			methodTable.put(methodName, mi); 
 		} 
 		return this;
 	} 
@@ -210,28 +187,14 @@ public class RpcProcessor {
 		return this;
 	}  
 	
-	public RpcProcessor removeMethod(String path) { 
-		MethodInstance mi = this.urlPath2MethodTable.get(path);  
-		if(mi != null) { 
-			removeMethod(mi.info.module, mi.info.method);
-		} 
+	public RpcProcessor removeMethod(String urlPath) { 
+		this.urlPath2MethodTable.remove(urlPath);  
 		return this;
 	} 
 	
 	public RpcProcessor removeMethod(String module, String method) {  
-		Map<String, MethodInstance> table = this.module2MethodTable.get(module);
-		if(table == null) {
-			String path = HttpKit.joinPath(module, method);
-			this.urlPath2MethodTable.remove(path);  
-			return this;
-		}
-		MethodInstance mi = table.remove(method);
-		if(table.isEmpty()) {
-			this.module2MethodTable.remove(module);
-		}
-		if(mi != null && mi.info.urlPath != null) {
-			this.urlPath2MethodTable.remove(mi.info.urlPath);  
-		}
+		String urlPath = HttpKit.joinPath(module, method);
+		removeMethod(urlPath);
 		return this;
 	}  
 	
@@ -315,49 +278,7 @@ public class RpcProcessor {
 		public MethodInstance methodInstance;
 		public Object[] params;
 	}
-	
-	
-	@SuppressWarnings("unchecked")
-	private MethodTarget findMethodByRpcFormat(Message req, Message response) { 
-		Object body = req.getBody();
-		if(body == null) {
-			reply(response, 400, "Message body missing in RPC request"); 
-			return null;
-		}
-		Map<String, Object> reqBody = null;
-		try {
-			reqBody = JsonKit.convert(body,Map.class);
-		}catch (Exception e) { 
-			reply(response, 400, "Message body should be RPC request format"); 
-		}
-		
-		String module = (String)reqBody.get(Protocol.MODULE);  
-		String method = (String)reqBody.get(Protocol.METHOD);
-		if(module == null) module = "index";
-		if(method == null) method = "index";
-		
-		Object[] params = JsonKit.getArray(reqBody, Protocol.PARAMS);
-		if(params == null) {
-			params = new Object[0];
-		} 
-		
-		Map<String, MethodInstance> table = this.module2MethodTable.get(module);
-		if(table == null) {
-			reply(response, 404, String.format("module=%s Not Found", module, method)); 
-			return null;
-		} 
-		MethodInstance mi = table.get(method);
-		if(mi == null) {
-			reply(response, 404, String.format("module=%s, method=%s Not Found", module, method)); 
-			return null;
-		}  
-		
-		MethodTarget target = new MethodTarget();
-		target.methodInstance = mi;
-		target.params = params;
-		return target;
-	}
-	
+	 
 	private boolean httpMethodMatached(Message req, RequestMapping anno) { 
 		if(anno.method().length == 0) {
 			return true;
@@ -422,13 +343,13 @@ public class RpcProcessor {
 	
 	@SuppressWarnings("unchecked")
 	private void invoke0(Message req, Message response) throws Exception {    
-		String url = req.getUrl();  
-		MethodTarget target = null; 
-		if(url == null) { //match by Message body
-			target = findMethodByRpcFormat(req, response); 
-		} else { //match by URL
-			target = findMethodByUrl(req, response); 
-		} 
+		String url = req.getUrl();   
+		if(url == null) { 
+			reply(response, 400, "url required");
+			return;
+		}  
+		
+		MethodTarget target = findMethodByUrl(req, response); 
 		if(target == null) return;   
 		
 		Object[] params = target.params; 
@@ -504,10 +425,7 @@ public class RpcProcessor {
 		DocRender render = new DocRender(this, docUrlPrefix); 
 		if(!this.urlPath2MethodTable.containsKey(HttpKit.joinPath(docModule, ""))) {
 			addModule(docModule, render, false, false);
-		} 
-		if(!this.urlPath2MethodTable.containsKey("/")) {
-			addModule("", render, false, false);
-		} 
+		}  
 		return this;
 	}   
 
@@ -579,13 +497,11 @@ public class RpcProcessor {
 	
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();
-		TreeMap<String, Map<String, MethodInstance>> methods = new TreeMap<>(this.module2MethodTable);
-		Iterator<Entry<String, Map<String, MethodInstance>>> iter = methods.entrySet().iterator();
+		TreeMap<String, MethodInstance> methods = new TreeMap<>(this.urlPath2MethodTable);
+		Iterator<Entry<String, MethodInstance>> iter = methods.entrySet().iterator();
 		while(iter.hasNext()) {
-			TreeMap<String, MethodInstance> objectMethods = new TreeMap<>(iter.next().getValue()); 
-			for(MethodInstance m : objectMethods.values()) { 
-				res.add(m.info);
-			}
+			MethodInstance mi = iter.next().getValue();
+			res.add(mi.info); 
 		} 
 		return res;
 	}
@@ -603,11 +519,8 @@ public class RpcProcessor {
 		public MethodInstance(RpcMethod info, MethodInvoker target) {
 			if(info.method == null) {
 				throw new IllegalArgumentException("method required");
-			}
-			this.info = info;
-			if(this.info.urlPath == null) {
-				this.info.urlPath = HttpKit.joinPath(info.module, info.method);
-			}
+			} 
+			this.info = info; 
 			this.target = target;
 		}
 		
@@ -617,10 +530,7 @@ public class RpcProcessor {
 			this.info = info; 
 			if(info.method == null) {
 				this.info.method = reflectedMethod.getName(); 
-			}
-			if(this.info.urlPath == null) {
-				this.info.urlPath = HttpKit.joinPath(info.module, info.method);
-			}
+			}  
 		} 
 	}
 }

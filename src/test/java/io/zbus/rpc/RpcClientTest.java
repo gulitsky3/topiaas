@@ -1,22 +1,16 @@
 package io.zbus.rpc;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.zbus.rpc.biz.InterfaceExample;
 import io.zbus.transport.Message;
 
 public class RpcClientTest { 
 	
 	public static void doTest(RpcClient rpc) throws Exception {    
-		//1) 原始的方法调用中的数据格式: {module: xx, method: xx, params: []}
-		Map<String, Object> data = new HashMap<>();
-		data.put("module", "/"); //可选
-		data.put("method", "plus");
-		data.put("params", new Object[] {1,2}); //可选，如果无参
-		
+		//1) 原始的方法调用中的数据格式 
 		Message req = new Message();
-		req.setBody(data); 
+		req.setUrl("/plus");
+		req.setBody(new Object[] {1,2}); //body as parameter array
+		
 		Message res = rpc.invoke(req); //同步调用
 		System.out.println(res);
 		

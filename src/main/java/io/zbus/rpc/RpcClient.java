@@ -4,9 +4,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.Map;
 
+import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Client;
 import io.zbus.transport.IoAdaptor;
@@ -79,14 +78,11 @@ public class RpcClient extends Client {
 			Object value = handleLocalMethod(proxy, method, args);
 			if (value != REMOTE_METHOD_CALL) return value; 
 			 
-			
-			Map<String, Object> data = new HashMap<>();
-			data.put(Protocol.MODULE, module);
-			data.put(Protocol.METHOD, method.getName());  
-			data.put(Protocol.PARAMS, args);
-			
+			 
+			String urlPath = HttpKit.joinPath(module, method.getName());
 			Message request = new Message();
-			request.setBody(data); //use body
+			request.setUrl(urlPath);
+			request.setBody(args); //use body
 			
 			Message resp = rpc.invoke(request);
 			return parseResult(resp, method.getReturnType());

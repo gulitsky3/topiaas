@@ -9,10 +9,5 @@ public interface Protocol {
 	public static final String ID        = "id";      // Message ID
 	
 	public static final String API_KEY   = "apiKey";
-	public static final String SIGNATURE = "signature";
-	
-	
-	public static final String MODULE    = "module"; 
-	public static final String METHOD    = "method";   
-	public static final String PARAMS    = "params";
+	public static final String SIGNATURE = "signature"; 
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.zbus.kit.FileKit;
+import io.zbus.kit.HttpKit;
 import io.zbus.rpc.RpcMethod;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.annotation.RequestMapping;
@@ -50,16 +51,12 @@ public class DocRender {
 	private String rowDoc(RpcMethod m, int idx) {  
 		String fmt = 
 				"<tr>" +   
-				"<td class=\"urlPath\"><a href=\"%s\">%s</a></td>" +
-				"<td class=\"module\">%s</td>" +
+				"<td class=\"urlPath\"><a href=\"%s\">%s</a></td>" + 
 				"<td class=\"returnType\">%s</td>" +  
 				"<td class=\"methodParams\"><code><strong><a href=\"%s\">%s</a></strong>(%s)</code>" +  
 				"</td>" + 
 				"</tr>"; 
-		String methodLink = m.urlPath;
-		if(!docRootPath.equals("/")) {
-		     methodLink = docRootPath + methodLink; 
-		}
+		String methodLink = HttpKit.joinPath(docRootPath, m.getUrlPath()); 
 		String method = m.method;
 		String paramList = "";
 		int size = m.paramNames.size();
@@ -80,7 +77,7 @@ public class DocRender {
 			paramList = paramList.substring(0, paramList.length()-2);
 		}    
 		
-		return String.format(fmt, methodLink, methodLink, m.module, m.returnType, methodLink, method,
+		return String.format(fmt, methodLink, methodLink, m.returnType, methodLink, method,
 				paramList);
 	} 
 	

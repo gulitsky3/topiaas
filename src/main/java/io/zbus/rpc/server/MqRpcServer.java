@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
 import io.zbus.mq.MqClient;
 import io.zbus.mq.MqServer;
@@ -72,7 +73,7 @@ public class MqRpcServer implements Closeable {
 				String prefix = "/"+mq;
 				if(url.startsWith(prefix)) {
 					url = url.substring(prefix.length());
-					if(!url.startsWith("/")) url = "/"+url;
+					url = HttpKit.joinPath("/", url); 
 					request.setUrl(url);
 				}
 			}

@@ -1,9 +1,7 @@
 package io.zbus.mq;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -17,7 +15,7 @@ import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.model.MessageQueue;
-import io.zbus.mq.model.Subscription; 
+import io.zbus.mq.model.Subscription;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
 import io.zbus.transport.Session;
@@ -101,8 +99,11 @@ public class MqServerAdaptor extends ServerAdaptor {
 		String url = msg.getUrl();
 		if(url == null) return; 
 		if(msg.getBody() != null) return;
-		
-		msg.setUrl(null);
+		//CMD and MQ populated in header, use header control, no need parse URL
+		if(msg.getHeader(Protocol.CMD) != null && msg.getHeader(Protocol.MQ) != null) {
+			return;
+		}
+		 
 		UrlInfo info = HttpKit.parseUrl(url);
 		if(info.path.size()==0) { 
 			for(Entry<String, String> e : info.params.entrySet()) {
@@ -117,39 +118,17 @@ public class MqServerAdaptor extends ServerAdaptor {
 			return;
 		}
 		
-		//Handle RPC protocol
+		//Assumed to be RPC
 		if(msg.getHeader(Protocol.CMD) == null) { // RPC assumed
 			msg.setHeader(Protocol.CMD, Protocol.PUB);
 			msg.setHeader(Protocol.ACK, false); //ACK should be disabled
-		}  
-		
-		int moduleIndex = 1;
-		int size = 3; 
-		Map<String, Object> req = new HashMap<String, Object>();
-		msg.setBody(req);
-		if(moduleIndex > 0) {
-			if (info.path.size() >= 1) {
-				msg.setHeader(Protocol.MQ, info.path.get(0)); 
+		}   
+		String mq = msg.getHeader(Protocol.MQ);
+		if(mq == null) {
+			if(info.path.size() > 0) {
+				msg.setHeader(Protocol.MQ, info.path.get(0));
 			}
-		}
-		if (info.path.size() > moduleIndex) {
-			req.put(io.zbus.rpc.Protocol.MODULE, info.path.get(moduleIndex));
-		}
-		if (info.path.size() > moduleIndex+1) {
-			req.put(io.zbus.rpc.Protocol.METHOD, info.path.get(moduleIndex+1));
-		}
-		
-		List<Object> params = new ArrayList<>(); 
-		if (info.path.size() > size) { 
-			req.put(io.zbus.rpc.Protocol.PARAMS, params);
-			for (int i = 0; i < info.path.size() - size; i++) {
-				params.add(info.path.get(size + i));
-			}
-		}
-		if(!info.params.isEmpty()) {
-			params.add(info.params); //kv params as last one
 		} 
-		req.put(io.zbus.rpc.Protocol.PARAMS, params.toArray()); 
 	} 
 	
 	
