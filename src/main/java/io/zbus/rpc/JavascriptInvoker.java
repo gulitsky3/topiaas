@@ -2,6 +2,7 @@ package io.zbus.rpc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -82,13 +83,16 @@ public class JavascriptInvoker {
 		}
 		
 		String method = info.pathList.get(info.pathList.size()-1); 
-		int idx = urlFile.lastIndexOf('/');
-		urlFile = urlFile.substring(0, idx);
+		urlFile = "";
+		for(int i=0;i<info.pathList.size()-1;i++) {
+			urlFile += info.pathList.get(i) + File.separator; 
+		}
+		urlFile = urlFile.substring(0, urlFile.length()-1); 
 		if(!urlFile.endsWith(".js")) {
 			urlFile += ".js";
 		}
 		File fullPath = new File(absoluteBasePath, urlFile); 
-		String file = fullPath.getPath();  
+		String file = fullPath.getPath(); 
 		String js = null;
 		try {
 			js = new String(fileKit.loadFileBytes(file));  
@@ -96,6 +100,7 @@ public class JavascriptInvoker {
 			Message res = new Message();
 			res.setStatus(404);
 			res.setBody(urlFile + " Not Found");
+			logger.info(file + " Not Found");
 			return res;
 		}
 		
