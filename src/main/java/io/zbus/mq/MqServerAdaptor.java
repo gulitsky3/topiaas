@@ -21,6 +21,7 @@ import io.zbus.mq.commands.RouteHandler;
 import io.zbus.mq.commands.SubHandler;
 import io.zbus.mq.commands.TakeHandler;
 import io.zbus.mq.plugin.DefaultUrlRouter;
+import io.zbus.mq.plugin.IpFilter;
 import io.zbus.mq.plugin.UrlRouter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
@@ -47,6 +48,8 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	private MqServerConfig config;
 	
 	private UrlRouter urlRouter;
+	private IpFilter sessionFilter;
+	
 	private FileKit fileKit;
 	
 	public MqServerAdaptor(MqServerConfig config) { 
@@ -93,6 +96,17 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		if(request.getHeader(Protocol.ID) == null) {
 			request.setHeader(Protocol.ID, StrKit.uuid());
 		}
+	}
+	
+	@Override
+	public void sessionCreated(Session sess) throws IOException { 
+		if(sessionFilter != null) {
+			if(!sessionFilter.doFilter(sess)) {
+				sess.close();
+				return;
+			}
+		}
+		super.sessionCreated(sess);
 	}
 	 
 	@Override

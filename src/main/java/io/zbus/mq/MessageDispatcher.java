@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.mq.model.MessageQueue;
 import io.zbus.mq.model.Subscription;
+import io.zbus.mq.plugin.MqMessageInterceptor;
 import io.zbus.transport.Message;
 import io.zbus.transport.Session;
 
@@ -25,6 +26,8 @@ public class MessageDispatcher {
 
 	//private int batchReadSize = 10;
 	private ExecutorService dispatchRunner = Executors.newFixedThreadPool(64);
+	
+	private MqMessageInterceptor beforeSub;
 
 	public MessageDispatcher(SubscriptionManager subscriptionManager, Map<String, Session> sessionTable) {
 		this.subscriptionManager = subscriptionManager;
@@ -76,6 +79,13 @@ public class MessageDispatcher {
 					}
 					if(message == null) return;
 					
+					if(beforeSub != null) { //intercept message before send out to subscribers
+						if(!beforeSub.intercept(message)) {
+							++index;
+							continue;
+						}
+					}
+					
 					loadbalanceTable.put(channel, ++index); 
 					String filter = (String) message.getHeader(Protocol.TAG);
 					if (sub.filters.isEmpty() || sub.filters.contains(filter)) {
@@ -115,5 +125,13 @@ public class MessageDispatcher {
 		
 		
 		sess.write(message); 
+	}
+
+	public MqMessageInterceptor getBeforeSub() {
+		return beforeSub;
+	}
+
+	public void setBeforeSub(MqMessageInterceptor beforeSub) {
+		this.beforeSub = beforeSub;
 	} 
 }
