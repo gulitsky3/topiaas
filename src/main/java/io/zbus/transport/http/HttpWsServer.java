@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -51,6 +52,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
+import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 import io.zbus.transport.Server;
@@ -168,6 +170,16 @@ public class HttpWsServer extends Server {
 				byte[] bytes = decodeWebSocketFrame(ctx, (WebSocketFrame)obj);
 				if(bytes != null) {//ws close may be null
 					Message msg = JsonKit.parseObject(bytes, Message.class);
+					if(!HttpKit.isText(msg.getHeader("content-type"))) {
+						if(msg.getBody() instanceof String) { //NOT TEXT data, but body String typed
+							try {
+								byte[] body = Base64.getDecoder().decode((String)msg.getBody());
+								msg.setBody(body);
+							}catch (Exception e) { 
+								//ignore
+							} 
+						}
+					}
 					if(msg != null){
 						out.add(msg);
 					}

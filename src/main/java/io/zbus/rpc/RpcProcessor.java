@@ -83,6 +83,9 @@ public class RpcProcessor {
 			}
 			
 			Method[] methods = service.getClass().getMethods(); 
+			Route r = service.getClass().getAnnotation(Route.class);
+			boolean defaultExcluded = false;
+			if(r != null) defaultExcluded = r.exclude();
 			
 			for (Method m : methods) {
 				if (m.getDeclaringClass() == Object.class) continue;  
@@ -102,6 +105,7 @@ public class RpcProcessor {
 				info.setReturnType(m.getReturnType());
 				
 				Route p = m.getAnnotation(Route.class);
+				if(p == null && defaultExcluded) continue;
 				if (p != null) { 
 					if (p.exclude()) continue; 
 					info.docEnabled = enableDoc && p.docEnabled();
@@ -332,15 +336,7 @@ public class RpcProcessor {
 		if(matched == null) {
 			reply(response, 404, String.format("URL=%s Not Found", url)); 
 			return null;
-		}
-		
-		if(length == 1) { //root
-			UrlInfo info = HttpKit.parseUrl(url);
-			if(info.pathList.size()>0) {
-				reply(response, 404, String.format("URL=%s Not Found", url)); 
-				return null; // root / should not with parameters
-			}
-		}
+		} 
 		
 		String urlPathMatched = matched.getKey();
 		
@@ -497,11 +493,16 @@ public class RpcProcessor {
 			}
 			
 			if(j >= params.length) { 
-				if(Map.class.isAssignableFrom(paramType) && target.queryMap != null) {
-					invokeParams[i] = convert(target.queryMap, paramType);   
+				if(target.queryMap != null) {
+					try {
+						invokeParams[i] = convert(target.queryMap, paramType); 
+					} catch (Exception e) {
+						//ignore
+					}
 				} else {
 					invokeParams[i] = null;
 				}
+				return;
 			} else { 
 				invokeParams[i] = convert(params[j++], paramType);   
 			}

@@ -90,6 +90,7 @@ public class HttpKit {
 		if(contentType.startsWith("text")) return true;
 		if(contentType.startsWith("application/json")) return true;
 		if(contentType.startsWith("application/javascript")) return true;
+		if(contentType.startsWith("application/xml")) return true;
 		return false;
 	}
 	 
@@ -100,6 +101,7 @@ public class HttpKit {
 		MIME_TYPES.put("css", "text/css"); 
 		MIME_TYPES.put("htm", "text/html"); 
 		MIME_TYPES.put("html", "text/html"); 
+		
 		MIME_TYPES.put("svg", "image/svg+xml"); 
 		MIME_TYPES.put("gif", "image/gif"); 
 		MIME_TYPES.put("jpeg", "image/jpeg"); 
