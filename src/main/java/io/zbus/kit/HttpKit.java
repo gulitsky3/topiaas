@@ -34,6 +34,18 @@ public class HttpKit {
 		public Map<String, String> params = new HashMap<String, String>(); 
 	} 
 	
+	public static String joinPath(String... paths) {
+		String url = "";
+		for(String p : paths) {
+			url += p;
+		} 
+		url = url.replaceAll("[/]+", "/");
+        if(url.endsWith("/") && url.length()>1) {
+        	url = url.substring(0, url.length()-1);
+        } 
+		return url;
+	}
+	
 	public static UrlInfo parseUrl(String url){
 		UrlInfo info = new UrlInfo();
 		if("/".equals(url) || StrKit.isEmpty(url)){

@@ -56,8 +56,15 @@ public class RpcProcessor {
 		return addModule(module, service, enableDoc, true);
 	} 
 	
+	@SuppressWarnings("unchecked")
 	public RpcProcessor addModule(String module, Object service, boolean defaultAuth, boolean enableDoc) {  
-		
+		if(service instanceof List) {
+			List<Object> svcList = (List<Object>)service;
+			for(Object svc : svcList) {
+				addModule(module, svc, defaultAuth, enableDoc);
+			}
+			return this;
+		}
 		if(module.startsWith("/")) {
 			module = module.substring(1);
 		}
@@ -264,7 +271,10 @@ public class RpcProcessor {
 			} 
 		} catch (Throwable e) {
 			logger.info(e.getMessage(), e);  
-			response.setBody(e.getMessage()); 
+			Object errorMsg = e.getMessage();
+			if(errorMsg == null) errorMsg = e.getClass().toString(); 
+			response.setBody(errorMsg);
+			//response.setBody(e); 
 			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			response.setStatus(500);
 		} finally {
@@ -407,8 +417,8 @@ public class RpcProcessor {
 		}
 		
 		Object body = req.getBody(); //assumed to be params 
-		if(body != null && body instanceof Object[]) {
-			params = (Object[])body;
+		if(body != null) {
+			params = JsonKit.convert(body, Object[].class); 
 		}   
 		if(params == null) { 
 			String subUrl = url.substring(urlPathMatched.length());
@@ -493,7 +503,11 @@ public class RpcProcessor {
 			if(!stackTraceEnabled) {
 				t.setStackTrace(new StackTraceElement[0]);
 			}
-			response.setBody(t.getMessage());
+			Object errorMsg = t.getMessage();
+			if(errorMsg == null) errorMsg = t.getClass().toString(); 
+			response.setBody(errorMsg);
+			
+			//response.setBody(t);
 			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			response.setStatus(500); 
 		}  

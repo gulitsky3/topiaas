@@ -59,6 +59,8 @@ public class JsonKit {
 		String jsonString = null;
 		if(json instanceof String) {
 			jsonString = (String)json;
+		} else if (json instanceof byte[]) {
+			return parseObject((byte[])json, clazz);
 		} else {
 			jsonString = JSON.toJSONString(json);
 		}

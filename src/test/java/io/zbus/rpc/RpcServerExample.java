@@ -29,7 +29,7 @@ public class RpcServerExample {
 	public static void main(String[] args) throws Exception {
 		
 		RpcProcessor p = new RpcProcessor();
-		p.setDocModule("m");
+		//p.setDocModule("m");
 		p.addModule(RpcServerExample.class); 
 		
 		RpcServer server = new RpcServer();      
