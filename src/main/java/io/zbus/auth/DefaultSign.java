@@ -8,7 +8,6 @@ import io.zbus.kit.CryptoKit;
 import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 import io.zbus.transport.Message;
-import io.zbus.transport.http.Http;
 
 public class DefaultSign implements RequestSign {   
 	
@@ -36,16 +35,13 @@ public class DefaultSign implements RequestSign {
     		} else if(f.equalsIgnoreCase("body")) {
     			Object body = request.getBody();
     			if(body != null) {
-    				if(body instanceof String) { //json body
-    					String contentType = request.getHeader(Http.CONTENT_TYPE);
-    			    	if(contentType != null && contentType.startsWith("application/json")) {
-    			    		try {
-    			    			body = JsonKit.parse((String)body);
-    			    		} catch (Exception e) {
-								//just ignore
-    			    			e.printStackTrace();
-							}
-    			    	}
+    				if(body instanceof String) { //json body 
+			    		try {
+			    			body = JsonKit.parse((String)body);
+			    		} catch (Exception e) {
+							//just ignore
+			    			e.printStackTrace();
+						} 
     				}
     				json.put("body", body);
     			} 
