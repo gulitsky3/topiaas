@@ -35,11 +35,11 @@ public class HttpKit {
 	} 
 	
 	public static String joinPath(String... paths) {
-		String url = "";
+		String url = "/";
 		for(String p : paths) {
 			url += p;
-		} 
-		url = url.replaceAll("[/]+", "/");
+		}   
+		url = url.replaceAll("[/]+", "/"); 
         if(url.endsWith("/") && url.length()>1) {
         	url = url.substring(0, url.length()-1);
         } 

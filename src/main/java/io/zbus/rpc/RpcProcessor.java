@@ -89,22 +89,15 @@ public class RpcProcessor {
 				
 				RpcMethod info = new RpcMethod();
 				String methodName =  m.getName();
-				String urlPath = path(module, methodName);
+				String urlPath = HttpKit.joinPath(module, methodName);
 				
 				RequestMapping p = m.getAnnotation(RequestMapping.class);
 				if (p != null) { 
 					if (p.exclude()) continue; 
 					
 					info.urlAnnotation = p;
-					urlPath = annoPath(p);  
-					//add module prefix
-					if(!urlPath.startsWith("/")) {
-						urlPath = "/"+urlPath;
-					}
-					urlPath = module + urlPath;
-					if(!urlPath.startsWith("/")) {
-						urlPath = "/"+urlPath;
-					}
+					urlPath = annoPath(p);   
+					urlPath = HttpKit.joinPath(module, urlPath); 
 				} 
 				
 				Auth auth = m.getAnnotation(Auth.class);
@@ -160,7 +153,7 @@ public class RpcProcessor {
 		RpcMethod spec = mi.info;
 		String urlPath = spec.urlPath;
 		if(urlPath == null) {
-			urlPath = path(spec.module, spec.method);;
+			urlPath = HttpKit.joinPath(spec.module, spec.method);;
 		}   
 		
 		boolean exists = this.urlPath2MethodTable.containsKey(urlPath);
@@ -202,7 +195,7 @@ public class RpcProcessor {
 		try {
 			Method[] methods = service.getClass().getMethods();
 			for (Method m : methods) {
-				String path = path(module, m.getName());
+				String path = HttpKit.joinPath(module, m.getName());
 				RequestMapping p = m.getAnnotation(RequestMapping.class);
 				if (p != null) {
 					if (p.exclude()) continue; 
@@ -228,7 +221,7 @@ public class RpcProcessor {
 	public RpcProcessor removeMethod(String module, String method) {  
 		Map<String, MethodInstance> table = this.module2MethodTable.get(module);
 		if(table == null) {
-			String path = path(module, method);
+			String path = HttpKit.joinPath(module, method);
 			this.urlPath2MethodTable.remove(path);  
 			return this;
 		}
@@ -245,13 +238,7 @@ public class RpcProcessor {
 	private String annoPath(RequestMapping p) {
 		if(p.path().length() == 0) return p.value();
 		return p.path();
-	}
-	 
-	private static String path(String module, String method) {
-		if(!module.startsWith("/")) module = "/"+module;
-		if(!module.endsWith("/")) module += "/";
-		return module + method;
-	}
+	} 
 	
 	public void process(Message req, Message response) {   
 		try {  
@@ -515,7 +502,7 @@ public class RpcProcessor {
 	
 	public RpcProcessor enableDoc() { 
 		DocRender render = new DocRender(this, docUrlPrefix); 
-		if(!this.urlPath2MethodTable.containsKey(path(docModule, ""))) {
+		if(!this.urlPath2MethodTable.containsKey(HttpKit.joinPath(docModule, ""))) {
 			addModule(docModule, render, false, false);
 		} 
 		if(!this.urlPath2MethodTable.containsKey("/")) {
@@ -619,7 +606,7 @@ public class RpcProcessor {
 			}
 			this.info = info;
 			if(this.info.urlPath == null) {
-				this.info.urlPath = path(info.module, info.method);
+				this.info.urlPath = HttpKit.joinPath(info.module, info.method);
 			}
 			this.target = target;
 		}
@@ -632,7 +619,7 @@ public class RpcProcessor {
 				this.info.method = reflectedMethod.getName(); 
 			}
 			if(this.info.urlPath == null) {
-				this.info.urlPath = path(info.module, info.method);
+				this.info.urlPath = HttpKit.joinPath(info.module, info.method);
 			}
 		} 
 	}
