@@ -211,15 +211,23 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			} 
 		} 
 		
-		Message res = fileKit.loadResource("static/index.html");
-		
-		if(res.getStatus() != 200) {
+		Message res = null;
+		if("/".equals(url)) { 
+			res = fileKit.loadResource("static/index.html"); 
+			if(res.getStatus() != 200) {
+				res = new Message();
+				res.setStatus(200);
+				res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+				res.setBody("<h1> Welcome to zbus</h1>"); 
+			} 
+			 
+		} else {
 			res = new Message();
-			res.setStatus(200);
+			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-			res.setBody("<h1> Welcome to zbus</h1>"); 
-		} 
-		sess.write(res); 
+			res.setBody(String.format("URL=%s Not Found", url));
+		}
+		sess.write(res);
 		return true; 
 	}
 	
