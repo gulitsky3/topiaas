@@ -34,10 +34,9 @@ public class RpcServerSpring {
 		return template.render("home.html", data); 
 	}   
 	
-	public List<HelpTopic> db(){
+	public List<HelpTopic> db(){ 
 		return sqlSession.selectList("io.zbus.rpc.biz.db.test"); 
-	}
-	
+	} 
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {  

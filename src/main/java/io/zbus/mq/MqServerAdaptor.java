@@ -134,6 +134,8 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			MsgKit.reply(req, 400, "json format required", sess); 
 			return;
 		}   
+		attachInfo(req, sess);  
+		
 		String cmd = req.getHeader(Protocol.CMD); 
 		
 		if(Protocol.PING.equals(cmd)) {
@@ -164,12 +166,14 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		for(Filter filter : this.filterList) {
 			boolean next = filter.doFilter(req, res);
 			if(!next) {
+				res.setHeader(Message.ID, req.getHeader(Message.ID));
+				if(config.verbose) { 
+					logger.info(sess.remoteAddress() + ":" + res); 
+				}  
 				sess.write(res);
 				return;
 			}
-		} 
-		
-		attachInfo(req, sess);  
+		}  
 		
 		cmd = req.removeHeader(Protocol.CMD); 
 		if (cmd == null) {

@@ -224,15 +224,14 @@ public class Http {
 	
 	private static void writeHttpLine(Message msg, OutputStream out) throws IOException{
 		if(msg.getStatus() != null){
-			String statusText = msg.getStatusText();
-			if(statusText == null) {
-				HttpResponseStatus s = HttpResponseStatus.valueOf(msg.getStatus());
-				if(s != null){
-					statusText = s.reasonPhrase();
-				} else {
-					statusText = "Unknown Status";
-				}
-			}
+			String statusText = "";
+			HttpResponseStatus s = HttpResponseStatus.valueOf(msg.getStatus());
+			if(s != null){
+				statusText = s.reasonPhrase();
+			} else {
+				statusText = "Unknown Status";
+			} 
+			
 			out.write(PREFIX);
 			out.write(String.format("%d", msg.getStatus()).getBytes());
 			out.write(BLANK);

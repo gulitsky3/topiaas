@@ -23,11 +23,13 @@
 package io.zbus.transport;
  
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
@@ -49,12 +51,12 @@ public class Message {
 	protected String url; 
 	protected String method;   
 	
-	protected Integer status; //null: request, otherwise: response 
-	protected String statusText;  
+	protected Integer status; //null: request, otherwise: response  
 	
 	protected Map<String, String> headers = new ConcurrentHashMap<String, String>(); 
 	protected Object body;  
 	
+	private Object context;
 	
 	//URL parser helper
 	private UrlInfo urlInfo;
@@ -71,8 +73,7 @@ public class Message {
 	public void replace(Message msg) {
 		this.url = msg.url;
 		this.method = msg.method;
-		this.status = msg.status;
-		this.statusText = msg.statusText;
+		this.status = msg.status; 
 		this.headers = msg.headers;
 		this.body = msg.body;
 	}  
@@ -91,15 +92,7 @@ public class Message {
 	
 	public Integer getStatus(){
 		return status;
-	} 
-	
-	public String getStatusText() {
-		return statusText;
-	}
-	
-	public void setStatusText(String statusText) {
-		this.statusText = statusText;
-	}
+	}  
 	
 	public String getMethod(){
 		return this.method;
@@ -176,8 +169,52 @@ public class Message {
 		return JsonKit.convert(value, clazz);
 	}
 	
+	@SuppressWarnings("unchecked")
+	public <T> T getContext() {
+		return (T)context;
+	}
+	
+	public void setContext(Object context) {
+		this.context = context;
+	}
+	
 	@Override
 	public String toString() {
-		return JSON.toJSONString(this, true); 
+		JSONObject json = new JSONObject();
+		json.put("status", this.status);
+		json.put("url", this.url);
+		json.put("method", this.method);
+		json.put("headers", this.headers);
+		json.put("body", this.body);
+		
+		return toJSONString(true);
+	}
+	
+	public String toJSONString() {
+		return toJSONString(false);
+	}
+	
+	public String toJSONString(boolean prettyFormat) {
+		JSONObject json = new JSONObject();
+		json.put("status", this.status);
+		json.put("url", this.url);
+		json.put("method", this.method);
+		json.put("headers", this.headers);
+		json.put("body", this.body);
+		
+		return JSON.toJSONString(json, prettyFormat);
+	}
+	
+	public byte[] toJSONBytes() {
+		return toJSONString().getBytes();
+	}
+	
+	public byte[] toJSONBytes(String charset) {
+		String s = toJSONString();
+		try {
+			return s.getBytes(charset);
+		} catch (UnsupportedEncodingException e) { 
+			return s.getBytes();
+		}
 	}
 }
