@@ -21,6 +21,12 @@ import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.zbus.kit.FileKit;
 
+/**
+ * SSL helper methods for creating <code>SslContext</code>, such as from public/private key pairs.
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class Ssl {
 	private static final Logger log = LoggerFactory.getLogger(Ssl.class);
 	private static Map<String, SslContext> sslContextCache = new ConcurrentHashMap<>();

@@ -20,6 +20,13 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 
+/**
+ * 
+ * HTTP conversion for <code>Message</code>.
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class Http {
 	private static final Logger logger = LoggerFactory.getLogger(Http.class);   
 	public static final String URL     = "url";

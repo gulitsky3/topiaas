@@ -30,14 +30,10 @@ public interface Protocol {
 	public static final String SOURCE         = "source"; 
 	public static final String TARGET         = "target"; 
 	public static final String MQ_TYPE        = "mqType";  
-	public static final String MQ_MASK        = "mqMask"; 
-	public static final String MQ_SIZE        = "mqSize";
+	public static final String MQ_MASK        = "mqMask";  
 	public static final String CHANNEL_MASK   = "channelMask"; 
 	public static final String WINDOW         = "window";
-	public static final String ACK            = "ack"; 
-	public static final String PAGE           = "page";
-	public static final String PAGE_SIZE      = "pageSize";
-	public static final String BODY_HTTP      = "bodyHttp"; //body  http
+	public static final String ACK            = "ack";  
 	
 	//Parameter mqType values
 	public static final String MEMORY  = "memory";  

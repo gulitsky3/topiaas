@@ -53,6 +53,15 @@ import io.zbus.transport.Message;
 import io.zbus.transport.Server;
 import io.zbus.transport.http.Http.FileForm; 
 
+/**
+ * 
+ * Support both HTTP and Websocket in one port -- unified port.
+ * 
+ * For HTTP protocol, it also support file uploading forms.
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class HttpWsServer extends Server { 
 	public HttpWsServer() {
 		codec(p -> {

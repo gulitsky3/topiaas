@@ -7,6 +7,14 @@ import io.zbus.auth.RequestSign;
 import io.zbus.transport.http.WebsocketClient;
 import io.zbus.transport.inproc.InprocClient;
 
+/**
+ * 
+ * Decoration pattern on AbastractClient, making Client's sub class type adaptive to all real clients such as
+ * WebsocketClient, InprocClient
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class Client extends AbastractClient {
 	protected AbastractClient support;
 	

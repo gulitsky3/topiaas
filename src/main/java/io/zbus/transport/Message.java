@@ -28,7 +28,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.fastjson.JSON;
-
+/**
+ * Message takes format of standard HTTP:
+ * <p> key-value headers  
+ * <p> body of any time which way serialized is controlled in headers's 'content-type' value  
+ * 
+ * <p> When Message parsed as request, url and method are in use.
+ * <p> When Message parsed as response, status of HTTP is in use, 
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class Message {   
 	public static final String ID = "id";
 	

@@ -13,6 +13,18 @@ import io.zbus.transport.IoAdaptor;
 import io.zbus.transport.Message;
 import io.zbus.transport.Session;
 
+/**
+ * 
+ * Client of In-Process, optimized for speed. 
+ * 
+ * Crucial ideas:
+ * <p>1) InprocClient is a Session type, can be plugged into <code>IoAdaptor</code> from server, which is event driven.
+ * <p>2) write message in process means directly invoking onMessage of the client.
+ * <p>3) send message to peer means directly invoking server's <code>IoAdaptor</code>'s onMessage
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class InprocClient extends AbastractClient implements Session { 
 	private static final Logger logger = LoggerFactory.getLogger(InprocClient.class); 
 	private ConcurrentMap<String, Object> attributes = null;

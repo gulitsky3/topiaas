@@ -19,6 +19,13 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 
+/**
+ * 
+ * Client of Websocket, via OkHttp3.
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class WebsocketClient extends AbastractClient {
 	private static final Logger logger = LoggerFactory.getLogger(WebsocketClient.class);   
 	

@@ -17,6 +17,16 @@ import io.zbus.auth.DefaultSign;
 import io.zbus.auth.RequestSign;
 import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit; 
+/**
+ * The common base class of all Client types.
+ * 
+ * It consumes <code>Message</code> type, provides main functionalities of following.
+ * <p> sync and async way invoking, message matching by callback table on Id of message coming and forth between server and client.
+ * <p> authentication intercepter on <code>Message</code> headers.
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public abstract class AbastractClient implements Closeable {
 	private static final Logger logger = LoggerFactory.getLogger(AbastractClient.class);
 

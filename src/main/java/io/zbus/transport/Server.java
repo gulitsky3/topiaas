@@ -37,7 +37,19 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.zbus.kit.NetKit; 
 
+/**
+ * Server capable of start multiple ServerAdaptor in different ports.
+ * 
+ * <code>IoAdaptor</code> is the main battle field to start, it provides feature extension points to plugin
+ * business logic.
+ * 
+ * When SSL is required, start with an extra parameter SslContext which can be built from <code>Ssl</code>
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class Server implements Closeable {
+	
 	public static interface CodecInitializer {
 		void initPipeline(List<ChannelHandler> p);
 	}
