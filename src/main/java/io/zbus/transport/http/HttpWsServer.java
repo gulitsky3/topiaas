@@ -67,7 +67,13 @@ import io.zbus.transport.http.Http.FormData;
  */
 public class HttpWsServer extends Server { 
 	public HttpWsServer() {
-		CorsConfig corsConfig = CorsConfigBuilder.forAnyOrigin().allowNullOrigin().allowCredentials().build();  
+		CorsConfig corsConfig = CorsConfigBuilder
+				.forAnyOrigin()
+				.allowNullOrigin()
+				.allowedRequestHeaders("X-Requested-With", "content-type")
+				.allowedRequestHeaders("PUT", "POST", "GET", "DELETE", "OPTIONS")
+				.allowCredentials()
+				.build();  
 		initCodec(corsConfig);
 	} 
 	
