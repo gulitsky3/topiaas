@@ -1,11 +1,18 @@
 package io.zbus.mq;
  
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.zbus.kit.ConfigKit;
+import io.zbus.kit.StrKit;
+import io.zbus.mq.MqServerConfig.CorsConfig;
 import io.zbus.mq.MqServerConfig.ServerConfig;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
@@ -29,6 +36,8 @@ public class MqServer extends HttpWsServer {
 	private RpcProcessor rpcProcessor;
 	
 	public MqServer(MqServerConfig config) {  
+		super(corsConfig(config.getCors()));
+		
 		this.config = config;
 		this.maxSocketCount = config.maxSocketCount;
 		
@@ -71,7 +80,8 @@ public class MqServer extends HttpWsServer {
 		}
 		staticResource.setBasePath(config.getStaticFileDir());
 		staticResource.setCacheEnabled(config.isStaticFileCacheEnabled());
-	} 
+	}  
+	
 	public MqServer(String configFile){
 		this(new MqServerConfig(configFile));
 	} 
@@ -83,6 +93,29 @@ public class MqServer extends HttpWsServer {
 	public MqServer() {
 		this(new MqServerConfig());
 	}
+	
+	protected static io.netty.handler.codec.http.cors.CorsConfig corsConfig(CorsConfig cfg){
+		if(cfg == null) return null;
+		CorsConfigBuilder builder;
+		if(cfg.origin.equals("*")) {
+			builder = CorsConfigBuilder.forAnyOrigin();
+		} else {
+			builder = CorsConfigBuilder.forOrigins(StrKit.split(cfg.origin));
+		} 
+		
+		String[] methods = StrKit.split(cfg.allowedRequestMethods);
+		List<HttpMethod> httpMethods = new ArrayList<>();
+		for(String method : methods) {
+			httpMethods.add(HttpMethod.valueOf(method));
+		}
+		builder.allowedRequestMethods(httpMethods.toArray(new HttpMethod[0]));
+		builder.allowedRequestHeaders(StrKit.split(cfg.allowedRequestHeaders));
+		builder.exposeHeaders(StrKit.split(cfg.exposeHeaders));
+		
+		builder.allowCredentials()
+				.allowNullOrigin();
+		return builder.build();   
+	} 
 	
 	public RpcProcessor getRpcProcessor() {
 		return rpcProcessor;

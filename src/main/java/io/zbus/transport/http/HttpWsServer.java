@@ -69,10 +69,10 @@ public class HttpWsServer extends Server {
 	public HttpWsServer() {
 		CorsConfig corsConfig = CorsConfigBuilder
 				.forAnyOrigin()
-				.allowNullOrigin()
-				.allowedRequestHeaders("X-Requested-With", "content-type")
+				.allowNullOrigin() 
 				.allowedRequestMethods(HttpMethod.PUT, HttpMethod.POST, HttpMethod.GET, HttpMethod.OPTIONS)
-				.allowedRequestHeaders("*")
+				.allowedRequestHeaders("*") 
+				.exposeHeaders("*")
 				.allowCredentials()
 				.build();  
 		initCodec(corsConfig);

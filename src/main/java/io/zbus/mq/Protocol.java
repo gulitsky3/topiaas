@@ -58,6 +58,8 @@ public interface Protocol {
 		public int consumerCount;
 		public String creator;
 		public Long createdAt; 
+		public Long lastPubTime;
+		public Long lastSubTime; 
 	}
 
 	public static class ChannelInfo {   
@@ -65,6 +67,7 @@ public interface Protocol {
 		public Integer mask;  
 		public String filter;
 		public long offset;
+		public Long lastSubTime;
 		public List<Subscription> subscriptions = new ArrayList<>();
 	}  
 }

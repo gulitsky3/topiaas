@@ -42,6 +42,13 @@
 		</auth>  
 		-->  
 	</monitor> 
+	
+	<cors>
+		<origin>*</origin>
+		<allowedRequestMethods>GET,POST,PUT,OPTIONS</allowedRequestMethods>
+		<allowedRequestHeaders>Origin, X-Request-With, X-Requested-With, Content-Type, Accept, Token</allowedRequestHeaders>
+		<exposeHeaders></exposeHeaders>
+	</cors>
  	
  	<staticFileDir cached="false">../static</staticFileDir>     
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   
