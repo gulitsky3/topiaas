@@ -22,7 +22,7 @@ public class CreateHandler implements CommandHandler {
 	public void handle(Message req, Session sess) throws IOException { 
 		String mqName = (String)req.getHeader(Protocol.MQ);
 		if(mqName == null) {
-			Reply.send(req, 400, "create command, missing mq field", sess);
+			MsgKit.reply(req, 400, "create command, missing mq field", sess);
 			return;
 		}
 		String mqType = (String)req.getHeader(Protocol.MQ_TYPE);
@@ -36,13 +36,13 @@ public class CreateHandler implements CommandHandler {
 		} catch (IOException e) { 
 			logger.error(e.getMessage(), e);
 			
-			Reply.send(req, 500, e.getMessage(), sess);
+			MsgKit.reply(req, 500, e.getMessage(), sess);
 			return;
 		} 
 		String msg = String.format("OK, CREATE (mq=%s,channel=%s)", mqName, channel); 
 		if(channel == null) {
 			msg = String.format("OK, CREATE (mq=%s)", mqName); 
 		}
-		Reply.send(req, 200, msg, sess);
+		MsgKit.reply(req, 200, msg, sess);
 	} 
 }

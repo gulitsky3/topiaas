@@ -13,10 +13,10 @@ import io.zbus.kit.FileKit;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.commands.CommandHandler;
 import io.zbus.mq.commands.CreateHandler;
+import io.zbus.mq.commands.MsgKit;
 import io.zbus.mq.commands.PubHandler;
 import io.zbus.mq.commands.QueryHandler;
 import io.zbus.mq.commands.RemoveHandler;
-import io.zbus.mq.commands.Reply;
 import io.zbus.mq.commands.RouteHandler;
 import io.zbus.mq.commands.SubHandler;
 import io.zbus.mq.commands.TakeHandler;
@@ -26,6 +26,13 @@ import io.zbus.transport.ServerAdaptor;
 import io.zbus.transport.Session;
 import io.zbus.transport.http.Http;
 
+/**
+ * 
+ * Message control based on HTTP headers extension
+ * 
+ * @author leiming.hong Jul 9, 2018
+ *
+ */
 public class MqServerAdaptor extends ServerAdaptor { 
 	private static final Logger logger = LoggerFactory.getLogger(MqServerAdaptor.class); 
 	private SubscriptionManager subscriptionManager;
@@ -75,6 +82,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 	
 	protected void attachInfo(Message request, Session sess) {
 		request.setHeader(Protocol.SOURCE, sess.id());
+		request.setHeader(Protocol.REMOTE_ADDR, sess.remoteAddress());
 		if(request.getHeader(Protocol.ID) == null) {
 			request.setHeader(Protocol.ID, StrKit.uuid());
 		}
@@ -84,7 +92,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 	public void onMessage(Object msg, Session sess) throws IOException {
 		Message req = (Message)msg;    
 		if (req == null) {
-			Reply.send(req, 400, "json format required", sess); 
+			MsgKit.reply(req, 400, "json format required", sess); 
 			return;
 		}   
 		String cmd = req.getHeader(Protocol.CMD); 
@@ -109,7 +117,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		if(requestAuth != null) {
 			AuthResult authResult = requestAuth.auth(req);
 			if(!authResult.success) {
-				Reply.send(req, 403, authResult.message, sess); 
+				MsgKit.reply(req, 403, authResult.message, sess); 
 				return; 
 			}
 		}   
@@ -124,21 +132,21 @@ public class MqServerAdaptor extends ServerAdaptor {
 		
 		cmd = req.removeHeader(Protocol.CMD); 
 		if (cmd == null) {
-			Reply.send(req, 400, "cmd key required", sess); 
+			MsgKit.reply(req, 400, "cmd key required", sess); 
 			return;
 		} 
 		cmd = cmd.toLowerCase();  
 		
 		CommandHandler handler = commandTable.get(cmd);
 		if(handler == null) {
-			Reply.send(req, 404, "Command(" + cmd + ") Not Found", sess); 
+			MsgKit.reply(req, 404, "Command(" + cmd + ") Not Found", sess); 
 			return; 
 		}
 		try {
 			handler.handle(req, sess);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
-			Reply.send(req, 500, e.getMessage(), sess);  
+			MsgKit.reply(req, 500, e.getMessage(), sess);  
 		}
 	}   
 	

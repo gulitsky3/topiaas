@@ -243,7 +243,7 @@ public class RpcProcessor {
 	
 	private boolean checkParams(Message req, Message res, Method method, Object[] params, Object[] invokeParams) {
 		Class<?>[] targetParamTypes = method.getParameterTypes();
-		
+		/*
 		boolean reqInject = false;
 		int count = 0; 
 		for(Class<?> paramType : targetParamTypes) {
@@ -259,7 +259,7 @@ public class RpcProcessor {
 			reply(res, 400, msg);
 			return false;
 		}
-		  
+		*/
 		for (int i = 0; i < targetParamTypes.length; i++) { 
 			Class<?> paramType = targetParamTypes[i];
 			if(Message.class.isAssignableFrom(paramType)) {
@@ -438,7 +438,7 @@ public class RpcProcessor {
 		try {     
 			invoke0(req, response);
 		} catch (Throwable e) {  
-			logger.error(e.getMessage(), e);
+			logger.debug(e.getMessage(), e); //no need to print
 			Throwable t = e;
 			if(t instanceof InvocationTargetException) {
 				t  = ((InvocationTargetException)e).getTargetException();
@@ -452,10 +452,12 @@ public class RpcProcessor {
 			Object errorMsg = t.getMessage();
 			if(errorMsg == null) errorMsg = t.getClass().toString(); 
 			response.setBody(errorMsg);
-			
-			//response.setBody(t);
 			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			response.setStatus(500); 
+			if(t instanceof RpcException) {
+				RpcException ex = (RpcException)t;
+				response.setStatus(ex.getStatus());
+			}  
 		}  
 	}
 	 

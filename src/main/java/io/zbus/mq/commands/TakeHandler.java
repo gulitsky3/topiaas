@@ -20,7 +20,8 @@ public class TakeHandler implements CommandHandler {
 	
 	@Override
 	public void handle(Message req, Session sess) throws IOException { 
-		if(!validateRequest(req, sess)) return;
+		if(!MsgKit.validateRequest(mqManager, req, sess)) return;
+		
 		String mqName = (String)req.getHeader(Protocol.MQ);
 		String channelName = (String)req.getHeader(Protocol.CHANNEL); 
 		Integer window = req.getHeaderInt(Protocol.WINDOW); 
@@ -30,28 +31,4 @@ public class TakeHandler implements CommandHandler {
 		
 	    messageDispatcher.take(mq, channelName, window, msgId, sess); 
 	} 
-	
-	private boolean validateRequest(Message req, Session sess) {
-		String mqName = (String)req.getHeader(Protocol.MQ);
-		String channelName = (String)req.getHeader(Protocol.CHANNEL);
-		if(mqName == null) {
-			Reply.send(req, 400, "Missing mq field", sess);
-			return false;
-		}
-		if(channelName == null) {
-			Reply.send(req, 400, "Missing channel field", sess);
-			return false;
-		} 
-		
-		MessageQueue mq = mqManager.get(mqName); 
-		if(mq == null) {
-			Reply.send(req, 404, "MQ(" + mqName + ") Not Found", sess);
-			return false;
-		}  
-		if(mq.channel(channelName) == null) { 
-			Reply.send(req, 404, "Channel(" + channelName + ") Not Found", sess);
-			return false;
-		}  
-		return true;
-	}
 }

@@ -34,6 +34,8 @@ public interface Protocol {
 	public static final String WINDOW         = "window";
 	public static final String ACK            = "ack";   
 	
+	public static final String REMOTE_ADDR    = "remote-addr";   //HTTP remote address
+	
 	//Parameter mqType values
 	public static final String MEMORY  = "memory";  
 	public static final String DISK    = "disk";  

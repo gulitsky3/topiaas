@@ -33,9 +33,9 @@ public class RouteHandler implements CommandHandler {
 		Boolean ack = req.getHeaderBool(Protocol.ACK);  
 		if(ack != null && ack == true) {
 			if(target == null) {
-				Reply.send(req, 404,  "Target=" + recver + " Not Found", sess);
+				MsgKit.reply(req, 404,  "Target=" + recver + " Not Found", sess);
 			} else {
-				Reply.send(req, 200,  "OK", sess);
+				MsgKit.reply(req, 200,  "OK", sess);
 			}
 			return;
 		}  

@@ -21,31 +21,31 @@ public class QueryHandler implements CommandHandler {
 		String mqName = (String)req.getHeader(Protocol.MQ);
 		String channelName = (String)req.getHeader(Protocol.CHANNEL);
 		if(mqName == null) {
-			Reply.send(req, 400, "query command, missing mq field", sess);
+			MsgKit.reply(req, 400, "query command, missing mq field", sess);
 			return;
 		} 
 		MessageQueue mq = mqManager.get(mqName); 
 		if(mq == null) {
-			Reply.send(req, 404, "MQ(" + mqName + ") Not Found", sess);
+			MsgKit.reply(req, 404, "MQ(" + mqName + ") Not Found", sess);
 			return;
 		} 
 		if(channelName == null) { 
 			Message res = new Message();
 			res.setStatus(200);
 			res.setBody(mq.info()); 
-			Reply.send(req, res, sess);
+			MsgKit.reply(req, res, sess);
 			return;
 		} 
 		
 		ChannelInfo channel = mq.channel(channelName);
 		if(channel == null) { 
-			Reply.send(req, 404, "Channel(" + channelName + ") Not Found", sess);
+			MsgKit.reply(req, 404, "Channel(" + channelName + ") Not Found", sess);
 			return;
 		}  
 		
 		Message res = new Message();
 		res.setStatus(200);
 		res.setBody(channel); 
-		Reply.send(req, res, sess); 
+		MsgKit.reply(req, res, sess); 
 	} 
 }
