@@ -37,7 +37,7 @@ public class MqServerConfig extends XmlConfig {
 	/**
 	 * File cached for FileKit to load static files
 	 */
-	public boolean fileCacheEnabled = true;
+	public boolean fileCacheEnabled = false;
 	
 	public MqServerConfig() { 
 		

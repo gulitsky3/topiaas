@@ -48,7 +48,7 @@ public class DocRender {
 		}
 		model.put("urlPrefix", urlPrefix);  
 		
-		String body = fileKit.loadFile("static/rpc.htm", model);
+		String body = fileKit.loadFile("static/rpc.html", model);
 		result.setBody(body);
 		result.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 		return result;

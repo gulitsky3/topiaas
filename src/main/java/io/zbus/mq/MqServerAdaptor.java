@@ -199,7 +199,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			} 
 		} 
 		
-		Message res = fileKit.loadResource("index.htm");
+		Message res = fileKit.loadResource("static/index.html");
 		
 		if(res.getStatus() != 200) {
 			res = new Message();
