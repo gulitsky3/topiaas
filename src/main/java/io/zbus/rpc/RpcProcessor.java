@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import io.zbus.kit.ClassKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,9 +183,14 @@ public class RpcProcessor {
 				}
 				
 				m.setAccessible(true);  
-				 
-				for (Class<?> t : m.getParameterTypes()) {
-					info.addParam(t); 
+				Class<?>[] paramTypes = m.getParameterTypes();
+				String[] paramNames = ClassKit.getParameterNames(m);
+				for (int i = 0; i < paramTypes.length; i++) {
+					String paramName = paramNames == null ? "arg"+i : paramNames[i];
+					String paramType = paramTypes[i].getName();
+					Type paramGenType = m.getGenericParameterTypes()[i];
+					String paramGenTypeName = paramGenType != null ? paramGenType.getTypeName() : null;
+					info.addParam(paramTypes[i], paramName, paramType, paramGenTypeName);
 				} 
 				Annotation[][] paramAnnos = m.getParameterAnnotations(); 
 				int size = info.params.size(); 

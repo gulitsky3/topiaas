@@ -26,14 +26,22 @@ public class RpcMethod {
 	
 	public static class MethodParam {
 		public Class<?> type;
+		public String typeName;
+		public String genericTypeName;
 		public String name;  
 		public boolean fromContext;
 	} 
 	
 	public void addParam(Class<?> type, String name) {
+		addParam(type, name, type.getName(), type.getName());
+	}
+
+	public void addParam(Class<?> typeClass, String name, String typeName, String genericTypeName) {
 		MethodParam p = new MethodParam();
 		p.name = name;
-		p.type = type;
+		p.type = typeClass;
+		p.typeName = typeName;
+		p.genericTypeName = genericTypeName;
 		params.add(p);
 	}
 	
