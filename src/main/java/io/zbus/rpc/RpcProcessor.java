@@ -464,11 +464,7 @@ public class RpcProcessor {
 		Object data = null;
 		if(mi.reflectedMethod != null) {
 			Class<?>[] targetParamTypes = mi.reflectedMethod.getParameterTypes();
-			Object[] invokeParams = new Object[targetParamTypes.length];  
-			if(target.params.length > targetParamTypes.length) {
-				reply(response, 400, String.format("URL=%s, Too many paramteter received", url));
-				return;   
-			}
+			Object[] invokeParams = new Object[targetParamTypes.length];   
 			
 			applyParams(req, response, target, invokeParams); 
 			
