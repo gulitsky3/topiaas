@@ -164,17 +164,7 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		res.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 		res.setBody("html" + System.currentTimeMillis());
 		return res;
-	}
-	 
-	
-	@Path("/")
-	public Message home() {   
-		Message res = new Message();
-		res.setStatus(200);
-		res.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-		res.setBody("<h1>hell world</h1>");
-		return res;
-	}
+	} 
 	
 	@Path("/test")
 	public Message req(Message req) {

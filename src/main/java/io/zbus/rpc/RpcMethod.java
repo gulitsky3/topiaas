@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RpcMethod {
+	public String urlPath; //if null, use module/method
 	public String module;
 	public String method; 
 	public List<String> paramTypes = new ArrayList<>();

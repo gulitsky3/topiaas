@@ -5,9 +5,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,16 +35,11 @@ public class RpcProcessor {
 	protected boolean methodPageEnabled = true; 
 	protected boolean methodPageAuthEnabled = false;
 	protected boolean overrideMethod = true;
-	protected String methodPageModule = "index";
+	protected String methodPageModule = "/";
 	
 	protected RpcFilter beforeFilter;
 	protected RpcFilter afterFilter;
-	protected RpcFilter authFilter; 
-	
-	public void enableMethodPageModule() { 
-		DocRender render = new DocRender(this, docUrlRoot);
-		addModule(methodPageModule, render, false, methodPageAuthEnabled);
-	}   
+	protected RpcFilter authFilter;  
 	 
 	public void addModule(String module, Object service) {
 		addModule(module, service, true);
@@ -82,8 +79,10 @@ public class RpcProcessor {
 				m.setAccessible(true);
 				
 				MethodInstance mi = new MethodInstance(module, m, service); 
+				mi.info.urlPath = urlPath;
 				mi.info.authRequired = authRequired;
 				mi.info.docEnabled = enableDoc;
+				mi.info.returnType = m.getReturnType().getCanonicalName();
 				
 				List<String> paramTypes = new ArrayList<String>();
 				for (Class<?> t : m.getParameterTypes()) {
@@ -105,38 +104,7 @@ public class RpcProcessor {
 				}  
 				
 				//register in tables
-				
-				boolean exists = this.urlPath2MethodTable.containsKey(urlPath);
-				if (exists) {
-					if(overrideMethod) {
-						logger.warn(urlPath + " overridden"); 
-						this.urlPath2MethodTable.put(urlPath, mi); 
-					} else {
-						logger.warn(urlPath + " exists, new ignored"); 
-					}
-				} else {
-					this.urlPath2MethodTable.put(urlPath, mi); 
-				}
-				
-				
-				Map<String, MethodInstance> methodTable = this.module2MethodTable.get(module);
-				if(methodTable == null) {
-					methodTable = new HashMap<>();
-					this.module2MethodTable.put(module, methodTable);
-				}
-				
-				exists = methodTable.containsKey(methodName);
-				if(exists) { 
-					if(overrideMethod) {
-						logger.warn(String.format("module=%s, method=%s overridden", module, methodName));
-						this.urlPath2MethodTable.put(urlPath, mi); 
-					} else { 
-						logger.warn(String.format("module=%s, method=%s exists, new ignored", module, methodName));
-					} 
-				} else {
-					methodTable.put(methodName, mi); 
-				}
-				
+				addMethod(mi);  
 			}
 		} catch (SecurityException e) {
 			logger.error(e.getMessage(), e);
@@ -147,9 +115,49 @@ public class RpcProcessor {
 		MethodInstance mi = new MethodInstance(spec.module, spec.method, service);
 		mi.info.paramNames = spec.paramNames;
 		
-		String path = path(spec.module, spec.method);
-		this.urlPath2MethodTable.put(path, mi); 
+		addMethod(mi);
 	}
+	
+	public void addMethod(MethodInstance mi) { 
+		RpcMethod spec = mi.info;
+		String urlPath = spec.urlPath;
+		if(urlPath == null) {
+			urlPath = path(spec.module, spec.method);;
+		}   
+		
+		boolean exists = this.urlPath2MethodTable.containsKey(urlPath);
+		if (exists) {
+			if(overrideMethod) {
+				logger.warn(urlPath + " overridden"); 
+				this.urlPath2MethodTable.put(urlPath, mi); 
+			} else {
+				logger.warn(urlPath + " exists, new ignored"); 
+			}
+		} else {
+			this.urlPath2MethodTable.put(urlPath, mi); 
+		}
+		String module = spec.module;
+		if(module == null) module = "/";
+		
+		Map<String, MethodInstance> methodTable = this.module2MethodTable.get(module);
+		if(methodTable == null) {
+			methodTable = new HashMap<>();
+			this.module2MethodTable.put(module, methodTable);
+		}
+		
+		String methodName = spec.method;
+		exists = methodTable.containsKey(methodName);
+		if(exists) { 
+			if(overrideMethod) {
+				logger.warn(String.format("module=%s, method=%s overridden", module, methodName));
+				this.urlPath2MethodTable.put(urlPath, mi); 
+			} else { 
+				logger.warn(String.format("module=%s, method=%s exists, new ignored", module, methodName));
+			} 
+		} else {
+			methodTable.put(methodName, mi); 
+		} 
+	} 
 	
 	public void removeModule(String module, Object service) {
 		try {
@@ -258,9 +266,7 @@ public class RpcProcessor {
 		response.setStatus(status);
 		response.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 		response.setBody(message);
-	} 
-	
-	
+	}  
 	
 	@SuppressWarnings("unchecked")
 	private void invoke(Message req, Message response) throws IllegalAccessException, IllegalArgumentException {   
@@ -377,6 +383,11 @@ public class RpcProcessor {
 			response.setStatus(500); 
 		} 
 	}
+	
+	public void enableMethodPage() { 
+		DocRender render = new DocRender(this, docUrlRoot);
+		addModule(methodPageModule, render, false, methodPageAuthEnabled);
+	}   
 
 	public void setBeforeFilter(RpcFilter beforeFilter) {
 		this.beforeFilter = beforeFilter;
@@ -421,9 +432,24 @@ public class RpcProcessor {
 	public void setDocUrlRoot(String docUrlRoot) {
 		this.docUrlRoot = docUrlRoot;
 	} 
+	 
 	
-	static class MethodInstance {
-		public RpcMethod info = new RpcMethod();  
+	public List<RpcMethod> rpcMethodList() { 
+		List<RpcMethod> res = new ArrayList<>();
+		TreeMap<String, Map<String, MethodInstance>> methods = new TreeMap<>(this.module2MethodTable);
+		Iterator<Entry<String, Map<String, MethodInstance>>> iter = methods.entrySet().iterator();
+		while(iter.hasNext()) {
+			TreeMap<String, MethodInstance> objectMethods = new TreeMap<>(iter.next().getValue()); 
+			for(MethodInstance m : objectMethods.values()) { 
+				res.add(m.info);
+			}
+		} 
+		return res;
+	}
+	
+	public static class MethodInstance {
+		public RpcMethod info = new RpcMethod();    
+		
 		//Mode1 reflection method of class
 		public Method reflectedMethod;
 		public Object instance;    

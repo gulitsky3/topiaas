@@ -165,7 +165,7 @@ public class RpcServer implements Closeable {
 		} 
 		
 		if(mqServerAddress != null && mq != null) { 
-			this.processor.setDocUrlRoot(this.mq+"/");
+			this.processor.setDocUrlRoot("/"+this.mq);
 			
 			this.mqRpcServer = new MqRpcServer(this.processor);
 			mqRpcServer.setAddress(mqServerAddress);
@@ -188,7 +188,7 @@ public class RpcServer implements Closeable {
 		
 		//Doc URL root generated
 		if(processor.isMethodPageEnabled()) {
-			processor.enableMethodPageModule();
+			processor.enableMethodPage();
 		}
 		
 		return this;

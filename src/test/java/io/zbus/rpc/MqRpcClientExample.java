@@ -1,9 +1,7 @@
 package io.zbus.rpc;
 
-import io.zbus.transport.Message;
-
-public class MqRpcClientExample {
-
+public class MqRpcClientExample { 
+	
 	public static void main(String[] args) throws Exception {  
 		RpcClient rpc = new RpcClient("localhost:15555");  
 		rpc.setMq("MyRpc"); //MQ required
@@ -13,18 +11,8 @@ public class MqRpcClientExample {
 		rpc.setSecretKey("461277322-943d-4b2f-b9b6-3f860d746ffd");
 		
 
-		Message req = new Message();
-		req.addHeader("module", "example");
-		req.addHeader("method", "getOrder"); 
+		RpcClientTest.doTest(rpc);
 		
-		Message res = rpc.invoke(req); //同步调用
-		System.out.println(res);
-		
-		rpc.invoke(req, resp -> { //异步调用
-			System.out.println(resp); 
-		}); 
-		 
-		 
-		rpc.close(); 
+		rpc.close();
 	}
 }

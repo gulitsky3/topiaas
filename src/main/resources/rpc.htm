@@ -19,9 +19,10 @@ table {  background-color: transparent;  display: table; border-collapse: separa
 .table { width: 100%; max-width: 100%;  margin-bottom: 1rem; }
 .table th {  height: 30px; }
 .table td, .table th {    border-bottom: 1px solid #eceeef;   text-align: left; padding-left: 16px;}
-th.module {  width: 10%; }
-th.returnType {  width: 20%; }
-th.methodParams {   width: 70%; } 
+th.urlPath {  width: 10%; }
+th.module {  width: 5%; }
+th.returnType {  width: 5%; }
+th.methodParams {   width: 80%; } 
 td.returnType { text-align: right; }
 thead { display: table-header-group; vertical-align: middle; border-color: inherit;}
 tbody { display: table-row-group; vertical-align: middle; border-color: inherit;}
@@ -35,12 +36,13 @@ tr { display: table-row;  vertical-align: inherit; border-color: inherit; }
 
 <div>
 <div class='url'>
-    <span>URL={{urlPrefix}}[module]/[method]/[param1]/[param2]/...</span>  
+    <span>Default URL={{urlPrefix}}/[module]/[method]/[param1]/[param2]/...</span>  
 </div>
 
 <table class='table'>
 <thead>
 <tr class='table-info'>
+	<th class='urlPath'>URL Path</th>
 	<th class='module'>Module</th>
     <th class='returnType'>Return Type</th>
     <th class='methodParams'>Method and Params</th> 

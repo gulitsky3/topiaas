@@ -51,9 +51,9 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 		<property name="authFilter" ref="authFilter"/> 
 		<property name="moduleTable">
 			<map>
-				<entry key="db" value-ref="db"/>
-				<entry key="example" value-ref="example"/>
-				<entry key="sql" value-ref="sql"/>
+				<entry key="/" value-ref="example"/>
+				<entry key="/db" value-ref="db"/> 
+				<entry key="/sql" value-ref="sql"/>
 			</map>
 		</property>
 	</bean> 

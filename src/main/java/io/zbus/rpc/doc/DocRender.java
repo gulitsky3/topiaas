@@ -2,64 +2,63 @@ package io.zbus.rpc.doc;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import io.zbus.kit.FileKit;
 import io.zbus.rpc.RpcMethod;
 import io.zbus.rpc.RpcProcessor;
+import io.zbus.rpc.annotation.Path;
 import io.zbus.transport.Message;
+import io.zbus.transport.http.Http;
 
 public class DocRender { 
 	private FileKit fileKit = new FileKit();
 	private final RpcProcessor rpcProcessor;  
-	private final String urlPrefix;
-	public DocRender(RpcProcessor rpcProcessor, String urlPrefix) {
+	private final String docRootPath;
+	public DocRender(RpcProcessor rpcProcessor, String docRootPath) {
 		this.rpcProcessor = rpcProcessor; 
-		this.urlPrefix = urlPrefix;
+		this.docRootPath = docRootPath;
 	}
 
+	@Path("/")
 	public Message index() throws IOException { 
 		Message result = new Message(); 
-		Map<String, Object> model = new HashMap<String, Object>();
-		 
-		if(!this.rpcProcessor.isMethodPageEnabled()){
-			result.setBody("<h1>Method page disabled</h1>");
-			return result;
-		}
+		Map<String, Object> model = new HashMap<String, Object>(); 
 		
+		List<RpcMethod> methods = this.rpcProcessor.rpcMethodList();
 		String doc = "<div>";
-		int rowIdx = 0;
-		TreeMap<String, Map<String, RpcMethod>> methods = new TreeMap<>(); //TODO (this.rpcProcessor.methodInfoTable);
-		Iterator<Entry<String, Map<String, RpcMethod>>> iter = methods.entrySet().iterator();
-		while(iter.hasNext()) {
-			TreeMap<String, RpcMethod> objectMethods = new TreeMap<>(iter.next().getValue()); 
-			for(RpcMethod m : objectMethods.values()) {
-				doc += rowDoc(m, rowIdx++);
-			}
-		} 
+		int rowIdx = 0;  
+		for(RpcMethod m : methods) {
+			doc += rowDoc(m, rowIdx++);
+		}
 		doc += "</div>";
 		model.put("content", doc); 
+		String urlPrefix = docRootPath;
+		if(urlPrefix.endsWith("/")) {
+			urlPrefix = urlPrefix.substring(0, urlPrefix.length()-1);
+		}
 		model.put("urlPrefix", urlPrefix);
 		
 		String body = fileKit.loadFile("rpc.htm", model);
 		result.setBody(body);
+		result.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 		return result;
 	}
 	
 	private String rowDoc(RpcMethod m, int idx) {  
 		String fmt = 
 				"<tr>" +   
-				"<td class=\"module\">" + 
-				"%s" + 
-				"</td>" +
+				"<td class=\"urlPath\"><a href=\"%s\">%s</a></td>" +
+				"<td class=\"module\">%s</td>" +
 				"<td class=\"returnType\">%s</td>" +  
 				"<td class=\"methodParams\"><code><strong><a href=\"%s\">%s</a></strong>(%s)</code>" +  
 				"</td>" + 
-				"</tr>";
-		String methodLink = urlPrefix + m.module + "/" + m.method;
+				"</tr>"; 
+		String methodLink = m.urlPath;
+		if(!docRootPath.equals("/")) {
+		     methodLink = docRootPath + methodLink; 
+		}
 		String method = m.method;
 		String paramList = "";
 		int size = m.paramNames.size();
@@ -80,7 +79,7 @@ public class DocRender {
 			paramList = paramList.substring(0, paramList.length()-2);
 		}    
 		
-		return String.format(fmt, m.module, m.returnType, methodLink, method,
+		return String.format(fmt, methodLink, methodLink, m.module, m.returnType, methodLink, method,
 				paramList);
 	} 
 	

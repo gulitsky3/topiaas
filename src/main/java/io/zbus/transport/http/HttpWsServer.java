@@ -134,9 +134,11 @@ public class HttpWsServer extends Server {
 			//1) WebSocket mode
 			if(obj instanceof WebSocketFrame){
 				byte[] bytes = decodeWebSocketFrame(ctx, (WebSocketFrame)obj);
-				Message msg = JsonKit.parseObject(bytes, Message.class);
-				if(msg != null){
-					out.add(msg);
+				if(bytes != null) {//ws close may be null
+					Message msg = JsonKit.parseObject(bytes, Message.class);
+					if(msg != null){
+						out.add(msg);
+					}
 				}
 				return;
 			}
