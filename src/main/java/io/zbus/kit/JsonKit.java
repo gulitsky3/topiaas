@@ -40,7 +40,7 @@ public class JsonKit {
 		} catch (UnsupportedEncodingException e) {
 			string = new String(bytes);
 		}
-		return JSON.parseObject(string, clazz);
+		return parseObject(string, clazz);
 	} 
 	
 	public static <T> T parseObject(String jsonString, Class<T> clazz) {

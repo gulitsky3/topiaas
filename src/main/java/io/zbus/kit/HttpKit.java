@@ -97,7 +97,7 @@ public class HttpKit {
     		if(StrKit.isEmpty(b)) continue;
     		info.pathList.add(b);
     	}
-    	
+    	info.urlPath = "/"+String.join("/", info.pathList);
     	if(params != null){
     		info.queryParamMap = StrKit.keyValueWithArray(params, "&");
     	} 
