@@ -316,7 +316,7 @@ public class Message {
 		this.setCookie(key, value);
 	}
 	public void setResponseCookie(String key, String value) {
-		Map<String, String> m = cookies();
+		Map<String, String> m = responseCookies();
 		m.put(key, value);  
 		calculateResponseCookieHeader();
 	}  
