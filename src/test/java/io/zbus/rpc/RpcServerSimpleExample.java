@@ -5,6 +5,7 @@ import java.util.Map;
 
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
+import io.zbus.rpc.filer.MyFilter;
 
 public class RpcServerSimpleExample {    
 	
@@ -32,7 +33,8 @@ public class RpcServerSimpleExample {
 	public static void main(String[] args) throws Exception {    
 		RpcProcessor p = new RpcProcessor();    
 		p.mount("/", RpcServerSimpleExample.class);      
-		 
+		
+		p.setBeforeFilter(new MyFilter());
 		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
