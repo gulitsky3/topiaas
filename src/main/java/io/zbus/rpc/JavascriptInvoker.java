@@ -3,6 +3,7 @@ package io.zbus.rpc;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ public class JavascriptInvoker {
 	ScriptEngine engine = factory.getEngineByName("javascript");
 	
 	private Map<String, Object> context = new HashMap<>(); 
+	private Map<String, Object> jsCtx = new HashMap<>();
 	private FileKit fileKit = new FileKit(false);
 	private String basePath = "."; 
 	private String urlPrefix = ""; 
@@ -56,6 +58,17 @@ public class JavascriptInvoker {
 		try {
 			js = new String(fileKit.loadFileBytes(file));  
 			engine.eval(js);
+			try {
+				Invocable inv = (Invocable) engine;
+				Object r = inv.invokeFunction("main", context);
+				r = JsKit.convert(r);
+				// the return object must be a map
+				@SuppressWarnings("unchecked")
+				Map<String, Object> map = (Map<String, Object>)r;
+				this.jsCtx.putAll(map);
+			} catch (NoSuchMethodError ne) {
+				/* ignore */
+			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		} 
@@ -74,14 +87,18 @@ public class JavascriptInvoker {
 			res.setStatus(400);
 			res.setBody("Missing function path");
 			return res;
-		}    
-		if(info.pathList.size() < 2) {
-			Message res = new Message();
-			res.setStatus(400);
-			res.setBody("Missing function name");
-			return res;
 		}
-		
+		if(info.pathList.size() < 2) {
+			// 补全method
+			info.pathList.add("main");
+		} else {
+			// 若整个路径能匹配到文件，则method使用main
+			Path fullPath = Paths.get("", info.pathList.toArray(new String[]{}));
+			if (fullPath.toFile().exists()) {
+				// 补全method
+				info.pathList.add("main");
+			};
+		}
 		String method = info.pathList.get(info.pathList.size()-1); 
 		urlFile = "";
 		for(int i=0;i<info.pathList.size()-1;i++) {
@@ -106,8 +123,11 @@ public class JavascriptInvoker {
 		
 		engine.eval(js);
 		Invocable inv = (Invocable) engine; 
+		Map<String, Object> mergedCtx = new HashMap<>();
+		mergedCtx.putAll(context);
+		mergedCtx.putAll(jsCtx);
 		Object res = inv.invokeFunction(method, InvocationContext.getRequest(),
-				InvocationContext.getResponse(), context);
+				InvocationContext.getResponse(), mergedCtx);
 		return JsKit.convert(res);
 	}
 
