@@ -50,6 +50,7 @@ public class RpcProcessor {
 	} 
 	
 	public void addModule(String module, Object service, boolean defaultAuth, boolean enableDoc) {  
+		if(module.startsWith("/")) module = module.substring(1);
 		try {
 			Method[] methods = service.getClass().getMethods();
 			boolean classAuthEnabled = defaultAuth;
@@ -78,18 +79,18 @@ public class RpcProcessor {
 
 				m.setAccessible(true);
 				
-				MethodInstance mi = new MethodInstance(module, m, service); 
-				mi.info.urlPath = urlPath;
-				mi.info.authRequired = authRequired;
-				mi.info.docEnabled = enableDoc;
-				mi.info.returnType = m.getReturnType().getCanonicalName();
-				
+				RpcMethod info = new RpcMethod();
+				info.urlPath = urlPath;
+				info.module = module;
+				info.method = methodName;
+				info.authRequired = authRequired;
+				info.docEnabled = enableDoc;
+				info.returnType = m.getReturnType().getCanonicalName();
 				List<String> paramTypes = new ArrayList<String>();
 				for (Class<?> t : m.getParameterTypes()) {
 					paramTypes.add(t.getCanonicalName());
 				}
-				mi.info.paramTypes = paramTypes;
-				
+				info.paramTypes = paramTypes;  
 				Annotation[][] paramAnnos = m.getParameterAnnotations(); 
 				int size = paramTypes.size(); 
 				for(int i=0; i<size; i++) {
@@ -97,14 +98,14 @@ public class RpcProcessor {
 					for(Annotation annotation : annos) {
 						if(Param.class.isAssignableFrom(annotation.getClass())) {
 							Param param = (Param)annotation;  
-							mi.info.paramNames.add(param.value()); 
+							info.paramNames.add(param.value()); 
 							break;
 						}
 					} 
 				}  
 				
 				//register in tables
-				addMethod(mi);  
+				addMethod(new MethodInstance(info, m, service));  
 			}
 		} catch (SecurityException e) {
 			logger.error(e.getMessage(), e);
@@ -112,9 +113,7 @@ public class RpcProcessor {
 	} 
 	
 	public void addMethod(RpcMethod spec, MethodInvoker service) {
-		MethodInstance mi = new MethodInstance(spec.module, spec.method, service);
-		mi.info.paramNames = spec.paramNames;
-		
+		MethodInstance mi = new MethodInstance(spec, service);  
 		addMethod(mi);
 	}
 	
@@ -178,20 +177,25 @@ public class RpcProcessor {
 	}  
 	
 	public void removeMethod(String path) { 
-		this.urlPath2MethodTable.remove(path);  
+		MethodInstance mi = this.urlPath2MethodTable.get(path);  
+		if(mi != null) { 
+			removeMethod(mi.info.module, mi.info.method);
+		}
 	} 
 	
-	public void removeMethod(String module, String method) { 
-		String path = path(module, method);
-		this.urlPath2MethodTable.remove(path);  
-		
+	public void removeMethod(String module, String method) {  
 		Map<String, MethodInstance> table = this.module2MethodTable.get(module);
 		if(table == null) {
+			String path = path(module, method);
+			this.urlPath2MethodTable.remove(path);  
 			return;
 		}
-		table.remove(method);
+		MethodInstance mi = table.remove(method);
 		if(table.isEmpty()) {
 			this.module2MethodTable.remove(module);
+		}
+		if(mi != null && mi.info.urlPath != null) {
+			this.urlPath2MethodTable.remove(mi.info.urlPath);  
 		}
 	} 
 	
@@ -221,7 +225,7 @@ public class RpcProcessor {
 		return table.get(method);
 	} 
 	
-	private String path(String module, String method) {
+	static String path(String module, String method) {
 		if(!module.startsWith("/")) module = "/"+module;
 		if(!module.endsWith("/")) module += "/";
 		return module + method;
@@ -386,7 +390,7 @@ public class RpcProcessor {
 	
 	public void enableMethodPage() { 
 		DocRender render = new DocRender(this, docUrlRoot);
-		addModule(methodPageModule, render, false, methodPageAuthEnabled);
+		addModule(methodPageModule, render, false, false);
 	}   
 
 	public void setBeforeFilter(RpcFilter beforeFilter) {
@@ -455,26 +459,16 @@ public class RpcProcessor {
 		public Object instance;    
 		
 		//Mode2 proxy to target
-		public MethodInvoker target;     
-		 
-		public MethodInstance(String module, Method reflectedMethod, Object instance) {
-			this.reflectedMethod = reflectedMethod;
-			this.instance = instance; 
-			this.info.module = module;
-			this.info.method = reflectedMethod.getName();
-		}
-		
-		public MethodInstance(String module, String methodName, MethodInvoker target) {  
-			this.info.module = module;
-			this.info.method = methodName;
-			this.target = target;
-		}
+		public MethodInvoker target;      
 		
 		public MethodInstance(RpcMethod info, MethodInvoker target) {
 			if(info.method == null) {
 				throw new IllegalArgumentException("method required");
 			}
 			this.info = info;
+			if(this.info.urlPath == null) {
+				this.info.urlPath = path(info.module, info.method);
+			}
 			this.target = target;
 		}
 		
@@ -485,7 +479,9 @@ public class RpcProcessor {
 			if(info.method == null) {
 				this.info.method = reflectedMethod.getName(); 
 			}
-		}
-		
+			if(this.info.urlPath == null) {
+				this.info.urlPath = path(info.module, info.method);
+			}
+		} 
 	}
 }

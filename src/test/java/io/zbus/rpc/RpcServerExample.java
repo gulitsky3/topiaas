@@ -13,7 +13,7 @@ public class RpcServerExample {
 		InterfaceExample example = new InterfaceExampleImpl(); 
 		b.setStackTraceEnabled(false);  
 		
-		b.addModule("/abc", example);   
+		b.addModule("/", example);   
 		
 		b.setPort(8080);
 		b.start();

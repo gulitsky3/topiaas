@@ -30,6 +30,7 @@ public class DocRender {
 		String doc = "<div>";
 		int rowIdx = 0;  
 		for(RpcMethod m : methods) {
+			if(!m.docEnabled) continue;
 			doc += rowDoc(m, rowIdx++);
 		}
 		doc += "</div>";

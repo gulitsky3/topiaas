@@ -235,10 +235,10 @@ public class RpcServer implements Closeable {
 	public RpcServer addMethod(RpcMethod spec, MethodInvoker genericInvocation){
 		processor.addMethod(spec, genericInvocation);
 		return this;
-	}  
+	}   
 	
-	public RpcServer removeMethod(String path){
-		processor.removeMethod(path);
+	public RpcServer removeMethod(String module, String method){
+		processor.removeMethod(module, method);
 		return this;
 	}  
 	
