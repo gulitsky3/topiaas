@@ -582,9 +582,7 @@ public class RpcProcessor {
 		if (!pathMatched) {
 			return false;
 		}
-		for (Entry<String, String> pe :pathParams.entrySet()) {
-			req.setParam(pe.getKey(), pe.getValue());
-		}
+		req.setPathParams(pathParams);
 		return true;
 	} 
 	

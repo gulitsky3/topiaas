@@ -82,6 +82,9 @@ public class Message {
 	@JSONField(serialize=false)
 	private String pathMatched;
 	
+	@JSONField(serialize=false)
+	private Map<String, String> pathParams;
+	
 	public Message() {
 		
 	}
@@ -99,6 +102,7 @@ public class Message {
 		this.headers = msg.headers;
 		this.body = msg.body; 
 		this.bodyAsRawString = msg.bodyAsRawString;
+		this.pathParams = msg.pathParams;
 	}  
 	
 	public String getUrl(){
@@ -246,6 +250,15 @@ public class Message {
 	@JSONField(deserialize=false, serialize=false)
 	public void setParam(String key) {
 		setParam(key, (String)null);
+	}
+	
+	@JSONField(deserialize=false, serialize=false)
+	public void setPathParams(Map<String, String> pathParams) {
+		this.pathParams = pathParams;
+	}
+	@JSONField(deserialize=false, serialize=false)
+	public Map<String, String> getPathParams() {
+		return this.pathParams;
 	}
 	
 	private void calculateUrl() {
