@@ -505,13 +505,14 @@ public class RpcProcessor {
 	
 	private MethodTarget findMethodByUrl(Message req, Message response) {  
 		String url = req.getUrl();  
-		int length = 0;
+		int length = -1;
 		Entry<String, List<MethodInstance>> matched = null;
 		for(Entry<String, List<MethodInstance>> e : urlPath2MethodTable.entrySet()) {
 			String key = e.getKey();
+			if(key.endsWith("/")) key = key.substring(0, key.length()-1); //for key='/'
 			if(url.startsWith(key+"/") || url.equals(key) || url.startsWith(key+"?")) {
 				if(key.length() > length) {
-					length = key.length();
+					length = e.getKey().length();
 					matched = e; 
 				}
 			}

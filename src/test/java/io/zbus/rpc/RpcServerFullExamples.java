@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.zbus.kit.FileKit;
+import io.zbus.mq.MqServer;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
@@ -111,9 +112,9 @@ public class RpcServerFullExamples {
 		rpcServer.setRpcProcessor(p); 
 		p.setDocFile("rpc.html");
 		
-		rpcServer.setMqServerAddress("localhost:15555");
+		//rpcServer.setMqServerAddress("localhost:15555");
 		rpcServer.setMq("/");  
-		//rpcServer.setMqServer(new MqServer(15555));
+		rpcServer.setMqServer(new MqServer(15555));
 		rpcServer.start();  
 	}  
 }
