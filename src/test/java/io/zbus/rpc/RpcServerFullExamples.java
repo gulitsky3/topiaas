@@ -128,7 +128,7 @@ public class RpcServerFullExamples {
 		rpcServer.setRpcProcessor(p); 
 		p.setDocFile("rpc.html");
 		
-		rpcServer.setMqServerAddress("zbus.io");
+		rpcServer.setMqServerAddress("localhost:15555");
 		rpcServer.setMq("/");  
 		rpcServer.start();  
 	}  

@@ -38,6 +38,34 @@ public class HttpKit {
 		public String queryParamString; 
 	} 
 	
+	/**
+	 * match pattern only /abc/* or /abc, /abc/
+	 * @param url
+	 * @param pattern
+	 * @return
+	 */
+	public static boolean urlMatched(String url, String pattern) {
+		boolean matched = false;
+		if(pattern.endsWith("*")) {
+			pattern = pattern.substring(0, pattern.length()-1);
+			matched = url.startsWith(pattern);
+			if(matched) return true;
+			
+			if(pattern.endsWith("/")) {
+				if(pattern.equals(url+"/")) return true; // ignore last /
+			}
+			return false; 
+		} else { //full match
+			if(pattern.endsWith("/")) {
+				if(pattern.equals(url+"/")) return true; // ignore last / 
+			} else {
+				if(url.equals(pattern+"/")) return true;
+			}
+			
+			return url.equals(pattern);
+		} 
+	}
+	
 	public static String joinPath(String... paths) {
 		String url = "/";
 		for(String p : paths) {
@@ -86,7 +114,7 @@ public class HttpKit {
 	}
 	
 	public static boolean isText(String contentType) { 
-		if(contentType == null) return false;
+		if(contentType == null) return false; 
 		if(contentType.startsWith("text")) return true;
 		if(contentType.startsWith("application/json")) return true;
 		if(contentType.startsWith("application/javascript")) return true;

@@ -5,8 +5,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import io.zbus.kit.CryptoKit;
+import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 import io.zbus.transport.Message;
+import io.zbus.transport.http.Http;
 
 public class DefaultSign implements RequestSign {   
 	
@@ -18,8 +20,7 @@ public class DefaultSign implements RequestSign {
 		String fields = request.getHeader(SIGN_FIELDS);
     	if(fields == null) fields = DEFAULT_SIGN_FIELDS;
     	else headers.put(SIGN_FIELDS, fields);
-    	String[] fieldList = StrKit.split(fields, ",");
-    	
+    	String[] fieldList = StrKit.split(fields, ","); 
     	
     	for(String f : fieldList) {
     		if(f.equalsIgnoreCase("url")) {
@@ -35,6 +36,17 @@ public class DefaultSign implements RequestSign {
     		} else if(f.equalsIgnoreCase("body")) {
     			Object body = request.getBody();
     			if(body != null) {
+    				if(body instanceof String) { //json body
+    					String contentType = request.getHeader(Http.CONTENT_TYPE);
+    			    	if(contentType != null && contentType.startsWith("application/json")) {
+    			    		try {
+    			    			body = JsonKit.parse((String)body);
+    			    		} catch (Exception e) {
+								//just ignore
+    			    			e.printStackTrace();
+							}
+    			    	}
+    				}
     				json.put("body", body);
     			} 
     		} else if(f.startsWith("h.")) {

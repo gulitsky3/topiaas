@@ -6,7 +6,7 @@
 		<address>0.0.0.0:15555</address> <!-- empty to disable -->
 		<sslEnabled certFile="ssl/zbus.crt" keyFile="ssl/zbus.key">false</sslEnabled> 
 		
-		<!--  use embedded auth --> 
+		<!--  use embedded auth 
 		<auth>
 			<add>
 				<apiKey>2ba912a8-4a8d-49d2-1a22-198fd285cb06</apiKey>
@@ -17,8 +17,12 @@
 				<secretKey>123475622-953d-4b2f-a7b6-4f860d126cce</secretKey> 
 			</add>  
 		</auth>  
-		 
-		
+		<authExcluedList>
+			<url>/doc/*</url>
+			<url>/index.html</url> 
+			<url>/static/*</url>
+		</authExcluedList>
+		--> 
 	</public>  
 	
 	<!-- address with no ssl and auth, only for private, speed and convenient 
@@ -39,15 +43,15 @@
 	</cors>
 	
 	
-	<!-- HTTP 代理--> 
+	<!-- HTTP 代理
 	<httpProxy>
 		<proxy>
-			<urlPrefix>/f5</urlPrefix>
+			<urlPrefix>/example</urlPrefix>
 			<urlRewrite></urlRewrite>
-			<backend>http://mw.cmft.com</backend>
+			<backend>http://localhost:8080</backend>
 		</proxy>
 	</httpProxy>
- 	
+ 	--> 
 	 
  	
  	<staticFileDir cached="false">../static</staticFileDir>     
@@ -55,6 +59,6 @@
 	<mqDbUrl></mqDbUrl>   
 	<maxSocketCount>102400</maxSocketCount>   
 	<packageSizeLimit>128M</packageSizeLimit>    
-	<verbose>false</verbose> 
+	<verbose>true</verbose> 
 </zbus>
 

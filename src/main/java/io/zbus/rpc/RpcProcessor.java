@@ -49,6 +49,8 @@ public class RpcProcessor {
 	private boolean stackTraceEnabled = true;   
 	private boolean threadContextEnabled = true;
 	
+	private boolean embbedJavascript = true;
+	
 	private RpcFilter beforeFilter;
 	private RpcFilter afterFilter; 
 	private RpcFilter exceptionFilter;
@@ -626,6 +628,8 @@ public class RpcProcessor {
 		DocRender render = new DocRender(this); 
 		render.setRootUrl(rootUrl);
 		render.setDocFile(docFile);
+		render.setEmbbedJavascript(this.embbedJavascript);
+		
 		mount(docUrl, render, false, false, false);
 		return this;
 	}   
@@ -711,7 +715,15 @@ public class RpcProcessor {
 	public void setThreadContextEnabled(boolean threadContextEnabled) {
 		this.threadContextEnabled = threadContextEnabled;
 	}
-	
+	 
+	public boolean isEmbbedJavascript() {
+		return embbedJavascript;
+	}
+
+	public void setEmbbedJavascript(boolean embbedJavascript) {
+		this.embbedJavascript = embbedJavascript; 
+	}
+
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();
 		TreeMap<String, List<MethodInstance>> methods = new TreeMap<>(this.urlPath2MethodTable);

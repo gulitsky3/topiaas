@@ -25,10 +25,9 @@ package io.zbus.transport;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeMap;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -56,7 +55,7 @@ public class Message {
 	
 	protected Integer status; //null: request, otherwise: response  
 	
-	protected Map<String, String> headers = new ConcurrentHashMap<String, String>(); 
+	protected TreeMap<String, String> headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 	protected Object body;  
 	
 	private Object context;
@@ -70,7 +69,8 @@ public class Message {
 	
 	public Message(Message msg) {
 		replace(msg);
-		this.headers = new HashMap<>(this.headers); //copy headers 
+		this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); //copy headers 
+		this.headers.putAll(msg.headers);
 	}
 	
 	public void replace(Message msg) {
@@ -110,7 +110,8 @@ public class Message {
 	} 
 	
 	public void setHeaders(Map<String, String> headers) {
-		this.headers = headers;
+		this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); //copy headers 
+		this.headers.putAll(headers); 
 	} 
 	
 	public String getHeader(String key){

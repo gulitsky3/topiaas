@@ -14,6 +14,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
 import io.zbus.kit.FileKit;
+import io.zbus.kit.HttpKit;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.commands.CommandHandler;
 import io.zbus.mq.commands.CreateHandler;
@@ -130,7 +131,31 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		}
 		
 	}
-	 
+	
+	protected boolean doAuth(Message req, Session sess) {
+		//Nothing should change on message before check integrity!!
+		if(requestAuth == null) return true;
+		if(requestAuth != null) {
+			String url = req.getUrl();
+			List<String> excludedList = config.publicServer.authExcludedList;
+			boolean excluded = false;
+			if(url != null) {
+				for(String pattern : excludedList) {   
+					excluded = HttpKit.urlMatched(url, pattern);
+					if(excluded) break; 
+				}
+			}
+			if(!excluded) {
+				AuthResult authResult = requestAuth.auth(req);
+				if(!authResult.success) {
+					MsgKit.reply(req, 403, authResult.message, sess); 
+					return false; 
+				}
+			}
+		}  
+		return true;
+	}
+	
 	@Override
 	public void onMessage(Object msg, Session sess) throws IOException { 
 		if(httpProxyHandler != null) {
@@ -161,22 +186,16 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			} 
 		}  
 		
-		//Nothing should change on message before check integrity!!
-		if(requestAuth != null) {
-			AuthResult authResult = requestAuth.auth(req);
-			if(!authResult.success) {
-				MsgKit.reply(req, 403, authResult.message, sess); 
-				return; 
-			}
-		}  
-		
-		attachInfo(req, sess);
-		
 		if(config.verbose) { 
 			String type = "<Request>";
 			if(Protocol.ROUTE.equals(cmd)) type = "<Response>";
 			logger.info(type + " " + sess.remoteAddress() + ": " + req); 
 		}  
+		
+		//Nothing should change on message before check integrity!!
+		if(!doAuth(req, sess)) return; 
+		
+		attachInfo(req, sess);  
 		
 		for(Filter filter : this.filterList) {
 			boolean next = filter.doFilter(req, res);
