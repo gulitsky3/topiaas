@@ -61,7 +61,7 @@ public class RpcServerMQ {
 		
 		RpcServer server = new RpcServer(p);       
 		server.setMqServerAddress("localhost:15555"); 
-		server.setMq("/abc/def");
+		server.setMq("/abc");
 		
 		//server.setAuthEnabled(true);
 		//server.setApiKey("2ba912a8-4a8d-49d2-1a22-198fd285cb06");

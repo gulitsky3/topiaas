@@ -30,7 +30,7 @@ public class RpcServerEmbedded {
 	public static void main(String[] args) throws Exception {   
 		RpcProcessor p = new RpcProcessor();   
 		p.setDocUrl("/");
-		p.mount("/", RpcServerEmbedded.class);     
+		p.mount("/example", RpcServerEmbedded.class);     
 		
 		StaticResource resource = new StaticResource(); 
 		resource.setBasePath("\\tmp"); 

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -44,6 +45,11 @@ public class MessageQueueManager {
 			}
 		}   
 	}
+	
+	public Set<String> mqNames(){ 
+		return mqTable.keySet(); //TODO make it threadsafe
+	}
+	
 	
 	public MessageQueue get(String mqName) {
 		if(mqName == null) mqName = "";

@@ -114,7 +114,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		
 		if(cmd == null) {
 			//Filter on URL of request
-			boolean handled = urlFilter(req, sess);
+			boolean handled = routeUrl(req, sess);
 			if(handled) return;
 		} 
 		
@@ -141,9 +141,40 @@ public class MqServerAdaptor extends ServerAdaptor {
 		}
 	}   
 	
-	private boolean urlFilter(Message req, Session sess) { 
+	/**
+	 * Find longest URL matched
+	 * @param url
+	 * @return
+	 */
+	private String matchMqPath(String url) {
+		int length = 0; 
+		String matched = null;
+		for(String mq : mqManager.mqNames()) { 
+			if(url.startsWith(mq)) {
+				if(mq.length() > length) {
+					length = mq.length();
+					matched = mq; 
+				}
+			}
+		}  
+		return matched;
+	}
+	
+	private boolean routeUrl(Message req, Session sess) { 
 		String url = req.getUrl();
 		if(url == null) return false;   
+		
+		String mq = matchMqPath(url); //
+		if(mq != null) {
+			req.setHeader(Protocol.MQ, mq);
+			//Assumed to be RPC
+			if(req.getHeader(Protocol.CMD) == null) { // RPC assumed
+				req.setHeader(Protocol.CMD, Protocol.PUB);
+				req.setHeader(Protocol.ACK, false); //ACK should be disabled
+			}  
+			
+			return false;
+		}
 		
 		if(rpcProcessor != null) {
 			if(rpcProcessor.matchUrl(url)) {
@@ -154,37 +185,21 @@ public class MqServerAdaptor extends ServerAdaptor {
 			} 
 		} 
 		
-		//Parse Url to find MQ to handle the message
-		UrlInfo info = HttpKit.parseUrl(url); 
-		if(info.pathList.size()==0) {  
-			for(Entry<String, String> e : info.queryParamMap.entrySet()) {
-				String key = e.getKey();
-				Object value = e.getValue();
-				if(key.equals("body")) {
-					req.setBody(value);
-					continue;
-				}
-				req.setHeader(key.toLowerCase(), value);
-			}    
-		}
-		
-		String mq = req.getHeader(Protocol.MQ); 
-		if(mq == null) { 
-			if(info.pathList.size() > 0) {
-				mq = info.pathList.get(0);  
+		//special case for URL to admin on MQ
+		if(url.length()>1) {
+			UrlInfo info = HttpKit.parseUrl(url); 
+			if(info.pathList.size()==0) {  
+				for(Entry<String, String> e : info.queryParamMap.entrySet()) {
+					String key = e.getKey();
+					Object value = e.getValue();
+					if(key.equals("body")) {
+						req.setBody(value);
+						continue;
+					}
+					req.setHeader(key.toLowerCase(), value);
+				}    
 			} 
-			if(mqManager.get(mq) == null) {
-				mq = "/"; 
-			}
-			req.setHeader(Protocol.MQ, mq);
-		} 
-		
-		//Assumed to be RPC
-		if(req.getHeader(Protocol.CMD) == null) { // RPC assumed
-			req.setHeader(Protocol.CMD, Protocol.PUB);
-			req.setHeader(Protocol.ACK, false); //ACK should be disabled
-		}  
-		
+		}
 		return false;
 	} 
 	

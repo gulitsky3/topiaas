@@ -17,7 +17,7 @@ public class RpcServerMQInproc {
 		
 		RpcServer rpc = new RpcServer(p);   
 		rpc.setMqServer(mqServer); //InProc MqServer
-		rpc.setMq("MyRpc");        //Choose MQ to group Service physically
+		rpc.setMq("/");        //Choose MQ to group Service physically
 		 
 		//server.setAuthEnabled(true);
 		//server.setApiKey("2ba912a8-4a8d-49d2-1a22-198fd285cb06");
