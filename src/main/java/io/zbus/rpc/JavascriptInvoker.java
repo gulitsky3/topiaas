@@ -16,10 +16,11 @@ import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsKit;
-import io.zbus.rpc.InvocationContext;
 import io.zbus.rpc.annotation.Route;
-import io.zbus.transport.Message; 
- 
+import io.zbus.transport.Message;
+import io.zbus.transport.http.Http; 
+
+
 @Route(exclude = true)
 public class JavascriptInvoker {
 	private static final Logger logger = LoggerFactory.getLogger(JavascriptInvoker.class);
@@ -31,7 +32,7 @@ public class JavascriptInvoker {
 	private FileKit fileKit = new FileKit(false);
 	private String basePath = "."; 
 	private String urlPrefix = ""; 
-	private String initJsFile = null;
+	private String initJsFile = null; 
 	 
 	private File absoluteBasePath = new File(basePath).getAbsoluteFile();  
 	public void setBasePath(String basePath) {
@@ -48,7 +49,7 @@ public class JavascriptInvoker {
 	} 
 	
 	public void init() {
-		if(initJsFile == null) return; 
+		if(initJsFile == null) return;  
 	}
 	
 	@Route("/cache")
@@ -56,27 +57,31 @@ public class JavascriptInvoker {
 		fileKit.setCacheEnabled(cacheEnabled);
 	}
 
-	@Route("/")
-	public Object invoke(Message req) throws Exception { 
+	@Route(path="/", ignoreResult=true)
+	public void entry() throws Exception {  
+		callJs("filter.js", "doFilter"); 
+	}
+	
+	public void invoke() throws Exception { 
+		Message req = InvocationContext.getRequest();
+		Message res = InvocationContext.getResponse();
+		
 		String url = req.getUrl();
 		if(url.startsWith(this.urlPrefix)) {
 			url = url.substring(this.urlPrefix.length());
 		}
 		UrlInfo info = HttpKit.parseUrl(url);
 		String urlFile = info.urlPath;
-		if(urlFile == null) { 
-			Message res = new Message();
+		if(urlFile == null) {  
 			res.setStatus(400);
 			res.setBody("Missing function path");
-			return res;
+			return;
 		}    
-		if(info.pathList.size() < 2) {
-			Message res = new Message();
+		if(info.pathList.size() < 2) { 
 			res.setStatus(400);
 			res.setBody("Missing function name");
-			return res;
-		}
-		
+			return;
+		} 
 		
 		urlFile = "";
 		for(int i=0;i<info.pathList.size()-1;i++) {
@@ -85,23 +90,30 @@ public class JavascriptInvoker {
 		urlFile = urlFile.substring(0, urlFile.length()-1); 
 		if(!urlFile.endsWith(".js")) {
 			urlFile += ".js";
-		}
-		File fullPathFile = new File(absoluteBasePath, urlFile); 
-		final String method = info.pathList.get(info.pathList.size()-1);
-		
+		} 
+		final String method = info.pathList.get(info.pathList.size()-1); 
+		callJs(urlFile, method);
+	}
+	
+	private void loadScript(String jsFile) throws Exception {   
+		File fullPathFile = new File(absoluteBasePath, jsFile);   
 		String file = fullPathFile.getPath(); 
-		String js = null;
-		try {
-			js = new String(fileKit.loadFileBytes(file));  
-		} catch (FileNotFoundException e) {  
-			Message res = new Message();
-			res.setStatus(404);
-			res.setBody(urlFile + " Not Found");
-			logger.info(file + " Not Found");
-			return res;
-		}
-		
+		String js = new String(fileKit.loadFileBytes(file)); 
 		engine.eval(js);
+	} 
+	
+	public void callJs(String jsFile, String jsFunc) throws Exception { 
+		Message req = InvocationContext.getRequest();
+		Message res = InvocationContext.getResponse();  
+		try {
+			loadScript(jsFile);
+		} catch (FileNotFoundException e) {   
+			res.setStatus(404);
+			res.setBody(jsFile + " Not Found");
+			logger.info(jsFile + " Not Found");
+			return;
+		} 
+		
 		Invocable inv = (Invocable) engine;
 		Map<String, Object> ctx = new HashMap<>(context);
 		if(context.containsKey("request")) {
@@ -111,14 +123,23 @@ public class JavascriptInvoker {
 			logger.debug("java context.response override, should change java context.response name.");
 		}
 		
-		ctx.put("request", InvocationContext.getRequest());
-		ctx.put("response", InvocationContext.getResponse());
-		final Object res = inv.invokeFunction(
-				method,
-				ctx
-			); 
-		
-		return JsKit.convert(res);
+		ctx.put("request", req);
+		ctx.put("response", res);
+		final Object jsRes = inv.invokeFunction(
+				jsFunc,
+				ctx,
+				this
+			);  
+		if(jsRes != null) {
+			if(jsRes instanceof Message) {
+				res.replace((Message)jsRes);
+			} else {
+				if(res.getHeader(Http.CONTENT_TYPE) == null) {
+					res.setHeader(Http.CONTENT_TYPE, "application/json; charset=utf8");  //default to json
+				}
+				res.setBody(JsKit.convert(jsRes));
+			}
+		}
 	}
 	
 	public void setCacheEnabled(boolean cacheEnabed) {

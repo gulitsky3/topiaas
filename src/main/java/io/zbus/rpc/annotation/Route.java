@@ -15,4 +15,5 @@ public @interface Route {
 	String[] method() default { };
 	boolean exclude() default false; 
 	boolean docEnabled() default true;
+	boolean ignoreResult() default false;
 }

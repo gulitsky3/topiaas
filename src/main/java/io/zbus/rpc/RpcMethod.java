@@ -15,6 +15,7 @@ public class RpcMethod {
 	public boolean authRequired; 
 	public boolean docEnabled = true;
 	public boolean enabled = true;
+	public boolean ignoreResult = false;
 	public Route urlAnnotation;
 	public List<RpcFilter> filters = new ArrayList<>();
 	

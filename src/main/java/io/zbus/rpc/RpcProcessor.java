@@ -144,6 +144,7 @@ public class RpcProcessor {
 					if (p.exclude()) continue; 
 					info.docEnabled = enableDoc && p.docEnabled();
 					info.urlAnnotation = p;
+					info.ignoreResult = p.ignoreResult();
 					urlPath = annoPath(p);    
 					
 					if(urlPath != null) {
@@ -620,6 +621,13 @@ public class RpcProcessor {
 				}
 			}
 			data = mi.target.invoke(mi.info.method, mapParams);
+		}
+		
+		if(mi.info.ignoreResult) { // method has put result in response
+			if(response.getStatus() == null) {
+				response.setStatus(200);
+			} 
+			return;
 		}
 		
 		if(data instanceof Message) {

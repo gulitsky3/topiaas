@@ -39,4 +39,8 @@ public class RequestMappingPatch implements Route {
 		return r.docEnabled();
 	}
 
+	@Override
+	public boolean ignoreResult() { 
+		return r.ignoreResult();
+	}
 }
