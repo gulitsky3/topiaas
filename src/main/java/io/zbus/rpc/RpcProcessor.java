@@ -144,6 +144,7 @@ public class RpcProcessor {
 					if (p.exclude()) continue; 
 					info.docEnabled = enableDoc && p.docEnabled();
 					info.urlAnnotation = p;
+					info.ignoreResult = p.ignoreResult();
 					urlPath = annoPath(p);    
 					
 					if(urlPath != null) {
@@ -504,13 +505,14 @@ public class RpcProcessor {
 	
 	private MethodTarget findMethodByUrl(Message req, Message response) {  
 		String url = req.getUrl();  
-		int length = 0;
+		int length = -1;
 		Entry<String, List<MethodInstance>> matched = null;
 		for(Entry<String, List<MethodInstance>> e : urlPath2MethodTable.entrySet()) {
 			String key = e.getKey();
+			if(key.endsWith("/")) key = key.substring(0, key.length()-1); //for key='/'
 			if(url.startsWith(key+"/") || url.equals(key) || url.startsWith(key+"?")) {
 				if(key.length() > length) {
-					length = key.length();
+					length = e.getKey().length();
 					matched = e; 
 				}
 			}
@@ -620,6 +622,13 @@ public class RpcProcessor {
 				}
 			}
 			data = mi.target.invoke(mi.info.method, mapParams);
+		}
+		
+		if(mi.info.ignoreResult) { // method has put result in response
+			if(response.getStatus() == null) {
+				response.setStatus(200);
+			} 
+			return;
 		}
 		
 		if(data instanceof Message) {
@@ -859,6 +868,10 @@ public class RpcProcessor {
 		} 
 		return res;
 	} 
+	
+	public Map<String, List<MethodInstance>> getUrlPath2MethodTable() {
+		return urlPath2MethodTable;
+	}
 	
 	public static class MethodInstance {
 		public RpcMethod info = new RpcMethod();    

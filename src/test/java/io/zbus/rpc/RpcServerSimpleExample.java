@@ -54,6 +54,25 @@ public class RpcServerSimpleExample {
 		
 		//p.setBeforeFilter(new MyFilter());
 		
+		p.setBeforeFilter(new RpcFilter() { 
+			@Override
+			public boolean doFilter(Message request, Message response, Throwable exception) {
+				Map<String, Object> ctx = new HashMap<>();
+				ctx.put("key", "set in before filter");
+				request.setContext(ctx );
+				return true;
+			}
+		});
+		
+		p.setAfterFilter(new RpcFilter() { 
+			@Override
+			public boolean doFilter(Message request, Message response, Throwable exception) {
+				Object ctx = request.getContext();
+				System.out.println("In After Filter>>>>>" + ctx);
+				return true;
+			}
+		});
+		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
 		//rpcServer.setChannel("temp");
