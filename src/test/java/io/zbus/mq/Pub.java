@@ -14,7 +14,7 @@ public class Pub {
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {   
-		MqClient client = new MqClient("wss://111.230.136.74"); 
+		MqClient client = new MqClient("localhost:15555"); 
 		
 		//MqClient client = buildInproClient();
 		
