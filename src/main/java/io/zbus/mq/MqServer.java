@@ -36,6 +36,8 @@ public class MqServer extends HttpWsServer {
 			if(publicServerConfig.auth != null) {
 				publicServerAdaptor.setRequestAuth(publicServerConfig.auth);
 			}
+			
+			publicServerAdaptor.onInit(); 
 		}
 		
 		privateServerConfig = config.privateServer;
@@ -49,6 +51,8 @@ public class MqServer extends HttpWsServer {
 			if(privateServerConfig.auth != null) {
 				privateServerAdaptor.setRequestAuth(privateServerConfig.auth);
 			}
+			
+			privateServerAdaptor.onInit();
 		}  
 		
 		MqServerAdaptor adaptor = this.publicServerAdaptor;

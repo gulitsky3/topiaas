@@ -37,6 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -193,12 +194,40 @@ public class FileKit {
 		res.setStatus(200); 
 		try {
 			byte[] data = loadFileBytes(resource);
-			res.setBody(data);
+			Object body = data;
+			if(HttpKit.isText(contentType)) {
+				body = new String(data, Charset.forName("utf8"));
+			}
+			res.setBody(body);
 		} catch (IOException e) {
 			res.setStatus(404);
 			res.setBody(info.urlPath + " Not Found");
 		}  
 		return res;
+	}
+	public void loadResource(Message res, String resource) {
+		loadResource(res, resource, new HashMap<>());
+	}
+	
+	public void loadResource(Message res, String resource, Map<String, Object> model) { 
+		UrlInfo info = HttpKit.parseUrl(resource); 
+		String contentType = HttpKit.contentType(resource);
+		if(contentType == null) {
+			contentType = "application/octet-stream";
+		} 
+		res.setHeader(Http.CONTENT_TYPE, contentType);   
+		res.setStatus(200); 
+		try {
+			byte[] data = loadFileBytes(resource);
+			Object body = data;
+			if(HttpKit.isText(contentType)) {
+				body = new String(data, Charset.forName("utf8"));
+			}
+			res.setBody(body); 
+		} catch (IOException e) {
+			res.setStatus(404);
+			res.setBody(info.urlPath + " Not Found");
+		}   
 	}
 
 	public static void deleteFile(File file) {

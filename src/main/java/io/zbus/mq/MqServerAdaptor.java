@@ -1,7 +1,9 @@
 package io.zbus.mq;
-
+ 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -20,9 +22,10 @@ import io.zbus.mq.commands.RemoveHandler;
 import io.zbus.mq.commands.RouteHandler;
 import io.zbus.mq.commands.SubHandler;
 import io.zbus.mq.commands.TakeHandler;
-import io.zbus.mq.plugin.PublicUrlRouter;
+import io.zbus.mq.plugin.CorsFilter;
+import io.zbus.mq.plugin.Filter;
 import io.zbus.mq.plugin.IpFilter;
-import io.zbus.mq.plugin.UrlRouter;
+import io.zbus.mq.plugin.UrlRouteFilter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
@@ -45,9 +48,10 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	
 	protected RpcProcessor rpcProcessor;
 	protected MqServerConfig config;
-	
-	protected UrlRouter urlRouter;
+	 
 	protected IpFilter sessionFilter; 
+	
+	protected List<Filter> filterList = new ArrayList<>();
 	
 	public MqServerAdaptor(MqServerConfig config) { 
 		this.config = config;
@@ -57,14 +61,10 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
 		mqManager.mqDir = config.mqDiskDir;  
 		 
-		mqManager.loadQueueTable();    
-		if(config.getUrlRouter() != null) {
-			urlRouter = config.getUrlRouter();
-		} else {
-			urlRouter = new PublicUrlRouter();
-		}
+		mqManager.loadQueueTable();     
 		
-		urlRouter.init(this);
+		filterList.add(new CorsFilter());
+		filterList.add(new UrlRouteFilter());
 		
 		commandTable.put(Protocol.PUB, new PubHandler(messageDispatcher, mqManager));
 		commandTable.put(Protocol.SUB, new SubHandler(messageDispatcher, mqManager, subscriptionManager));
@@ -82,6 +82,12 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		this.subscriptionManager = that.subscriptionManager;
 		this.messageDispatcher = that.messageDispatcher;
 		this.commandTable = that.commandTable; 
+	}
+	
+	public void onInit() {
+		for(Filter filter : filterList) {
+			filter.init(this);
+		}
 	}
 	
 	@Override
@@ -113,10 +119,19 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		}
 		super.sessionCreated(sess);
 	}
+	
+	protected void process(Message req, Message res, Session sess) {
+		for(Filter filter : this.filterList) {
+			boolean next = filter.doFilter(req, res);
+			if(!next) return; 
+		}
+		
+	}
 	 
 	@Override
 	public void onMessage(Object msg, Session sess) throws IOException {
 		Message req = (Message)msg;    
+		Message res = new Message(); 
 		if (req == null) {
 			MsgKit.reply(req, 400, "json format required", sess); 
 			return;
@@ -129,24 +144,14 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		
 		if(config.verbose) { 
 			logger.info(sess.remoteAddress() + ":" + req); 
-		} 
-		
-		if("OPTIONS".equalsIgnoreCase(req.getMethod())) {
-			Message res = new Message(); 
-			res.setHeader("Access-Control-Allow-Origin", "*");
-			res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
-			res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
-			res.setStatus(200);
-			sess.write(res);
-			return;
-		}
+		}  
 		
 		if(cmd == null) { //Special case for favicon
 			if(req.getBody() == null && "/favicon.ico".equals(req.getUrl())) {
-				Message res = FileKit.INSTANCE.loadResource("static/favicon.ico");
+				FileKit.INSTANCE.loadResource(res, "static/favicon.ico");
 				sess.write(res);
 				return;
-			}
+			} 
 		}
 		
 		//check integrity 
@@ -158,10 +163,12 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 			}
 		}   
 		
-		if(cmd == null) {
-			//Filter on URL of request
-			boolean handled = urlRouter.route(req, sess);
-			if(handled) return;
+		for(Filter filter : this.filterList) {
+			boolean next = filter.doFilter(req, res);
+			if(!next) {
+				sess.write(res);
+				return;
+			}
 		} 
 		
 		attachInfo(req, sess);  

@@ -11,7 +11,7 @@ import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
-import io.zbus.mq.plugin.UrlRouter;
+import io.zbus.mq.plugin.Filter;
 
 public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;
@@ -28,7 +28,7 @@ public class MqServerConfig extends XmlConfig {
 	/**
 	 * URL mappting to MQ, nullable to default
 	 */
-	public UrlRouter urlRouter;       
+	public Filter urlRouter;       
 	/**
 	 * In URL match, match rpc first over MQ, default to false
 	 */
@@ -185,11 +185,11 @@ public class MqServerConfig extends XmlConfig {
 		this.mqDbPassword = mqDbPassword;
 	}
 
-	public UrlRouter getUrlRouter() {
+	public Filter getUrlRouter() {
 		return urlRouter;
 	}
 
-	public void setUrlRouter(UrlRouter urlRouter) {
+	public void setUrlRouter(Filter urlRouter) {
 		this.urlRouter = urlRouter;
 	}
 

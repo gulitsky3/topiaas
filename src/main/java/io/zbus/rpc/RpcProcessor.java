@@ -15,6 +15,9 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
@@ -245,7 +248,7 @@ public class RpcProcessor {
 	private class MethodTarget{
 		public MethodInstance methodInstance;
 		public Object[] params;
-		public Map<String, String> queryMap;
+		public Map<String, Object> queryMap;
 	}
 	 
 	private boolean httpMethodMatached(Message req, Route anno) { 
@@ -325,17 +328,24 @@ public class RpcProcessor {
 		
 		Object body = req.getBody(); //assumed to be params 
 		if(body != null) {
-			if(!(body instanceof FormData)) { //may be upload files
-				params = JsonKit.convert(body, Object[].class); 
-			} 
+			if(body instanceof JSONObject || body instanceof FormData) { 
+				FormData form = JsonKit.convert(body, FormData.class); 
+				req.setBody(form);
+				if(form.files.isEmpty()) { //if no files upload, attributes same as queryString
+					target.queryMap = form.attributes;
+				} 
+			} else if(body instanceof String) {
+				target.queryMap = JsonKit.parseObject((String)body);
+			} else if(body instanceof JSONArray) {
+				params = JsonKit.convert(body, Object[].class);
+			}
 		}   
 		if(params == null) { 
 			String subUrl = url.substring(urlPathMatched.length());
 			UrlInfo info = HttpKit.parseUrl(subUrl);
 			List<Object> paramList = new ArrayList<>(info.pathList); 
 			if(!info.queryParamMap.isEmpty()) {
-				target.queryMap = info.queryParamMap;
-				//paramList.add(info.queryParamMap);
+				target.queryMap = new HashMap<>(info.queryParamMap); 
 			}
 			params = paramList.toArray();
 		} 
@@ -389,7 +399,7 @@ public class RpcProcessor {
 						}  
 					}  
 					if(target.queryMap != null) {
-						for(Entry<String, String> e : target.queryMap.entrySet()) {
+						for(Entry<String, Object> e : target.queryMap.entrySet()) {
 							if(mapParams.containsKey(e.getKey())) continue; //path match first
 							mapParams.put(e.getKey(), e.getValue());
 						}
@@ -436,7 +446,7 @@ public class RpcProcessor {
 			MethodParam mp = declaredParams.get(i);
 			if(mp.name != null) {
 				if(target.queryMap != null) {
-					String value = target.queryMap.get(mp.name);
+					Object value = target.queryMap.get(mp.name);
 					if(value != null) { 
 						invokeParams[i] = convert(value, paramType);    
 						continue;

@@ -7,7 +7,7 @@ import io.zbus.kit.FileKit;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.Protocol.MqInfo;
 import io.zbus.mq.model.MessageQueue;
-import io.zbus.mq.plugin.MonitorUrlRouter;
+import io.zbus.mq.plugin.MonitorUrlFilter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
 import io.zbus.rpc.annotation.Route;
@@ -32,8 +32,8 @@ public class MonitorServerAdaptor extends MqServerAdaptor {
 		rpcProcessor.mount("/static", staticResource, false);
 		rpcProcessor.mountDoc(); 
 		
-		this.urlRouter = new MonitorUrlRouter(rpcProcessor); 
-		this.urlRouter.init(this);
+		filterList.clear();
+		filterList.add(new MonitorUrlFilter(rpcProcessor)); 
 	}
  
 	
