@@ -269,7 +269,14 @@ public class RpcProcessor {
 			if(i >= params.length) {
 				invokeParams[i] = null;
 			} else {
-				invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
+				try {
+					invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
+				} catch (Exception e) {
+					res.setStatus(400);
+					res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+					res.setBody(String.format("Required parameter type(%s) bad format", paramType.getName()));
+					return false;
+				}
 			}
 		} 
 		return true;
