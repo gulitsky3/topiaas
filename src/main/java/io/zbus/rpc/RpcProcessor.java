@@ -426,15 +426,22 @@ public class RpcProcessor {
 				c == String.class ||
 				c == Date.class;
 	}
-	private boolean classMatch(Class<?> target, Class<?> c) {
-		if(target == c) return true;  
-		if(target.isAssignableFrom(c)) return true; 
+	//0 - not matche, 1 - full match, 2 - partial match
+	private int classMatch(Class<?> target, Class<?> c) {
+		if(target == c) return 1;   
 		
-		if(isSimpleType(target) && isSimpleType(c)) return true;   
+		if(target.isAssignableFrom(c)) {
+			if(target == Object.class) { //Object special case
+				return 2;
+			}
+			return 1; 
+		}
 		
-		if(!isSimpleType(target) && !isSimpleType(c)) return true; //possible to convert through json
+		if(isSimpleType(target) && isSimpleType(c)) return 2;   
+		
+		if(!isSimpleType(target) && !isSimpleType(c)) return 2; //possible to convert through json
 
-		return false;
+		return 0;
 	}
 	
 	private void matchMethod(MethodTarget target, List<MethodInstance> instances) {
@@ -449,29 +456,50 @@ public class RpcProcessor {
 			paramCount++;
 			params.add(target.queryMap);
 		}
-		
+		  
+		MethodInstance defaultMethod = instances.get(0);
 		for(MethodInstance mi : instances) {
 			if(mi.target != null) continue; 
 			if(mi.info.params.size() != paramCount) continue;
 			
-			boolean matched = true;
+			boolean matched = true; 
+			boolean fullMatch = true; 
+			boolean methodParamObjectTyped = false;
 			for(int i=0;i<paramCount;i++) {
 				Object param = params.get(i);
 				if(param == null) continue; 
 				
 				Class<?> paramType = mi.info.params.get(i).type;
-				if(!classMatch(paramType, param.getClass())) {
+				if(paramType == Object.class) {
+					methodParamObjectTyped = true;
+				}
+				int rc = classMatch(paramType, param.getClass());
+				if(rc == 0) {
 					matched = false;
 					break;
 				}
+				
+				if(rc == 2) {
+					fullMatch = false;
+				}
 			}
-			if(matched) {
-				target.methodInstance = mi;
-				return;
+			
+			if(matched) { 
+				if(fullMatch) { //full matched, just return 
+					target.methodInstance = mi;
+					return;
+				}   
+				if(methodParamObjectTyped) { //Object typed, as default
+					defaultMethod = mi;
+				} else {
+					target.methodInstance = mi;
+				}
 			}
 		}
 		//default to first
-		target.methodInstance = instances.get(0);
+		if(target.methodInstance == null) {
+			target.methodInstance = defaultMethod;
+		}
 	}
 	
 	private MethodTarget findMethodByUrl(Message req, Message response) {  

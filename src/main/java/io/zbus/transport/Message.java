@@ -55,7 +55,7 @@ public class Message {
 	
 	protected Integer status; //null: request, otherwise: response  
 	
-	protected TreeMap<String, String> headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+	protected TreeMap<String, Object> headers = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
 	protected Object body;  
 	
 	private Object context;
@@ -105,43 +105,62 @@ public class Message {
 		this.method = method;
 	} 
 	
-	public Map<String,String> getHeaders() {
+	public Map<String, Object> getHeaders() {
 		return headers;
 	} 
 	
-	public void setHeaders(Map<String, String> headers) {
+	public void setHeaders(Map<String, Object> headers) {
 		this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); //copy headers 
 		this.headers.putAll(headers); 
 	} 
 	
 	public String getHeader(String key){
-		return this.headers.get(key);
+		Object value = this.headers.get(key);
+		if(value == null) return null;
+		if(value instanceof String) return (String)value;  
+		
+		return value.toString();
 	}
 	
+	public Object getHeaderObject(String key){
+		return this.headers.get(key);
+	}
+	 
 	public Integer getHeaderInt(String key){
-		String value = this.headers.get(key);
+		Object value = getHeaderObject(key);
 		if(value == null) return null;
-		return Integer.valueOf(value);
-	} 
+		if(value instanceof Integer) return (Integer) value;
+		return Integer.valueOf(value.toString());
+	}  
 	
 	public Long getHeaderLong(String key){
-		String value = this.headers.get(key);
+		Object value = getHeaderObject(key);
 		if(value == null) return null;
-		return Long.valueOf(value);
+		if(value instanceof Long) return (Long) value;
+		return Long.valueOf(value.toString());
 	} 
 	
 	public Boolean getHeaderBool(String key){
-		String value = this.headers.get(key);
+		Object value = getHeaderObject(key);
 		if(value == null) return null;
-		return Boolean.valueOf(value);
+		if(value instanceof Boolean) return (Boolean) value;
+		return Boolean.valueOf(value.toString());
 	} 
 	
 	public void setHeader(String key, Object value){
 		if(value == null) return;
-		this.headers.put(key, value.toString());
+		this.headers.put(key, value);
 	}  
 	
 	public String removeHeader(String key){
+		Object exists = removeHeaderObject(key);
+		if(exists == null) return null; 
+		if(exists instanceof String) return (String)exists;
+		
+		return exists.toString();
+	}
+	
+	public Object removeHeaderObject(String key){
 		return this.headers.remove(key);
 	}
 	

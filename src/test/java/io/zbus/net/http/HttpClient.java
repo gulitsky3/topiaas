@@ -281,8 +281,8 @@ public class HttpClient {
 		Builder builder = new Builder();
 		HttpUrl url = HttpUrl.parse(msg.getUrl());
 		builder.url(url);
-		for(Entry<String, String> e : msg.getHeaders().entrySet()){
-			builder.addHeader(e.getKey(), e.getValue());
+		for(Entry<String, Object> e : msg.getHeaders().entrySet()){
+			builder.addHeader(e.getKey(), (String)e.getValue());
 		}
 		if("GET".equalsIgnoreCase(msg.getMethod())){
 			builder.get();

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.zbus.kit.FileKit;
+import io.zbus.mq.MqServer;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.annotation.Route;
@@ -17,23 +18,7 @@ public class RpcServerFullExamples {
 	//default: /plus/{a}/{b}
 	public int plus(int a, int b) {
 		return a+b;
-	} 
-	
-	public Object testOverride(String data) {
-		return "testOverride(String data)" + data;
-	}
-	
-	public Object testOverride(Map<String, Object> data) {
-		return data;
-	}
-	
-	public Object testOverride(int i, Map<String, Object> data) {
-		return "testOverride(int i, Map<String, Object> data)" + data;
-	}
-	
-	public Object testOverride() {
-		return "testOverride()";
-	}
+	}  
 	
 	@Route("/abc") //default path could be changed
 	public Object json() {
@@ -129,8 +114,9 @@ public class RpcServerFullExamples {
 		rpcServer.setRpcProcessor(p); 
 		p.setDocFile("rpc.html");
 		
-		rpcServer.setMqServerAddress("localhost:15555");
-		rpcServer.setMq("/");  
+		//rpcServer.setMqServerAddress("localhost:15555");
+		//rpcServer.setMq("/");  
+		rpcServer.setMqServer(new MqServer(15555));
 		rpcServer.start();  
 	}  
 }

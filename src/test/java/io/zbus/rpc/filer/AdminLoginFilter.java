@@ -9,7 +9,7 @@ public class AdminLoginFilter implements RpcFilter {
 
 	@Override
 	public boolean doFilter(Message request, Message response, Throwable exception) { 
-		System.out.println("[Filter=admin]: " + request);
+		System.out.println("[Filter=admin]: " + request); 
 		return true;
 	} 
 }

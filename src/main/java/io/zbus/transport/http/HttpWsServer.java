@@ -159,15 +159,31 @@ public class HttpWsServer extends Server {
 			String contentType = msg.getHeader(Http.CONTENT_TYPE); 
 			if(contentType == null) {
 				contentType = "application/json; charset=utf8";
+			} 
+			
+			for (Entry<String, Object> e : msg.getHeaders().entrySet()) { 
+				String key = e.getKey();
+				Object value = e.getValue(); 
+				if(value instanceof List) {
+					@SuppressWarnings("unchecked")
+					List<Object> listValue = (List<Object>)value;
+					for(Object listItem : listValue) {
+						httpMessage.headers().add(key, listItem);
+					}
+				} else if (value instanceof Object[]) {
+					for(Object arrayItem : (Object[])value) {
+						httpMessage.headers().add(key, arrayItem);
+					}
+				} else {
+					httpMessage.headers().add(key, value);
+				} 
 			}
+			
 			httpMessage.headers().set("Connection", "Keep-Alive");
 			httpMessage.headers().set(Http.CONTENT_TYPE, contentType); 
 			
-			for (Entry<String, String> e : msg.getHeaders().entrySet()) { 
-				httpMessage.headers().set(e.getKey(), e.getValue());
-			}
-			byte[] body = Http.body(msg);
-			httpMessage.headers().set(Http.CONTENT_LENGTH, body.length+"");
+			byte[] body = Http.body(msg); 
+			httpMessage.headers().set(Http.CONTENT_LENGTH, body.length);
 			httpMessage.content().writeBytes(Http.body(msg)); 
 			out.add(httpMessage);
 		}
@@ -251,12 +267,28 @@ public class HttpWsServer extends Server {
 			out.add(msg);
 		} 
 	
+		@SuppressWarnings("unchecked")
 		private Message decodeHeaders(io.netty.handler.codec.http.HttpMessage httpMsg){
 			Message msg = new Message();
 			Iterator<Entry<String, String>> iter = httpMsg.headers().iteratorAsString();
 			while (iter.hasNext()) {
 				Entry<String, String> e = iter.next();
-				msg.setHeader(e.getKey(), e.getValue()); 
+				Object existValue = msg.getHeaderObject(e.getKey());
+				if(existValue == null) {
+					msg.setHeader(e.getKey(), e.getValue()); 
+					continue;
+				} 
+				 
+				if(existValue instanceof List) {
+					List<Object> valueList = (List<Object>)existValue;
+					valueList.add(e.getValue());
+					continue;
+				}   
+				
+				List<Object> valueList = new ArrayList<>();
+				valueList.add(existValue);
+				valueList.add(e.getValue()); 
+				msg.setHeader(e.getKey(), valueList); 
 			}  
 	
 			if (httpMsg instanceof HttpRequest) {
