@@ -18,7 +18,7 @@ zbus carefully designed on its protocol and components to embrace KISS(Keep It S
 - Easy RPC support out of box 
 - HTTP/WebSocket/InProc + JSON simple format, multiple languages support
 - SSL + API Auth secured
-- Extremely light-weighted 
+- Extremely light-weighted (z---bus)
  
 ## Getting started  
 In zbus-dist directory, just run zbus.bat/sh, JDK8+ required. 
