@@ -13,7 +13,7 @@ public class JsKit {
 	private static Class<?> scriptClass;
 	static {
 		try {
-			scriptClass = Class.forName("jdk.nashorn.api.scripting.ScriptObjectMirror");
+			scriptClass = Class.forName("jdk.nashorn.api.scripting.ScriptObjectMirror"); //TODO remove nashorn dependency
 		} catch (ClassNotFoundException e) { 
 			scriptClass = null;
 			e.printStackTrace();

@@ -215,7 +215,7 @@ public class InterfaceExampleImpl implements InterfaceExample{
 	} 
 	
 	ScriptEngineManager factory = new ScriptEngineManager();
-	ScriptEngine engine = factory.getEngineByName("nashorn");
+	ScriptEngine engine = factory.getEngineByName("javascript");
 	@Override
 	public Object callJs() { 
 		try {  

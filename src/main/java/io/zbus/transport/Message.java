@@ -186,6 +186,22 @@ public class Message {
 		return value;
 	}
 	
+	public String param(String key) {
+		return getParam(key);
+	}
+	
+	public List<String> paramArray(String key) {
+		return getParamArray(key);
+	}
+	
+	public String queryString() {
+		if(url == null) return null;
+		if(urlInfo == null) {
+			urlInfo = HttpKit.parseUrl(url);
+		}
+		return urlInfo.queryParamString;
+	}
+	
 	public List<String> getParamArray(String key) {
 		if(url == null) return new ArrayList<>();
 		if(urlInfo == null) {

@@ -19,7 +19,7 @@ import io.zbus.transport.Message;
 @Route(exclude = true)
 public class JavascriptInvoker {
 	ScriptEngineManager factory = new ScriptEngineManager();
-	ScriptEngine engine = factory.getEngineByName("nashorn");
+	ScriptEngine engine = factory.getEngineByName("javascript");
 	
 	private Map<String, Object> context = new HashMap<>(); 
 	private FileKit fileKit = new FileKit(false);
@@ -71,8 +71,8 @@ public class JavascriptInvoker {
 		
 		engine.eval(js);
 		Invocable inv = (Invocable) engine;
-		Object res = inv.invokeFunction("main", context, InvocationContext.getRequest(),
-				InvocationContext.getResponse());
+		Object res = inv.invokeFunction("main", InvocationContext.getRequest(),
+				InvocationContext.getResponse(), context);
 		return JsKit.convert(res);
 	}
 

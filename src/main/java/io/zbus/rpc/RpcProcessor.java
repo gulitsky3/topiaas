@@ -524,7 +524,7 @@ public class RpcProcessor {
 		MethodTarget target = new MethodTarget();  
 		Object[] params = null;  
 		Object body = req.getBody(); //assumed to be params 
-		if(body != null) {
+		if(body != null) {//body parameters goes first
 			if(body instanceof JSONObject || body instanceof FormData) { 
 				FormData form = JsonKit.convert(body, FormData.class); 
 				req.setBody(form);
@@ -540,6 +540,7 @@ public class RpcProcessor {
 				}
 			}
 		}   
+		//Body parameters goes first, only if body has no parameters, check url part
 		if(params == null) { 
 			String subUrl = url.substring(urlPathMatched.length());
 			UrlInfo info = HttpKit.parseUrl(subUrl);
