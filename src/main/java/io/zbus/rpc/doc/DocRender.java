@@ -15,14 +15,10 @@ import io.zbus.transport.http.Http;
 
 public class DocRender { 
 	private FileKit fileKit = new FileKit();
-	private final RpcProcessor rpcProcessor;  
-	private final String urlPrefix;
-	private final String mqContext;
+	private final RpcProcessor rpcProcessor;   
 	
-	public DocRender(RpcProcessor rpcProcessor, String urlPrefix, String mqContext) {
-		this.rpcProcessor = rpcProcessor; 
-		this.urlPrefix = urlPrefix;
-		this.mqContext = mqContext;
+	public DocRender(RpcProcessor rpcProcessor) {
+		this.rpcProcessor = rpcProcessor;  
 	}   
 	
 	@RequestMapping(path="/", docEnabled=false)
@@ -41,12 +37,11 @@ public class DocRender {
 		String js = fileKit.loadFile("static/zbus.min.js");
 		model.put("content", doc); 
 		model.put("zbusjs", js); 
-		String urlPrefix = this.urlPrefix;
+		String urlPrefix = this.rpcProcessor.getUrlPrefix();
 		if(urlPrefix.endsWith("/")) {
 			urlPrefix = urlPrefix.substring(0, urlPrefix.length()-1);
 		}
-		model.put("urlPrefix", urlPrefix); 
-		model.put("mq", this.mqContext);
+		model.put("urlPrefix", urlPrefix);  
 		
 		String body = fileKit.loadFile("static/rpc.htm", model);
 		result.setBody(body);
@@ -62,7 +57,7 @@ public class DocRender {
 				"<td class=\"methodParams\"><code><strong><a href=\"%s\">%s</a></strong>(%s)</code>" +  
 				"</td>" + 
 				"</tr>"; 
-		String methodLink = HttpKit.joinPath(urlPrefix, m.getUrlPath()); 
+		String methodLink = HttpKit.joinPath(rpcProcessor.getUrlPrefix(), m.getUrlPath()); 
 		String method = m.method;
 		String paramList = "";
 		int size = m.paramNames.size();

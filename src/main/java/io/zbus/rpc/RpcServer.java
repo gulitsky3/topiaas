@@ -49,6 +49,9 @@ public class RpcServer implements Closeable {
 	private boolean authEnabled = false; //Enable mq channel's authentication
 	private String apiKey;
 	private String secretKey;
+	
+	public RpcServer() { 
+	} 
 	 
 	public RpcServer(RpcProcessor processor) {
 		this.processor = processor; 
@@ -80,8 +83,7 @@ public class RpcServer implements Closeable {
 	}    
 	
 	public RpcServer setMq(String mq){ 
-		this.mq = mq;
-		this.processor.setDocMqContext(mq);
+		this.mq = mq; 
 		return this;
 	}    
 	
@@ -158,6 +160,9 @@ public class RpcServer implements Closeable {
 	} 
 	 
 	public RpcServer start() throws Exception{  
+		if(this.processor == null) {
+			throw new IllegalStateException("Missing RpcProcessor");
+		}
 		if(onStart != null) {
 			onStart.onStart(processor);
 		} 

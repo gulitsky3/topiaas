@@ -10,8 +10,8 @@ public class RpcServerMQInproc {
 	public static void main(String[] args) throws Exception {  
 		  
 		RpcProcessor p = new RpcProcessor();
-		p.setUrlPrefix(""); 
-		p.addModule("", InterfaceExampleImpl.class);  
+		p.setUrlPrefix("");  
+		p.addModule("example", InterfaceExampleImpl.class);  
 		
 		
 		MqServerConfig config = new MqServerConfig("0.0.0.0", 15555);  

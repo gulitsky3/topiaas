@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
-import io.zbus.mq.plugin.UrlEntry;
 import io.zbus.kit.JsonKit;
+import io.zbus.mq.plugin.UrlEntry;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
@@ -34,8 +34,7 @@ public class RpcProcessor {
 	private String urlPrefix="";
 	
 	private boolean docEnabled = true; 
-	private String docModule = "";
-	private String docMqContext = "";
+	private String docModule = "doc"; 
 	
 	 
 	private boolean stackTraceEnabled = true;   
@@ -434,7 +433,7 @@ public class RpcProcessor {
 	}
 	
 	public RpcProcessor enableDoc() { 
-		DocRender render = new DocRender(this, urlPrefix, docMqContext); 
+		DocRender render = new DocRender(this); 
 		addModule(docModule, render, false, false, false);
 		return this;
 	}   
@@ -479,16 +478,8 @@ public class RpcProcessor {
 	public RpcProcessor setDocModule(String docModule) {
 		this.docModule = docModule;
 		return this;
-	} 
+	}  
 	
-	public String getDocMqContext() {
-		return docMqContext;
-	}
-	
-	public void setDocMqContext(String docMqContext) {
-		this.docMqContext = docMqContext;
-	}
-
 	@SuppressWarnings("unchecked")
 	public void setModuleTable(Map<String, Object> instances){
 		if(instances == null) return;

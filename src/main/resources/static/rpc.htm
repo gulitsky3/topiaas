@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-<title>{{mq}} Java</title>  
+<title>{{urlPrefix}} Java</title>  
 
 <style type='text/css'>
 body {
@@ -35,15 +35,12 @@ tr { display: table-row;  vertical-align: inherit; border-color: inherit; }
 <script type="text/javascript">
 {{zbusjs}}
 
-const rpc = new RpcClient(null, '{{mq}}');
+const rpc = new RpcClient(null, '{{urlPrefix}}');
 
 
 </script> 
 
-<div>
-<div class='url'>
-    <span>Default URL={{urlPrefix}}/[module]/[method]/[param1]/[param2]/...</span>  
-</div>
+<div> 
 
 <table class='table'>
 <thead>

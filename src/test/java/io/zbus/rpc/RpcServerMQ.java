@@ -7,15 +7,16 @@ public class RpcServerMQ {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {  
 		  
-		RpcProcessor p = new RpcProcessor();
-		p.setUrlPrefix("/kom");
-		p.addModule("", InterfaceExampleImpl.class);  
+		RpcProcessor p = new RpcProcessor(); 
+		p.setUrlPrefix("/test");
+		p.addModule("example", InterfaceExampleImpl.class);  
 		
 		
-		RpcServer server = new RpcServer(p); 
+		RpcServer server = new RpcServer(); 
 		//connect to zbus
+		server.setProcessor(p);
 		server.setMqServerAddress("localhost:15555");
-		server.setMq("kom"); 
+		server.setMq("MyRpc2"); //MQ entry, RPC client incognito
 		//MQ authentication, no need to configure if use HTTP direct RPC
 		//server.setAuthEnabled(true);
 		//server.setApiKey("2ba912a8-4a8d-49d2-1a22-198fd285cb06");
