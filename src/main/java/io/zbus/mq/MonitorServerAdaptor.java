@@ -14,7 +14,6 @@ import io.zbus.mq.model.MessageQueue;
 import io.zbus.rpc.RpcException;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
-import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
@@ -77,19 +76,15 @@ public class MonitorServerAdaptor extends ServerAdaptor {
 	}
 	
 	class MonitorService {
-		private FileKit fileKit = new FileKit();
-
-		@RequestMapping("/")
-		public Message index() {
-			return fileKit.loadResource("static/home.htm");
-		}
-
+		private FileKit fileKit = new FileKit();  
+		
 		@RequestMapping(path = "/favicon.ico", docEnabled = false)
 		public Message favicon() {
 			return fileKit.loadResource("static/favicon.ico");
 		}
-		 
-		public Object query(@Param("params") Map<String, String> params) { 
+		
+		@RequestMapping("/")
+		public Object query(Map<String, String> params) { 
 			if(params == null) {
 				params = new HashMap<>(); 
 			} 
@@ -108,7 +103,7 @@ public class MonitorServerAdaptor extends ServerAdaptor {
 			return q.channel(channel);
 		} 
 		
-		public MqInfo create(@Param("params") Map<String, String> params, Message msg) throws IOException { 
+		public MqInfo create(Map<String, String> params, Message ctx) throws IOException { 
 			if(params == null) {
 				throw new RpcException(400, "Missing query params");
 			} 
@@ -122,13 +117,13 @@ public class MonitorServerAdaptor extends ServerAdaptor {
 			String channel = params.get(Protocol.CHANNEL); 
 			Integer channelMask = StrKit.getInt(params, Protocol.CHANNEL_MASK);
 			Long offset = StrKit.getLong(params, Protocol.OFFSET); 
-			String creator = msg.getHeader(Protocol.REMOTE_ADDR);
+			String creator = ctx.getHeader(Protocol.REMOTE_ADDR);
 			
 			MessageQueue mq = mqManager.saveQueue(mqName, mqType, mqMask, channel, offset, channelMask, creator); 
 			return mq.info();
 		} 
 		
-		public Message remove(@Param("params") Map<String, String> params) throws IOException { 
+		public Message remove(Map<String, String> params) throws IOException { 
 			if(params == null) {
 				throw new RpcException(400, "Missing query params");
 			} 

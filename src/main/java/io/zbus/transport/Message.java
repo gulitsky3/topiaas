@@ -28,6 +28,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.fastjson.JSON;
+
+import io.zbus.kit.HttpKit;
+import io.zbus.kit.HttpKit.UrlInfo;
+import io.zbus.kit.JsonKit;
 /**
  * Message takes format of standard HTTP:
  * <p> key-value headers  
@@ -49,7 +53,11 @@ public class Message {
 	protected String statusText;  
 	
 	protected Map<String, String> headers = new ConcurrentHashMap<String, String>(); 
-	protected Object body;    
+	protected Object body;  
+	
+	
+	//URL parser helper
+	private UrlInfo urlInfo;
 	
 	public Message() {
 		
@@ -147,6 +155,26 @@ public class Message {
 	public void setBody(Object body) { 
 		this.body = body; 
 	}  
+	
+	/**
+	 * Get URL query string param
+	 * @param key
+	 * @return
+	 */
+	public String getParam(String key) {
+		if(url == null) return null;
+		if(urlInfo == null) {
+			urlInfo = HttpKit.parseUrl(url);
+		}
+		String value = urlInfo.queryParamMap.get(key);
+		return value;
+	}
+	
+	public <T> T getParam(String key, Class<T> clazz){ 
+		String value = getParam(key);
+		if(value == null) return null;
+		return JsonKit.convert(value, clazz);
+	}
 	
 	@Override
 	public String toString() {

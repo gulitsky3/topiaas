@@ -242,7 +242,7 @@ public class RpcProcessor {
 	
 	
 	private boolean checkParams(Message req, Message res, Method method, Object[] params, Object[] invokeParams) {
-		Class<?>[] targetParamTypes = method.getParameterTypes();
+		Class<?>[] targetParamTypes = method.getParameterTypes(); 
 		/*
 		boolean reqInject = false;
 		int count = 0; 
@@ -258,7 +258,7 @@ public class RpcProcessor {
 			String msg = String.format("Request(Url=%s, Method=%s, Params=%s) Bad Format", req.getUrl(), method.getName(), JsonKit.toJSONString(params));
 			reply(res, 400, msg);
 			return false;
-		}
+		} 
 		*/
 		for (int i = 0; i < targetParamTypes.length; i++) { 
 			Class<?> paramType = targetParamTypes[i];

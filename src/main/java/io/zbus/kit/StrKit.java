@@ -16,19 +16,7 @@ public class StrKit {
 	
 	public static Map<String, String> kvp(String value){
 		return StrKit.kvp(value, "&");
-	}
-	
-	public static Integer getInt(Map<String, String> map, String key) {
-		String value = map.get(key);
-		if(value == null) return null;
-		return Integer.valueOf(value);
-	}
-	
-	public static Long getLong(Map<String, String> map, String key) {
-		String value = map.get(key);
-		if(value == null) return null;
-		return Long.valueOf(value);
-	}
+	} 
 
 	public static Map<String, String> kvp(String value, String delim){
 		if(isEmpty(delim)) {
@@ -54,6 +42,24 @@ public class StrKit {
 			res.put(k, v);
 		}
 		return res;
+	}
+	
+	public static Integer getInt(Map<String, String> map, String key) {
+		String value = map.get(key);
+		if(value == null) return null;
+		return Integer.valueOf(value);
+	}
+	
+	public static Long getLong(Map<String, String> map, String key) {
+		String value = map.get(key);
+		if(value == null) return null;
+		return Long.valueOf(value);
+	}
+	
+	public static Double getDouble(Map<String, String> map, String key) {
+		String value = map.get(key);
+		if(value == null) return null;
+		return Double.valueOf(value);
 	}
 
 }

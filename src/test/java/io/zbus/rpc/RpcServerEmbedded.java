@@ -28,12 +28,12 @@ public class RpcServerEmbedded {
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {   
-		RpcProcessor p = new RpcProcessor();   
-		p.setDocUrl("/");
-		p.mount("/example", RpcServerEmbedded.class);     
-		
 		StaticResource resource = new StaticResource(); 
 		resource.setBasePath("\\tmp"); 
+		
+		RpcProcessor p = new RpcProcessor();   
+		p.setDocUrl("/");
+		p.mount("/example", RpcServerEmbedded.class);    
 		p.mount("/static", resource);
 		
 		//Serve RPC embedded in MqServer 

@@ -11,6 +11,7 @@ import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
+import io.zbus.mq.plugin.UrlMqRouter;
 
 public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;
@@ -20,8 +21,23 @@ public class MqServerConfig extends XmlConfig {
 	public int maxSocketCount = 102400;
 	public int packageSizeLimit = 1024 * 1024 * 64; // 64M
 	public String mqDiskDir = "/tmp/zbus"; 
-	public String mqDbUrl;  
+	public String mqDbUrl;
+	public String mqDbUser;
+	public String mqDbPassword;
+	
+	/**
+	 * URL mappting to MQ, nullable to default
+	 */
+	public UrlMqRouter urlMqRouter;       
+	/**
+	 * In URL match, match rpc first over MQ, default to false
+	 */
+	public boolean urlMatchLocalRpcFirst = false; 
 	public boolean verbose = true;  
+	/**
+	 * File cached for FileKit to load static files
+	 */
+	public boolean fileCacheEnabled = true;
 	
 	public MqServerConfig() { 
 		
@@ -141,7 +157,50 @@ public class MqServerConfig extends XmlConfig {
 
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
-	}   
+	}     
+	
+	public String getMqDbUser() {
+		return mqDbUser;
+	}
+
+	public void setMqDbUser(String mqDbUser) {
+		this.mqDbUser = mqDbUser;
+	}
+
+	public String getMqDbPassword() {
+		return mqDbPassword;
+	}
+
+	public void setMqDbPassword(String mqDbPassword) {
+		this.mqDbPassword = mqDbPassword;
+	}
+
+	public UrlMqRouter getUrlMqRouter() {
+		return urlMqRouter;
+	}
+
+	public void setUrlMqRouter(UrlMqRouter urlMqRouter) {
+		this.urlMqRouter = urlMqRouter;
+	}
+
+	public boolean isUrlMatchLocalRpcFirst() {
+		return urlMatchLocalRpcFirst;
+	}
+
+	public void setUrlMatchLocalRpcFirst(boolean urlMatchLocalRpcFirst) {
+		this.urlMatchLocalRpcFirst = urlMatchLocalRpcFirst;
+	}
+
+	public boolean isFileCacheEnabled() {
+		return fileCacheEnabled;
+	}
+
+	public void setFileCacheEnabled(boolean fileCacheEnabled) {
+		this.fileCacheEnabled = fileCacheEnabled;
+	}
+
+
+
 
 	public static class ServerConfig{
 		public String address;

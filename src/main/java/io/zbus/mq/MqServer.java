@@ -41,7 +41,7 @@ public class MqServer extends HttpWsServer {
 		privateServerConfig = config.privateServer;
 		if(privateServerConfig != null) {
 			if(publicServerAdaptor != null) {
-				privateServerAdaptor = publicServerAdaptor.duplicate(); //share internal state
+				privateServerAdaptor = publicServerAdaptor.clone(); //share internal state
 			} else {
 				privateServerAdaptor = new MqServerAdaptor(this.config);
 			} 

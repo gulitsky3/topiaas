@@ -20,6 +20,8 @@ import io.zbus.mq.commands.RemoveHandler;
 import io.zbus.mq.commands.RouteHandler;
 import io.zbus.mq.commands.SubHandler;
 import io.zbus.mq.commands.TakeHandler;
+import io.zbus.mq.plugin.DefaultUrlMqRouter;
+import io.zbus.mq.plugin.UrlMqRouter;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
@@ -33,7 +35,7 @@ import io.zbus.transport.http.Http;
  * @author leiming.hong Jul 9, 2018
  *
  */
-public class MqServerAdaptor extends ServerAdaptor { 
+public class MqServerAdaptor extends ServerAdaptor implements Cloneable { 
 	private static final Logger logger = LoggerFactory.getLogger(MqServerAdaptor.class); 
 	private SubscriptionManager subscriptionManager;
 	private MessageDispatcher messageDispatcher;
@@ -43,8 +45,13 @@ public class MqServerAdaptor extends ServerAdaptor {
 	private boolean verbose = true;  
 	
 	private RpcProcessor rpcProcessor;
+	private MqServerConfig config;
+	
+	private UrlMqRouter urlMqRouter;
+	private FileKit fileKit;
 	
 	public MqServerAdaptor(MqServerConfig config) { 
+		this.config = config;
 		mqManager = new MessageQueueManager();
 		subscriptionManager = new SubscriptionManager(mqManager);  
 		
@@ -52,7 +59,14 @@ public class MqServerAdaptor extends ServerAdaptor {
 		mqManager.mqDir = config.mqDiskDir; 
 		verbose = config.verbose;
 		
+		fileKit = new FileKit(config.fileCacheEnabled);
 		mqManager.loadQueueTable();    
+		
+		urlMqRouter = config.getUrlMqRouter();
+		
+		if(urlMqRouter == null) {
+			urlMqRouter = new DefaultUrlMqRouter();
+		} 
 		
 		commandTable.put(Protocol.PUB, new PubHandler(messageDispatcher, mqManager));
 		commandTable.put(Protocol.SUB, new SubHandler(messageDispatcher, mqManager, subscriptionManager));
@@ -64,23 +78,18 @@ public class MqServerAdaptor extends ServerAdaptor {
 		commandTable.put(Protocol.PING, (req, sess)->{}); 
 	} 
 	
-	public MqServerAdaptor duplicate() {
-		MqServerAdaptor copy = new MqServerAdaptor(sessionTable);
-		copy.subscriptionManager = subscriptionManager;
-		copy.messageDispatcher = messageDispatcher;
-		copy.mqManager = mqManager;
-		copy.requestAuth = requestAuth;
-		copy.commandTable = commandTable;
-		copy.verbose = verbose;  
-		copy.rpcProcessor = rpcProcessor;
-		return copy;
-	}
+	@Override
+	protected MqServerAdaptor clone() { 
+		try {
+			MqServerAdaptor clone = (MqServerAdaptor) super.clone();
+			clone.requestAuth = null;
+			return clone;
+		} catch (CloneNotSupportedException e) {
+			return null;
+		}
+	}  
 	
-	private MqServerAdaptor(Map<String, Session> sessionTable) {
-		super(sessionTable);
-	}
-	
-	protected void attachInfo(Message request, Session sess) {
+	private void attachInfo(Message request, Session sess) {
 		request.setHeader(Protocol.SOURCE, sess.id());
 		request.setHeader(Protocol.REMOTE_ADDR, sess.remoteAddress());
 		if(request.getHeader(Protocol.ID) == null) {
@@ -148,32 +157,25 @@ public class MqServerAdaptor extends ServerAdaptor {
 			logger.error(e.getMessage(), e);
 			MsgKit.reply(req, 500, e.getMessage(), sess);  
 		}
-	}   
+	}    
 	
-	/**
-	 * Find longest URL matched
-	 * @param url
-	 * @return
-	 */
-	private String matchMqPath(String url) {
-		int length = 0; 
-		String matched = null;
-		for(String mq : mqManager.mqNames()) { 
-			if(url.startsWith(mq)) {
-				if(mq.length() > length) {
-					length = mq.length();
-					matched = mq; 
-				}
-			}
-		}  
-		return matched;
-	}
 	
-	private boolean routeUrl(Message req, Session sess) { 
+	public boolean routeUrl(Message req, Session sess) { 
 		String url = req.getUrl();
 		if(url == null) return false;   
 		
-		String mq = matchMqPath(url); //
+		if(config.urlMatchLocalRpcFirst) {
+			if(rpcProcessor != null) {
+				if(rpcProcessor.matchUrl(url)) {
+					Message res = new Message();
+					rpcProcessor.process(req, res);
+					sess.write(res); 
+					return true;
+				} 
+			} 
+		}
+		
+		String mq = urlMqRouter.match(mqManager, url); 
 		if(mq != null) {
 			req.setHeader(Protocol.MQ, mq);
 			//Assumed to be RPC
@@ -182,27 +184,32 @@ public class MqServerAdaptor extends ServerAdaptor {
 				req.setHeader(Protocol.ACK, false); //ACK should be disabled
 			}  
 			
-			//TODO check if consumer exists, reply 502, no service available
-			
+			//TODO check if consumer exists, reply 502, no service available 
 			return false;
-		}
+		} 
 		
-		if(rpcProcessor != null) {
-			if(rpcProcessor.matchUrl(url)) {
-				Message res = new Message();
-				rpcProcessor.process(req, res);
-				sess.write(res); 
-				return true;
+		if(!config.urlMatchLocalRpcFirst) {
+			if(rpcProcessor != null) {
+				if(rpcProcessor.matchUrl(url)) {
+					Message res = new Message();
+					rpcProcessor.process(req, res);
+					sess.write(res); 
+					return true;
+				} 
 			} 
 		} 
-		  
-		Message res = new Message(); 
-		res.setStatus(200);
-		res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-		res.setBody("<h1> Welcome to zbus</h1>");
+		
+		Message res = fileKit.loadResource("index.htm");
+		
+		if(res.getStatus() != 200) {
+			res = new Message();
+			res.setStatus(200);
+			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+			res.setBody("<h1> Welcome to zbus</h1>"); 
+		} 
 		sess.write(res); 
 		return true; 
-	} 
+	}
 	
 	public void setRpcProcessor(RpcProcessor rpcProcessor) {
 		this.rpcProcessor = rpcProcessor;

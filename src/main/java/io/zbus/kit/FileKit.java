@@ -50,8 +50,8 @@ import io.zbus.transport.http.Http.FileForm;
 import io.zbus.transport.http.Http.FileUpload;
 
 public class FileKit {
-	private final Map<String, String> cache = new ConcurrentHashMap<String, String>();
-	private boolean enableCache = true;
+	private final Map<String, byte[]> cache = new ConcurrentHashMap<String, byte[]>();
+	private boolean cacheEnabled = true;
 
 	public static FileKit INSTANCE = new FileKit();
 
@@ -60,11 +60,11 @@ public class FileKit {
 	}
 
 	public FileKit(boolean cached) {
-		this.enableCache = cached;
+		this.cacheEnabled = cached;
 	}
 
-	public void setCache(boolean value) {
-		enableCache = value;
+	public void setCacheEnabled(boolean value) {
+		cacheEnabled = value;
 	}
 
 	public static InputStream inputStream(String resource) {
@@ -98,8 +98,8 @@ public class FileKit {
 	}
 
 	public String loadFile(String resource) throws IOException {
-		if (enableCache && cache.containsKey(resource)) {
-			return cache.get(resource);
+		if (cacheEnabled && cache.containsKey(resource)) {
+			return new String(cache.get(resource));
 		}
 
 		InputStream in = FileKit.class.getClassLoader().getResourceAsStream(resource);
@@ -125,7 +125,7 @@ public class FileKit {
 			}
 		}
 		String content = writer.toString();
-		cache.put(resource, content);
+		cache.put(resource, content.getBytes());
 		return content;
 	}
 
@@ -149,6 +149,9 @@ public class FileKit {
 	}
 
 	public byte[] loadFileBytes(String resource) throws IOException {
+		if (cacheEnabled && cache.containsKey(resource)) {
+			return cache.get(resource);
+		}
 		InputStream in = inputStream(resource);
 		if (in == null)
 			throw new FileNotFoundException("File(" + resource + ") Not Found");
@@ -168,7 +171,9 @@ public class FileKit {
 				// ignore
 			}
 		}
-		return buffer.toByteArray();
+		byte[] res = buffer.toByteArray();
+		cache.put(resource, res);
+		return res;
 	} 
 	
 	public Message loadResource(String resource) {

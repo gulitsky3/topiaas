@@ -26,6 +26,9 @@ public class DiskQueue extends AbstractMessageQueue {
 		super(FileNameNormalizer.normalizeName(mqDir)); 
 		File mqDirFile = new File(baseDir, FileNameNormalizer.escapeName(mqDir));
 		index = new Index(mqDirFile);
+		if(creator != null) {
+			index.setCreator(creator); 
+		}
 		writer = new QueueWriter(index);
 		
 		loadChannels();
@@ -43,6 +46,8 @@ public class DiskQueue extends AbstractMessageQueue {
 		info.mask = getMask();
 		info.messageDepth = size(); 
 		info.channelCount = channels().size();  
+		info.creator = index.getCreator();
+		info.createdAt = index.getCreatedTime();
 		return info;
 	}
 	

@@ -20,7 +20,7 @@ public class StaticResource {
 	}
 	@RequestMapping(exclude=true)
 	public void setCacheEnabled(boolean cacheEnabled) {
-		this.fileKit.setCache(cacheEnabled);
+		this.fileKit.setCacheEnabled(cacheEnabled);
 	}
 	
 	@RequestMapping("/")
