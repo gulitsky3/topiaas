@@ -13,6 +13,8 @@ zbus strives to make Message Queue and Remote Procedure Call fast, light-weighte
 
 zbus carefully designed on its protocol and components to embrace KISS(Keep It Simple and Stupid) principle, but in all it delivers power and elasticity. 
 
+
+
 ## Features
 - Fast MQ of disk|memory|db, capable of unicast, multicast and broadcast messaging models
 - Easy RPC support out of box 
@@ -27,11 +29,11 @@ zbus carefully designed on its protocol and components to embrace KISS(Keep It S
 
 [zbus-python](https://gitee.com/rushmore/zbus-python)
 
-[zbus-java (same as zbus server)](https://gitee.com/rushmore/zbus)
+[zbus-java](https://gitee.com/rushmore/zbus) [javadoc](https://apidoc.gitee.com/rushmore/zbus)
 
 [zbus-dotnet](https://gitee.com/rushmore/zbus-dotnet)
 
-## Getting started  
+## How to start zbus server 
 In zbus-dist directory, just run zbus.bat/sh, JDK8+ required. 
 
 Maven
@@ -41,6 +43,28 @@ Maven
 		<artifactId>zbus</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</dependency>
+
+## Tutorials
+
+### MQ Tutorial
+[js](https://gitee.com/rushmore/zbus-js)
+
+[python](https://gitee.com/rushmore/zbus-python)
+
+[java](https://gitee.com/rushmore/zbus)
+
+[dotnet](https://gitee.com/rushmore/zbus-dotnet)
+
+
+### RPC Tutorial
+[js](https://gitee.com/rushmore/zbus-js)
+
+[python](https://gitee.com/rushmore/zbus-python)
+
+[java](https://gitee.com/rushmore/zbus)
+
+[dotnet](https://gitee.com/rushmore/zbus-dotnet)
+
 
 ## High Level Diagram
 
