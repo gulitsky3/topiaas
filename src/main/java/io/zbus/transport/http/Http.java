@@ -108,9 +108,9 @@ public class Http {
 		return msg; 
 	}
 	
-	private static String charset(String value) {
+	public static String charset(String contentType) {
 		String charset="utf-8";
-		String[] bb = value.split(";"); 
+		String[] bb = contentType.split(";"); 
 		if(bb.length>1){
 			String[] bb2 = bb[1].trim().split("=");
 			if(bb2[0].trim().equalsIgnoreCase("charset")){

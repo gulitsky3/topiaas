@@ -180,8 +180,18 @@ public class HttpWsServer extends Server {
 					int size = body.readableBytes();
 					if (size > 0) {
 						byte[] data = new byte[size];
-						body.readBytes(data);
-						msg.setBody(data);
+						body.readBytes(data); 
+						if(contentType.startsWith("text") || contentType.startsWith("application/json")) {
+							try{
+								String charset = Http.charset(contentType);
+								msg.setBody(new String(data, charset));
+							} catch (Exception e) {
+								logger.error(e.getMessage(), e);
+								msg.setBody(new String(data));
+							}
+						} else {
+							msg.setBody(data);
+						}
 					}
 				}
 			}
