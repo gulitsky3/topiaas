@@ -230,8 +230,9 @@ public class HttpWsServer extends Server {
 				&& contentType != null
 				&& (
 				   contentType.startsWith("application/x-www-form-urlencoded")
-				   || contentType.startsWith("multipart/form-data"))
-				){
+				   || contentType.startsWith("multipart/form-data")
+				)
+			){
 				handleFormMessage((HttpRequest) httpMsg, msg);
 			}  else {
 				//Body
@@ -245,7 +246,12 @@ public class HttpWsServer extends Server {
 					if (size > 0) {
 						byte[] data = new byte[size];
 						body.readBytes(data); 
-						if(contentType.startsWith("text") || contentType.startsWith("application/json")) {
+						if(contentType != null
+							&& (
+								contentType.startsWith("text")
+								|| contentType.startsWith("application/json")
+							)
+						) {
 							try{
 								String charset = Http.charset(contentType);
 								msg.setBody(new String(data, charset));
@@ -373,7 +379,6 @@ public class HttpWsServer extends Server {
 					return;
 				}
 			}
-			
 			super.channelRead(ctx, msg);
 		}
 	 
