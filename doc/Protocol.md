@@ -1,4 +1,4 @@
-## Protocol
+## MQ Protocol
 /**
  * 
  * JSON format
