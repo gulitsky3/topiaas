@@ -59,8 +59,9 @@ public class MessageDispatcher {
 				boolean windowOpen = false;
 				while (index < max) {
 					Subscription sub = subs.get((int) (index % N)); 
-					loadbalanceTable.put(channel, ++index); 
+					
 					if(sub.window != null && sub.window <= 0) { 
+						loadbalanceTable.put(channel, ++index); 
 						continue;
 					} 
 					windowOpen = true;
@@ -75,6 +76,7 @@ public class MessageDispatcher {
 					}
 					if(message == null) return;
 					
+					loadbalanceTable.put(channel, ++index); 
 					String filter = (String) message.getHeader(Protocol.TAG);
 					if (sub.filters.isEmpty() || sub.filters.contains(filter)) {
 						Session sess = sessionTable.get(sub.clientId);

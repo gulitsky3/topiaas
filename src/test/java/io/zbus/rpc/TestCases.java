@@ -3,7 +3,7 @@ package io.zbus.rpc;
 import io.zbus.rpc.biz.InterfaceExample;
 import io.zbus.transport.Message;
 
-public class RpcClientTest { 
+public class TestCases { 
 	
 	public static void doTest(RpcClient rpc) throws Exception {     
 		//1) 原始的方法调用中的数据格式 

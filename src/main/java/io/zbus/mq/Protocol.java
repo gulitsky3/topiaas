@@ -19,6 +19,7 @@ public interface Protocol {
 	public static final String CREATE = "create";   //Create or Update
 	public static final String REMOVE = "remove";   //Remove MQ/Channel
 	public static final String QUERY  = "query";    //Query MQ/Channel
+	public static final String BIND   = "bind";     //Bind URL mapping to MQ message(Make browser friendly)
 	public static final String PING   = "ping";     //Heartbeat ping
 	
 	//Parameter keys(for commands)

@@ -12,15 +12,7 @@ import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
 
-public class MqServerConfig extends XmlConfig {
-	public static class ServerConfig{
-		public String address;
-		public boolean sslEnabled = false;
-		public String sslCertFile;
-		public String sslKeyFile;
-		public RequestAuth auth;
-	}
-	
+public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;
 	public ServerConfig privateServer;
 	public ServerConfig monitorServer;
@@ -32,6 +24,11 @@ public class MqServerConfig extends XmlConfig {
 	public boolean verbose = true;
 	
 	public MqServerConfig() { 
+		
+	}
+	
+	public MqServerConfig(String host, int port) {
+		this.publicServer = new ServerConfig(host+":"+port);
 	}
 
 	public MqServerConfig(String configXmlFile) {
@@ -136,5 +133,71 @@ public class MqServerConfig extends XmlConfig {
 	public void setMqDbUrl(String mqDbUrl) {
 		this.mqDbUrl = mqDbUrl;
 	}
+	
  
+	public boolean isVerbose() {
+		return verbose;
+	}
+
+	public void setVerbose(boolean verbose) {
+		this.verbose = verbose;
+	}
+
+
+	public static class ServerConfig{
+		public String address;
+		public boolean sslEnabled = false;
+		public String sslCertFile;
+		public String sslKeyFile;
+		public RequestAuth auth;
+		
+		public ServerConfig() {
+			
+		}
+		
+		public ServerConfig(String address) {
+			this.address = address;
+		}
+
+		public String getAddress() {
+			return address;
+		}
+
+		public void setAddress(String address) {
+			this.address = address;
+		}
+
+		public boolean isSslEnabled() {
+			return sslEnabled;
+		}
+
+		public void setSslEnabled(boolean sslEnabled) {
+			this.sslEnabled = sslEnabled;
+		}
+
+		public String getSslCertFile() {
+			return sslCertFile;
+		}
+
+		public void setSslCertFile(String sslCertFile) {
+			this.sslCertFile = sslCertFile;
+		}
+
+		public String getSslKeyFile() {
+			return sslKeyFile;
+		}
+
+		public void setSslKeyFile(String sslKeyFile) {
+			this.sslKeyFile = sslKeyFile;
+		}
+
+		public RequestAuth getAuth() {
+			return auth;
+		}
+
+		public void setAuth(RequestAuth auth) {
+			this.auth = auth;
+		}
+		
+	}
 }

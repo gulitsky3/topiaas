@@ -4,6 +4,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -11,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
+import io.zbus.kit.StrKit;
 import io.zbus.mq.MqClient;
 import io.zbus.mq.MqServer;
 import io.zbus.mq.Protocol;
@@ -31,9 +34,12 @@ public class MqRpcServer implements Closeable {
 	
 	private int clientCount = 1;
 	private int heartbeatInterval = 30; // seconds
+	private int poolSize = 64;
 
 	private List<MqClient> clients = new ArrayList<>();
 	private RpcProcessor processor;
+	
+	private ExecutorService runner;
 
 	public MqRpcServer(RpcProcessor processor) {
 		this.processor = processor;
@@ -47,6 +53,9 @@ public class MqRpcServer implements Closeable {
 	}
 	
 	public void start() {
+		if(runner == null) {
+			runner = Executors.newFixedThreadPool(poolSize);
+		} 
 		for(int i=0;i<clientCount;i++) {
 			MqClient client = startClient();
 			clients.add(client);
@@ -79,24 +88,27 @@ public class MqRpcServer implements Closeable {
 			
 			String url = request.getUrl();
 			if(url != null) {
-				String prefix = "/"+mq;
-				if(url.startsWith(prefix)) {
+				String prefix = processor.getUrlPrefix(); 
+				if(!StrKit.isEmpty(prefix) && url.startsWith(prefix)) {
 					url = url.substring(prefix.length());
 					url = HttpKit.joinPath("/", url); 
 					request.setUrl(url);
 				}
 			}
-			Message response = new Message(); 
-			processor.process(request, response);   
-			if(response.getStatus() == null) {
-				response.setStatus(200);
-			}
 			
-			response.setHeader(Protocol.CMD, Protocol.ROUTE);
-			response.setHeader(Protocol.TARGET, source);
-			response.setHeader(Protocol.ID, id);
+			runner.submit(()->{
+				Message response = new Message(); 
+				processor.process(request, response);   
+				if(response.getStatus() == null) {
+					response.setStatus(200);
+				}
+				
+				response.setHeader(Protocol.CMD, Protocol.ROUTE);
+				response.setHeader(Protocol.TARGET, source);
+				response.setHeader(Protocol.ID, id);
 
-			mqClient.sendMessage(response); 
+				mqClient.sendMessage(response); 
+			}); 
 		});
 
 		mqClient.onOpen(() -> {
@@ -189,5 +201,13 @@ public class MqRpcServer implements Closeable {
 
 	public void setSecretKey(String secretKey) {
 		this.secretKey = secretKey;
-	}  
+	}
+
+	public int getPoolSize() {
+		return poolSize;
+	}
+
+	public void setPoolSize(int poolSize) {
+		this.poolSize = poolSize;
+	}   
 }

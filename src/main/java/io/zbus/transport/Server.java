@@ -116,6 +116,10 @@ public class Server implements Closeable {
 		listenTable.put(port, info); 
 	} 
 	
+	public boolean isStarted() {
+		return !this.listenTable.isEmpty();
+	}
+	
 	@Override
 	public void close() throws IOException {
 		if(bossGroup != null){

@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 
-public class RpcServerExample_DynamicMethod {
+public class RpcServerDynamicMethod {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception { 
@@ -21,9 +21,8 @@ public class RpcServerExample_DynamicMethod {
 		p.addMethod(spec, service);  
 	
 		
-		RpcServer server = new RpcServer();  
-		server.setProcessor(p);
-		server.setPort(80);
+		RpcServer server = new RpcServer(p);   
+		server.setPort(8080);
 		server.start();
 	}
 }

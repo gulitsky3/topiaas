@@ -7,7 +7,7 @@ import io.zbus.kit.FileKit;
 import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 
-public class RpcServerExample {   
+public class RpcServerDirectHttp {   
 	private FileKit fileKit = new FileKit(false); 
 	
 	@RequestMapping("/")
@@ -54,13 +54,13 @@ public class RpcServerExample {
 		
 		RpcProcessor p = new RpcProcessor();
 		StaticResource resource = new StaticResource();
-		resource.setBasePath("/tmp");
-		p.setDocModule("m");
-		p.addModule("example", RpcServerExample.class); 
+		resource.setBasePath("\\tmp"); 
+		
+		p.setDocModule("m"); 
+		p.addModule("", RpcServerDirectHttp.class); 
 		p.addModule("static", resource);
 		
-		RpcServer server = new RpcServer();      
-		server.setProcessor(p); 
+		RpcServer server = new RpcServer(p);       
 		server.setPort(8080);
 		server.start();
 	}

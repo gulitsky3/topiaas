@@ -1,9 +1,12 @@
 package io.zbus.rpc;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.io.Closeable;
 import java.io.IOException;
 
 import io.netty.handler.ssl.SslContext;
+import io.zbus.mq.MqServer;
 import io.zbus.rpc.server.HttpRpcServerAdaptor;
 import io.zbus.rpc.server.MqRpcServer;
 import io.zbus.transport.IoAdaptor;
@@ -38,30 +41,21 @@ public class RpcServer implements Closeable {
 	private String mq;
 	private String mqType;
 	private String channel;         //Default to MQ
+	private MqServer mqServer;      //InProc MQ server
 	private String mqServerAddress; //Support MQ based RPC
 	private Integer mqClientCount;
 	private Integer mqHeartbeatInterval;
 	private MqRpcServer mqRpcServer;
+	
 	//Auth for mq client
 	private boolean authEnabled = false; //Enable mq channel's authentication
 	private String apiKey;
 	private String secretKey;
-	
-	public RpcServer() {
-		this.processor = new RpcProcessor();
-	}
+	 
 	public RpcServer(RpcProcessor processor) {
 		this.processor = processor;
-	}
-	
-	public RpcServer setProcessor(RpcProcessor processor) {
-		this.processor = processor;
-		return this;
-	}
-	
-	public RpcProcessor getProcessor() {
-		return this.processor;
-	}
+		this.httpRpcServerAdaptor = new HttpRpcServerAdaptor(processor);
+	} 
 	
 	public RpcServer setPort(Integer port){ 
 		this.port = port;
@@ -75,6 +69,7 @@ public class RpcServer implements Closeable {
 	
 	public RpcServer setMq(String mq){ 
 		this.mq = mq;
+		this.processor.setDocMqContext(mq);
 		return this;
 	}    
 	
@@ -103,6 +98,16 @@ public class RpcServer implements Closeable {
 		return this;
 	} 
 	
+	/**
+	 * Set InProc server instance as address
+	 * @param mqServer
+	 * @return
+	 */
+	public RpcServer setAddress(MqServer mqServer){  
+		this.mqServer = mqServer;
+		return this;
+	}  
+	
 	public RpcServer setCertFile(String certFile){ 
 		this.certFile = certFile; 
 		return this;
@@ -122,7 +127,16 @@ public class RpcServer implements Closeable {
 	public void setSecretKey(String mqSecretKey) {
 		this.secretKey = mqSecretKey;
 	}
-	public IoAdaptor getHttpRpcServerAdaptor() { 
+	
+	public IoAdaptor getServerAdaptor() { 
+		if(mqRpcServer != null) {
+			MqServer mqServer = mqRpcServer.getMqServer();
+			if(mqServer != null) {
+				return mqServer.getServerAdaptor();
+			} else {
+				throw new IllegalStateException("MqServer not started as inproce mode");
+			}
+		}
 		return httpRpcServerAdaptor;
 	}
 
@@ -143,8 +157,7 @@ public class RpcServer implements Closeable {
 		} 
 		
 		if(port != null) {
-			this.httpWsServer = new HttpWsServer(); 
-			this.httpRpcServerAdaptor = new HttpRpcServerAdaptor(processor);
+			this.httpWsServer = new HttpWsServer();  
 			SslContext context = null;
 			if(keyFile != null && certFile != null) {
 				context = Ssl.buildServerSsl(certFile, keyFile); 
@@ -152,11 +165,16 @@ public class RpcServer implements Closeable {
 			httpWsServer.start(String.format("%s:%d",this.host, this.port), httpRpcServerAdaptor, context); 
 		} 
 		
-		if(mqServerAddress != null && mq != null) { 
-			this.processor.setDocUrlPrefix("/"+this.mq);
-			
+		if(mq != null) {   
 			this.mqRpcServer = new MqRpcServer(this.processor);
-			mqRpcServer.setAddress(mqServerAddress);
+			if(this.mqServer != null) {
+				if(!mqServer.isStarted()) {
+					mqServer.start();
+				}
+				mqRpcServer.setMqServer(this.mqServer);
+			} else if(this.mqServerAddress != null) {
+				mqRpcServer.setAddress(mqServerAddress);
+			}
 			mqRpcServer.setMq(this.mq);
 			mqRpcServer.setAuthEnabled(authEnabled);
 			mqRpcServer.setApiKey(apiKey);

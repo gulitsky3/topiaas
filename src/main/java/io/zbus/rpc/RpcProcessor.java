@@ -28,18 +28,20 @@ import io.zbus.transport.http.Http.FileForm;
 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
-	protected Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance  
+	private Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance  
 	
-	protected String docUrlPrefix = "/";
-	protected boolean docEnabled = true; 
-	protected String docModule = "";
-	protected boolean docAuthRequired = false;
+	private String urlPrefix="";
 	
-	protected boolean stackTraceEnabled = true;   
+	private boolean docEnabled = true; 
+	private String docModule = "";
+	private String docMqContext = "";
 	
-	protected RpcFilter beforeFilter;
-	protected RpcFilter afterFilter;
-	protected RpcFilter authFilter;   
+	 
+	private boolean stackTraceEnabled = true;   
+	
+	private RpcFilter beforeFilter;
+	private RpcFilter afterFilter;
+	private RpcFilter authFilter;   
 	
 	public RpcProcessor addModule(String module, Object service) { 
 		return addModule(module, service, true, true, true);
@@ -431,7 +433,7 @@ public class RpcProcessor {
 	}
 	
 	public RpcProcessor enableDoc() { 
-		DocRender render = new DocRender(this, docUrlPrefix); 
+		DocRender render = new DocRender(this, urlPrefix, docMqContext); 
 		addModule(docModule, render, false, false, false);
 		return this;
 	}   
@@ -467,12 +469,7 @@ public class RpcProcessor {
 	public RpcProcessor setDocEnabled(boolean docEnabled) {
 		this.docEnabled = docEnabled;
 		return this;
-	}
-	
-	public RpcProcessor setDocAuthRequired(boolean docAuthRequired) {
-		this.docAuthRequired = docAuthRequired;
-		return this;
-	}
+	} 
 
 	public String getDocModule() {
 		return docModule;
@@ -481,8 +478,16 @@ public class RpcProcessor {
 	public RpcProcessor setDocModule(String docModule) {
 		this.docModule = docModule;
 		return this;
+	} 
+	
+	public String getDocMqContext() {
+		return docMqContext;
 	}
 	
+	public void setDocMqContext(String docMqContext) {
+		this.docMqContext = docMqContext;
+	}
+
 	@SuppressWarnings("unchecked")
 	public void setModuleTable(Map<String, Object> instances){
 		if(instances == null) return;
@@ -496,11 +501,14 @@ public class RpcProcessor {
 		}
 	}
 	
-	public RpcProcessor setDocUrlPrefix(String docUrlPrefix) {
-		this.docUrlPrefix = docUrlPrefix;
+	public RpcProcessor setUrlPrefix(String urlPrefix) {
+		this.urlPrefix = urlPrefix;
 		return this;
 	} 
-	 
+	
+	public String getUrlPrefix() {
+		return urlPrefix;
+	}
 	
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();

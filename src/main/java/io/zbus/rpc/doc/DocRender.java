@@ -16,12 +16,15 @@ import io.zbus.transport.http.Http;
 public class DocRender { 
 	private FileKit fileKit = new FileKit();
 	private final RpcProcessor rpcProcessor;  
-	private final String docRootPath;
-	public DocRender(RpcProcessor rpcProcessor, String docRootPath) {
+	private final String urlPrefix;
+	private final String mqContext;
+	
+	public DocRender(RpcProcessor rpcProcessor, String urlPrefix, String mqContext) {
 		this.rpcProcessor = rpcProcessor; 
-		this.docRootPath = docRootPath;
-	}  
- 
+		this.urlPrefix = urlPrefix;
+		this.mqContext = mqContext;
+	}   
+	
 	@RequestMapping(path="/", docEnabled=false)
 	public Message index() throws IOException { 
 		Message result = new Message(); 
@@ -38,14 +41,12 @@ public class DocRender {
 		String js = fileKit.loadFile("static/zbus.min.js");
 		model.put("content", doc); 
 		model.put("zbusjs", js); 
-		String urlPrefix = docRootPath;
+		String urlPrefix = this.urlPrefix;
 		if(urlPrefix.endsWith("/")) {
 			urlPrefix = urlPrefix.substring(0, urlPrefix.length()-1);
 		}
-		model.put("urlPrefix", urlPrefix);
-		String mq = urlPrefix;
-		if(mq.startsWith("/")) mq = mq.substring(1); 
-		model.put("mq", mq);
+		model.put("urlPrefix", urlPrefix); 
+		model.put("mq", this.mqContext);
 		
 		String body = fileKit.loadFile("static/rpc.htm", model);
 		result.setBody(body);
@@ -61,7 +62,7 @@ public class DocRender {
 				"<td class=\"methodParams\"><code><strong><a href=\"%s\">%s</a></strong>(%s)</code>" +  
 				"</td>" + 
 				"</tr>"; 
-		String methodLink = HttpKit.joinPath(docRootPath, m.getUrlPath()); 
+		String methodLink = HttpKit.joinPath(urlPrefix, m.getUrlPath()); 
 		String method = m.method;
 		String paramList = "";
 		int size = m.paramNames.size();

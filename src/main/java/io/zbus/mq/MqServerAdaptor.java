@@ -76,17 +76,18 @@ public class MqServerAdaptor extends ServerAdaptor {
 	 
 	@Override
 	public void onMessage(Object msg, Session sess) throws IOException {
-		Message req = (Message)msg;   
-		if(verbose) {
-			logger.info(sess.remoteAddress() + ":" + req);
-		}
-		
+		Message req = (Message)msg;    
 		if (req == null) {
 			reply(req, 400, "json format required", sess); 
 			return;
 		} 
 		
 		String cmd = req.getHeader(Protocol.CMD); 
+		if(verbose) { 
+			if(!Protocol.PING.equals(cmd)) {
+				logger.info(sess.remoteAddress() + ":" + req);
+			} 
+		}
 		if(cmd == null) { //Special case for favicon
 			if(req.getBody() == null && "/favicon.ico".equals(req.getUrl())) {
 				Message res = FileKit.INSTANCE.loadResource("static/favicon.ico");
