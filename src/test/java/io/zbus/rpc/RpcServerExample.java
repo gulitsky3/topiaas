@@ -35,19 +35,18 @@ public class RpcServerExample {
 		res.setBody("<h1>Uploaded Success</h1>");
 		
 		return res;
-	}
-	
-	
-	@RequestMapping(path="/favicon.ico", docEnabled=false)
-	public Message favicon() { 
-		return fileKit.loadResource("favicon.ico"); 
-	}
+	} 
 	 
 	@RequestMapping(path="/abc")
 	public Object json() {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key", System.currentTimeMillis());
 		return value;
+	}
+	
+	@RequestMapping(path="/favicon.ico", docEnabled=false)
+	public Message favicon() { 
+		return fileKit.loadResource("static/favicon.ico"); 
 	}
 	
 	@SuppressWarnings("resource")

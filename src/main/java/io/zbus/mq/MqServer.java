@@ -12,11 +12,15 @@ import io.zbus.transport.http.HttpWsServer;
 
 public class MqServer extends HttpWsServer {
 	private static final Logger logger = LoggerFactory.getLogger(MqServer.class); 
-	private MqServerAdaptor publicServerAdaptor; 
-	private ServerConfig publicServerConfig;
-	private MqServerAdaptor privateServerAdaptor; 
+	
+	private ServerConfig publicServerConfig; 
 	private ServerConfig privateServerConfig;
-	//TODO Monitor adaptor
+	private ServerConfig monitorServerConfig;
+
+	private MqServerAdaptor publicServerAdaptor; 
+	private MqServerAdaptor privateServerAdaptor; 
+	private MonitorServerAdaptor monitorServerAdaptor;
+	
 	private final MqServerConfig config; 
 	
 	public MqServer(MqServerConfig config) {  
@@ -43,6 +47,11 @@ public class MqServer extends HttpWsServer {
 				privateServerAdaptor.setRequestAuth(privateServerConfig.auth);
 			}
 		}  
+		
+		monitorServerConfig = config.monitorServer;
+		if(monitorServerConfig != null) {
+			monitorServerAdaptor = new MonitorServerAdaptor(this.config); 
+		}
 	} 
 	public MqServer(String configFile){
 		this(new MqServerConfig(configFile));
@@ -81,7 +90,19 @@ public class MqServer extends HttpWsServer {
 			this.start(privateServerConfig.address, privateServerAdaptor, sslContext); 
 		}  
 		
-		//Monitor TODO
+		if(monitorServerAdaptor != null) {
+			SslContext sslContext = null;
+			if (monitorServerConfig.sslEnabled){  
+				try{  
+					sslContext = Ssl.buildServerSsl(monitorServerConfig.sslCertFile, monitorServerConfig.sslKeyFile); 
+				} catch (Exception e) { 
+					logger.error("SSL init error: " + e.getMessage());
+					throw new IllegalStateException(e.getMessage(), e.getCause());
+				} 
+			}
+			logger.info("Starting mointor server @" + monitorServerConfig.address);
+			this.start(monitorServerConfig.address, monitorServerAdaptor, sslContext); 
+		} 
 	}
 	 
 	

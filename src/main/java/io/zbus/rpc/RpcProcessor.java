@@ -35,32 +35,26 @@ public class RpcProcessor {
 	protected String docModule = "";
 	protected boolean docAuthRequired = false;
 	
-	protected boolean stackTraceEnabled = true; 
-	protected boolean overrideMethod = true;
-	
+	protected boolean stackTraceEnabled = true;   
 	
 	protected RpcFilter beforeFilter;
 	protected RpcFilter afterFilter;
-	protected RpcFilter authFilter;  
-	
-	public RpcProcessor addModule(Object service) {
-		return addModule("", service);
-	} 
+	protected RpcFilter authFilter;   
 	
 	public RpcProcessor addModule(String module, Object service) { 
-		return addModule(module, service, true);
+		return addModule(module, service, true, true, true);
 	}
 	
-	public RpcProcessor addModule(String module, Object service, boolean enableDoc) {
-		return addModule(module, service, enableDoc, true);
+	public RpcProcessor addModule(String module, Object service, boolean defaultAuth) {
+		return addModule(module, service, defaultAuth, true, true);
 	} 
 	
 	@SuppressWarnings("unchecked")
-	public RpcProcessor addModule(String module, Object service, boolean defaultAuth, boolean enableDoc) {  
+	public RpcProcessor addModule(String module, Object service, boolean defaultAuth, boolean enableDoc, boolean overrideMethod) {  
 		if(service instanceof List) {
 			List<Object> svcList = (List<Object>)service;
 			for(Object svc : svcList) {
-				addModule(module, svc, defaultAuth, enableDoc);
+				addModule(module, svc, defaultAuth, enableDoc, overrideMethod);
 			}
 			return this;
 		}
@@ -135,7 +129,7 @@ public class RpcProcessor {
 				}  
 				
 				//register in tables
-				addMethod(new MethodInstance(info, m, service));  
+				addMethod(new MethodInstance(info, m, service), overrideMethod);  
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
@@ -144,11 +138,19 @@ public class RpcProcessor {
 	} 
 	
 	public RpcProcessor addMethod(RpcMethod spec, MethodInvoker service) {
-		MethodInstance mi = new MethodInstance(spec, service);  
-		return addMethod(mi);
+		return addMethod(spec, service, true);
 	}
 	
-	public RpcProcessor addMethod(MethodInstance mi) { 
+	public RpcProcessor addMethod(RpcMethod spec, MethodInvoker service, boolean overrideMethod) {
+		MethodInstance mi = new MethodInstance(spec, service);  
+		return addMethod(mi, overrideMethod);
+	}
+	
+	public RpcProcessor addMethod(MethodInstance mi) {
+		return addMethod(mi, true);
+	}
+	
+	public RpcProcessor addMethod(MethodInstance mi, boolean overrideMethod) { 
 		RpcMethod spec = mi.info;
 		String urlPath = spec.getUrlPath();
 		if(urlPath == null) {
@@ -430,9 +432,7 @@ public class RpcProcessor {
 	
 	public RpcProcessor enableDoc() { 
 		DocRender render = new DocRender(this, docUrlPrefix); 
-		if(!this.urlPath2MethodTable.containsKey(HttpKit.joinPath(docModule, ""))) {
-			addModule(docModule, render, false, false);
-		}  
+		addModule(docModule, render, false, false, false);
 		return this;
 	}   
 

@@ -20,7 +20,7 @@ public class DocRender {
 	public DocRender(RpcProcessor rpcProcessor, String docRootPath) {
 		this.rpcProcessor = rpcProcessor; 
 		this.docRootPath = docRootPath;
-	} 
+	}  
  
 	@RequestMapping(path="/", docEnabled=false)
 	public Message index() throws IOException { 
@@ -35,7 +35,7 @@ public class DocRender {
 			doc += rowDoc(m, rowIdx++);
 		}
 		doc += "</div>";
-		String js = fileKit.loadFile("zbus.js");
+		String js = fileKit.loadFile("static/zbus.js");
 		model.put("content", doc); 
 		model.put("zbusjs", js); 
 		String urlPrefix = docRootPath;
@@ -44,7 +44,7 @@ public class DocRender {
 		}
 		model.put("urlPrefix", urlPrefix);
 		
-		String body = fileKit.loadFile("rpc.htm", model);
+		String body = fileKit.loadFile("static/rpc.htm", model);
 		result.setBody(body);
 		result.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 		return result;

@@ -40,7 +40,9 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	</bean>
 	
 	<bean id="processor" class="io.zbus.rpc.RpcProcessor" >  
+		<!-- 
 		<property name="authFilter" ref="authFilter"/> 
+		 -->
 		<property name="moduleTable">
 			<map>
 				<entry key="example" value-ref="example"/>
