@@ -1,19 +1,30 @@
 package io.zbus.transport.inproc;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 import io.zbus.transport.AbastractClient;
 import io.zbus.transport.IoAdaptor;
+import io.zbus.transport.Message;
 import io.zbus.transport.Session;
 
+/**
+ * 
+ * Client of In-Process, optimized for speed. 
+ * 
+ * Crucial ideas:
+ * <p>1) InprocClient is a Session type, can be plugged into <code>IoAdaptor</code> from server, which is event driven.
+ * <p>2) write message in process means directly invoking onMessage of the client.
+ * <p>3) send message to peer means directly invoking server's <code>IoAdaptor</code>'s onMessage
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class InprocClient extends AbastractClient implements Session { 
 	private static final Logger logger = LoggerFactory.getLogger(InprocClient.class); 
 	private ConcurrentMap<String, Object> attributes = null;
@@ -73,21 +84,15 @@ public class InprocClient extends AbastractClient implements Session {
 		return "Inproc-"+id;
 	}
 	
-
-	@SuppressWarnings("unchecked")
+ 
 	@Override
 	public void write(Object msg) {  //Session received message  
 		try {
-			Map<String, Object> data = null;
-			if(msg instanceof Map) {
-				data = (Map<String, Object>)msg; 
-			} else if(msg instanceof byte[]) {
-				data = JsonKit.parseObject((byte[])msg);
-			} else if(msg instanceof String) {
-				data = JsonKit.parseObject((String)msg);
-			} else {
-				throw new IllegalArgumentException("type of msg not support: " + msg.getClass());
+			if(!(msg instanceof Message)) {
+				logger.error("Message type required");
+				return;
 			}
+			Message data = (Message)msg;  
 			if(onMessage != null) {
 				onMessage.handle(data);
 			} 
@@ -97,7 +102,7 @@ public class InprocClient extends AbastractClient implements Session {
 	}
 	
 	@Override
-	protected void sendMessage0(Map<String, Object> data) {  //Session send out message
+	protected void sendMessage0(Message data) {  //Session send out message
 		synchronized (lock) {
 			if(!active) {
 				connect();

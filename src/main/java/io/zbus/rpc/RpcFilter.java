@@ -1,6 +1,6 @@
 package io.zbus.rpc;
 
-import java.util.Map;
+import io.zbus.transport.Message;
 
 public interface RpcFilter { 
 	/**
@@ -9,5 +9,5 @@ public interface RpcFilter {
 	 * @param response
 	 * @return true if continue to handle request response
 	 */
-	boolean doFilter(Map<String, Object> request, Map<String, Object> response);
+	boolean doFilter(Message request, Message response);
 }

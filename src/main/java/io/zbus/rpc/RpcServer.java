@@ -2,289 +2,240 @@ package io.zbus.rpc;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.handler.ssl.SslContext;
-import io.zbus.kit.ClassKit;
-import io.zbus.rpc.annotation.Remote;
-import io.zbus.rpc.server.HttpRpcServer;
-import io.zbus.rpc.server.MqRpcServer;
-import io.zbus.transport.IoAdaptor;
-import io.zbus.transport.Ssl; 
- 
+import io.zbus.kit.HttpKit;
+import io.zbus.kit.JsonKit;
+import io.zbus.mq.MqClient;
+import io.zbus.mq.MqServer;
+import io.zbus.mq.Protocol;
+import io.zbus.transport.Message;
 
-public class RpcServer implements Closeable {  
-	private static final Logger log = LoggerFactory.getLogger(RpcServer.class);
-	
-	private RpcProcessor processor;  
-	private boolean autoLoadService = false; 
-	private RpcStartInterceptor onStart;
-	
-	//RPC over HTTP/WS
-	private Integer port;
-	private String host = "0.0.0.0"; 
-	private String certFile;
-	private String keyFile;
-	private HttpRpcServer httpRpcServer; 
-	
-	
-	//RPC over MQ
+public class RpcServer implements Closeable {
+	private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
+
+	private MqServer mqServer; //InProc or Embedded
+	private String mqServerAddress;
 	private String mq;
-	private String mqType;
-	private String channel;         //Default to MQ
-	private String mqServerAddress; //Support MQ based RPC
-	private Integer mqClientCount;
-	private Integer mqHeartbeatInterval;
-	private MqRpcServer mqRpcServer;
+	private String mqType = Protocol.MEMORY;
+	private String channel;
+	private boolean authEnabled = false;
+	private String apiKey = "";
+	private String secretKey = "";
+	
+	private int clientCount = 1;
+	private int heartbeatInterval = 30; // seconds
+	private int poolSize = 64;
+
+	private List<MqClient> clients = new ArrayList<>();
+	private RpcProcessor rpcProcessor;
+	
+	private ExecutorService runner;
+
+	public RpcServer(RpcProcessor processor) {
+		this.rpcProcessor = processor;
+	}
 	
 	public RpcServer() {
-		this.processor = new RpcProcessor(); 
-	}
-	
-	public RpcServer setPort(Integer port){ 
-		this.port = port;
-		return this;
-	} 
-	 
-	public RpcServer setHost(String host){ 
-		this.host = host;
-		return this;
-	}    
-	
-	public RpcServer setMq(String mq){ 
-		this.mq = mq;
-		return this;
-	}    
-	
-	public RpcServer setMqType(String mqType){ 
-		this.mqType = mqType;
-		return this;
-	}    
-	
-	public RpcServer setMqClientCount(Integer count){ 
-		this.mqClientCount = count;
-		return this;
-	}    
-	
-	public RpcServer setMqHeartbeatInterval(Integer mqHeartbeatInterval) {
-		this.mqHeartbeatInterval = mqHeartbeatInterval;
-		return this;
-	}
-	
-	public RpcServer setChannel(String channel) {
-		this.channel = channel;
-		return this;
-	}
-	
-	public RpcServer setAddress(String address){ 
-		this.mqServerAddress = address;
-		return this;
-	} 
-	
-	public RpcServer setCertFile(String certFile){ 
-		this.certFile = certFile; 
-		return this;
-	}  
-	
-	public RpcServer setKeyFile(String keyFile){ 
-		this.keyFile = keyFile;
-		return this;
-	}  
-	 
-	public RpcServer setAutoLoadService(boolean autoLoadService) {
-		this.autoLoadService = autoLoadService;
-		return this;
-	}  
-	
-	public RpcServer setStackTraceEnabled(boolean stackTraceEnabled) {
-		this.processor.setStackTraceEnabled(stackTraceEnabled);
-		return this;
-	} 
-	
-	public RpcServer setMethodPageEnabled(boolean methodPageEnabled) {
-		this.processor.setMethodPageEnabled(methodPageEnabled);
-		return this;
-	}  
-	
-	public RpcServer setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
-		this.processor.setMethodPageAuthEnabled(methodPageAuthEnabled);
-		return this;
-	}
-	
-	public RpcServer setMethodPageModule(String monitorModuleName) {
-		this.processor.setMethodPageModule(monitorModuleName);
-		return this;
-	}  
-	
-	
-	public void setBeforeFilter(RpcFilter beforeFilter) {
-		this.processor.setBeforeFilter(beforeFilter);
-	}
-
-	public void setAfterFilter(RpcFilter afterFilter) {
-		this.processor.setAfterFilter(afterFilter);
-	}
-
-	public void setAuthFilter(RpcFilter authFilter) {
-		this.processor.setAuthFilter(authFilter);
-	} 
-	
-	public IoAdaptor getHttpRpcServerAdaptor() {
-		if(httpRpcServer == null) return null;
-		return httpRpcServer.getHttpRpcAdaptor();
-	}
-
-	public void setMqServerAddress(String mqServerAddress) {
-		this.mqServerAddress = mqServerAddress;
-	}
-
-	public void setOnStart(RpcStartInterceptor onStart) {
-		this.onStart = onStart;
-	}
-
-	private void validate(){ 
 		
 	}
 	
-	protected void initProcessor(){  
-		Set<Class<?>> classes = ClassKit.scan(Remote.class);
-		for(Class<?> clazz : classes){ 
-			try {
-				processor.addModule(clazz.newInstance());
-			} catch (Exception e) { 
-				log.error(e.getMessage(), e);
+	public RpcProcessor getRpcProcessor() {
+		return rpcProcessor;
+	}
+	
+	public void setRpcProcessor(RpcProcessor processor) {
+		this.rpcProcessor = processor;
+	}
+
+	@Override
+	public void close() throws IOException {
+		for(MqClient client : clients) {
+			client.close();
+		} 
+	}
+	
+	public void start() {  
+		if(runner == null) {
+			runner = Executors.newFixedThreadPool(poolSize);
+		} 
+		if(this.mq != null) {
+			this.rpcProcessor.setRootUrl(HttpKit.joinPath("/", this.mq));
+			this.rpcProcessor.mountDoc();
+		}
+		if(mqServer != null) {  
+			if(!mqServer.isStarted()) {
+				mqServer.start();
 			} 
-		}   
-	}
-	
-	public RpcProcessor processor() {
-		return this.processor;
-	}
-	 
-	public RpcServer start() throws Exception{
-		validate();  
-		
-		if(autoLoadService){
-			initProcessor();
 		}  
 		
-		if(onStart != null) {
-			onStart.onStart(processor);
-		} 
+		//embedded in MqServer
+		if(mqServer != null && mq == null) { 
+			mqServer.setRpcProcessor(rpcProcessor);
+			if(!mqServer.isStarted()) {
+				mqServer.start();
+			}
+			return;
+		}  
 		
-		if(port != null) {
-			this.httpRpcServer = new HttpRpcServer(this.processor); 
-			if(keyFile != null && certFile != null) {
-				SslContext context = Ssl.buildServerSsl(certFile, keyFile);
-				httpRpcServer.setSslContext(context);
-			}  
-			 
-			httpRpcServer.start(this.host, this.port); 
-		} 
+		//Inproc or remote MqServer
+		for(int i=0;i<clientCount;i++) {
+			MqClient client = startClient();
+			clients.add(client);
+		}
+	} 
+
+	protected MqClient startClient() {
+		MqClient client = null;
+		if (mqServer != null) {
+			client = new MqClient(mqServer);
+		} else if (mqServerAddress != null) {
+			client = new MqClient(mqServerAddress);
+		} else {
+			throw new IllegalStateException("Can not create MqClient, missing address or mqServer?");
+		}
 		
-		if(mqServerAddress != null && mq != null) { 
-			this.processor.setDocUrlRoot(this.mq+"/");
+		if (this.channel == null) this.channel = this.mq;  
+		
+		if(this.authEnabled) {
+			client.setAuthEnabled(this.authEnabled);
+			client.setApiKey(apiKey);
+			client.setSecretKey(secretKey);
+		}
+		final MqClient mqClient = client;
+		mqClient.heartbeat(heartbeatInterval, TimeUnit.SECONDS);
+		
+		final String urlPrefix = HttpKit.joinPath("/", this.mq);
+		mqClient.addMqHandler(mq, channel, request -> {
+			String source = (String)request.getHeader(Protocol.SOURCE);
+			String id = (String)request.getHeader(Protocol.ID); 
 			
-			this.mqRpcServer = new MqRpcServer(this.processor);
-			mqRpcServer.setAddress(mqServerAddress);
-			mqRpcServer.setMq(this.mq);
-			if(this.mqType != null) {
-				mqRpcServer.setMqType(mqType);
-			}
-			if(this.channel != null) {
-				mqRpcServer.setChannel(this.channel);
-			}
-			if(this.mqClientCount != null) {
-				mqRpcServer.setClientCount(mqClientCount);
-			}
-			if(this.mqHeartbeatInterval != null) {
-				mqRpcServer.setHeartbeatInterval(mqHeartbeatInterval);
+			String url = request.getUrl();
+			if(url != null) { 
+				if(url.startsWith(urlPrefix)) {
+					url = url.substring(urlPrefix.length());
+					url = HttpKit.joinPath("/", url); 
+					request.setUrl(url);
+				}
 			}
 			
-			mqRpcServer.start();
-		} 
+			runner.submit(()->{
+				Message response = new Message(); 
+				rpcProcessor.process(request, response);   
+				if(response.getStatus() == null) {
+					response.setStatus(200);
+				}
+				
+				response.setHeader(Protocol.CMD, Protocol.ROUTE);
+				response.setHeader(Protocol.TARGET, source);
+				response.setHeader(Protocol.ID, id);
+
+				mqClient.sendMessage(response); 
+			}); 
+		});
+
+		mqClient.onOpen(() -> {
+			Message req = new Message();
+			req.setHeader(Protocol.CMD, Protocol.CREATE); // create MQ/Channel
+			req.setHeader(Protocol.MQ, mq);
+			req.setHeader(Protocol.MQ_TYPE, mqType);
+			req.setHeader(Protocol.CHANNEL, channel); 
+			Message res = mqClient.invoke(req);
+			logger.info(JsonKit.toJSONString(res));
+
+			req = new Message();
+			req.setHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
+			req.setHeader(Protocol.MQ, mq);
+			req.setHeader(Protocol.CHANNEL, channel); 
+			res = mqClient.invoke(req); 
+			logger.info(JsonKit.toJSONString(res)); 
+		});
+
+		mqClient.connect();
 		
-		//Doc URL root generated
-		if(processor.isMethodPageEnabled()) {
-			processor.enableMethodPageModule();
-		}
-		
-		return this;
-	}   
-	 
-	public RpcServer addModule(Object service){
-		processor.addModule(service);
-		return this;
+		return mqClient;
 	}
-	
-	public RpcServer addModule(String module, Class<?> service){
-		try {
-			Object obj = service.newInstance();
-			processor.addModule(module, obj);
-		} catch (InstantiationException | IllegalAccessException e) {
-			log.error(e.getMessage(),e);
-		} 
-		return this;
+
+	public MqServer getMqServer() {
+		return mqServer;
 	}
-	
-	public RpcServer addModule(String module, Object service){
-		processor.addModule(module, service);
-		return this;
+
+	public void setMqServer(MqServer mqServer) {
+		this.mqServer = mqServer;
 	}
-	
-	public RpcServer addModule(List<Object> services){
-		for(Object svc : services) {
-			processor.addModule(svc);
-		}
-		return this;
+
+	public String getMqServerAddress() {
+		return mqServerAddress;
 	}
-	
-	public RpcServer addModule(String module, List<Object> services){
-		for(Object svc : services) {
-			processor.addModule(module, svc);
-		}
-		return this;
-	}  
-	
-	
-	@SuppressWarnings("unchecked")
-	public void setModuleTable(Map<String, Object> instances){
-		if(instances == null) return;
-		for(Entry<String, Object> e : instances.entrySet()){
-			Object svc = e.getValue();
-			if(svc instanceof List) {
-				addModule(e.getKey(), (List<Object>)svc); 
-			} else {
-				addModule(e.getKey(), svc);
-			}
-		}
+
+	public void setMqServerAddress(String address) {
+		this.mqServerAddress = address;
 	}
-	
-	public RpcServer addMethod(RpcMethod spec, MethodInvoker genericInvocation){
-		processor.addMethod(spec, genericInvocation);
-		return this;
-	}  
-	
-	public RpcServer removeMethod(String module, String method){
-		processor.removeMethod(module, method);
-		return this;
-	}  
-	
-	@Override
-	public void close() throws IOException {  
-		if(httpRpcServer != null) {
-			httpRpcServer.close();
-			httpRpcServer = null;
-		} 
-		if(mqRpcServer != null) {
-			mqRpcServer.close();
-			mqRpcServer = null;
-		}
+
+	public String getMq() {
+		return mq;
+	}
+
+	public void setMq(String mq) {
+		this.mq = mq;
+	}
+
+	public String getMqType() {
+		return mqType;
+	}
+
+	public void setMqType(String mqType) {
+		this.mqType = mqType;
+	}
+
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
+	public int getClientCount() {
+		return clientCount;
+	}
+
+	public void setClientCount(int clientCount) {
+		this.clientCount = clientCount;
+	}
+
+	public int getHeartbeatInterval() {
+		return heartbeatInterval;
+	}
+
+	public void setHeartbeatInterval(int heartbeatInterval) {
+		this.heartbeatInterval = heartbeatInterval;
+	}
+
+	public void setAuthEnabled(boolean authEnabled) {
+		this.authEnabled = authEnabled;
+	}
+
+	public void setApiKey(String apiKey) {
+		this.apiKey = apiKey;
+	}
+
+	public void setSecretKey(String secretKey) {
+		this.secretKey = secretKey;
+	}
+
+	public int getPoolSize() {
+		return poolSize;
+	}
+
+	public void setPoolSize(int poolSize) {
+		this.poolSize = poolSize;
 	}   
 }

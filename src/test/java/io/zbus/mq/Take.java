@@ -1,7 +1,6 @@
 package io.zbus.mq;
 
-import java.util.HashMap;
-import java.util.Map;
+import io.zbus.transport.Message;
 
 public class Take {  
 	
@@ -16,10 +15,10 @@ public class Take {
 		
 		final String mq = "MyMQ", channel = "MyChannel";
 		
-		Map<String, Object> req = new HashMap<>();
-		req.put("cmd", "take");  
-		req.put("mq", mq); 
-		req.put("channel", channel); 
+		Message req = new Message();
+		req.setHeader("cmd", "take");  
+		req.setHeader("mq", mq); 
+		req.setHeader("channel", channel); 
 		
 		client.invoke(req, res->{
 			System.out.println(res);

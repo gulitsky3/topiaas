@@ -16,9 +16,17 @@ import org.slf4j.LoggerFactory;
 import io.zbus.auth.DefaultSign;
 import io.zbus.auth.RequestSign;
 import io.zbus.kit.JsonKit;
-import io.zbus.kit.StrKit;
-import io.zbus.mq.Protocol;
-
+import io.zbus.kit.StrKit; 
+/**
+ * The common base class of all Client types.
+ * 
+ * It consumes <code>Message</code> type, provides main functionalities of following.
+ * <p> sync and async way invoking, message matching by callback table on Id of message coming and forth between server and client.
+ * <p> authentication intercepter on <code>Message</code> headers.
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public abstract class AbastractClient implements Closeable {
 	private static final Logger logger = LoggerFactory.getLogger(AbastractClient.class);
 
@@ -27,7 +35,7 @@ public abstract class AbastractClient implements Closeable {
 	protected boolean authEnabled = false;
 	protected RequestSign requestSign = new DefaultSign();
 
-	protected DataHandler<Map<String, Object>> onMessage;
+	protected DataHandler<Message> onMessage;
 	protected EventHandler onClose;
 	protected EventHandler onOpen;
 	protected ErrorHandler onError; 
@@ -70,11 +78,21 @@ public abstract class AbastractClient implements Closeable {
 		};
 	}
 
-	protected abstract void sendMessage0(Map<String, Object> data);
+	protected abstract void sendMessage0(Message data);
 	
-	public void sendMessage(Map<String, Object> data) {
+	public void sendMessage(Message data) {
 		if(beforeSend != null) {
 			beforeSend.intercept(data);
+		} 
+		if (authEnabled) {
+			if (apiKey == null) {
+				throw new IllegalStateException("apiKey not set");
+			}
+			if (secretKey == null) {
+				throw new IllegalStateException("secretKey not set");
+			}
+
+			requestSign.sign(data, apiKey, secretKey);
 		}
 		sendMessage0(data);
 	}
@@ -85,7 +103,7 @@ public abstract class AbastractClient implements Closeable {
 
 	public synchronized void heartbeat(long interval, TimeUnit timeUnit, AbastractClient.MessageBuilder builder) {
 		runner.scheduleAtFixedRate(() -> {
-			Map<String, Object> msg = builder.build();
+			Message msg = builder.build();
 			sendMessage(msg);
 		}, interval, interval, timeUnit); 
 	}
@@ -100,43 +118,29 @@ public abstract class AbastractClient implements Closeable {
 		}
 	}
 
-	public void invoke(Map<String, Object> req, DataHandler<Map<String, Object>> dataHandler) {
+	public void invoke(Message req, DataHandler<Message> dataHandler) {
 		invoke(req, dataHandler, null);
 	}
 
-	public void invoke(Map<String, Object> req, DataHandler<Map<String, Object>> dataHandler,
+	public void invoke(Message req, DataHandler<Message> dataHandler,
 			ErrorHandler errorHandler) {
 
-		String id = (String) req.get("id");
-		if (id == null) {
-			id = StrKit.uuid();
-			req.put("id", id);
-		}
-		if (authEnabled) {
-			if (apiKey == null) {
-				throw new IllegalStateException("apiKey not set");
-			}
-			if (secretKey == null) {
-				throw new IllegalStateException("secretKey not set");
-			}
-
-			requestSign.sign(req, apiKey, secretKey);
-		}
-
+		String id = StrKit.uuid();
+		req.setHeader(Message.ID, id); 
 		AbastractClient.RequestContext ctx = new RequestContext(req, dataHandler, errorHandler);
 		callbackTable.put(id, ctx);
 
 		sendMessage(req);
 	}
 
-	public Map<String, Object> invoke(Map<String, Object> req) throws IOException, InterruptedException {
+	public Message invoke(Message req) throws IOException, InterruptedException {
 		return invoke(req, 10, TimeUnit.SECONDS);
 	}
 
-	public Map<String, Object> invoke(Map<String, Object> req, long timeout, TimeUnit timeUnit)
+	public Message invoke(Message req, long timeout, TimeUnit timeUnit)
 			throws IOException, InterruptedException {
 		CountDownLatch countDown = new CountDownLatch(1);
-		AtomicReference<Map<String, Object>> res = new AtomicReference<Map<String, Object>>();
+		AtomicReference<Message> res = new AtomicReference<Message>();
 		long start = System.currentTimeMillis();
 		invoke(req, data -> {
 			res.set(data);
@@ -145,32 +149,23 @@ public abstract class AbastractClient implements Closeable {
 		countDown.await(timeout, timeUnit);
 		if (res.get() == null) {
 			long end = System.currentTimeMillis();
-			String msg = String.format("Timeout(Time=%dms, ID=%s): %s", (end - start), (String) req.get("id"),
-					JsonKit.toJSONString(req));
+			String id = (String) req.getHeader(Message.ID);
+			String msg = String.format("Timeout(Time=%dms, ID=%s): %s", (end - start), id, JsonKit.toJSONString(req));
 			throw new IOException(msg);
 		}
 		return res.get();
 	}
 
-	public boolean handleInvokeResponse(Map<String, Object> response) throws Exception {
-		String id = (String) response.get(Protocol.ID);
+	public boolean handleInvokeResponse(Message response) throws Exception {
+		String id = (String) response.getHeader(Message.ID);
 		if (id != null) {
 			AbastractClient.RequestContext ctx = callbackTable.remove(id);
 			if (ctx != null) { // 1) Request-Response invocation
-				Integer status = (Integer) response.get(Protocol.STATUS);
-				if (status != null && status != 200) {
-					if (ctx.onError != null) {
-						ctx.onError.handle(new InvokeException((String) response.get(Protocol.BODY)));
-					} else {
-						logger.error(JsonKit.toJSONString(response));
-					}
+				if (ctx.onData != null) {
+					ctx.onData.handle(response);
 				} else {
-					if (ctx.onData != null) {
-						ctx.onData.handle(response);
-					} else {
-						logger.warn("Missing handler for: " + response);
-					}
-				}
+					logger.warn("Missing handler for: " + response);
+				} 
 				return true;
 			}
 		}
@@ -193,7 +188,7 @@ public abstract class AbastractClient implements Closeable {
 		this.requestSign = requestSign;
 	}
 
-	public void onMessage(DataHandler<Map<String, Object>> onMessage) {
+	public void onMessage(DataHandler<Message> onMessage) {
 		this.onMessage = onMessage;
 	}
 
@@ -222,11 +217,11 @@ public abstract class AbastractClient implements Closeable {
 	}
 
 	public static class RequestContext {
-		public Map<String, Object> request;
-		public DataHandler<Map<String, Object>> onData;
+		public Message request;
+		public DataHandler<Message> onData;
 		public ErrorHandler onError;
 
-		RequestContext(Map<String, Object> request, DataHandler<Map<String, Object>> onData, ErrorHandler onError) {
+		RequestContext(Message request, DataHandler<Message> onData, ErrorHandler onError) {
 			this.request = request;
 			this.onData = onData;
 			this.onError = onError;
@@ -234,6 +229,6 @@ public abstract class AbastractClient implements Closeable {
 	}
 
 	public static interface MessageBuilder {
-		Map<String, Object> build();
+		Message build();
 	}
 }

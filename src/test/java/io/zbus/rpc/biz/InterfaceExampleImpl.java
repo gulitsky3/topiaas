@@ -7,9 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import com.alibaba.fastjson.JSON;
+
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.transport.http.HttpMessage; 
+import io.zbus.rpc.annotation.RequestMapping;
+import io.zbus.transport.Message;
+import io.zbus.transport.http.Http; 
 
 @Auth(exclude=true)
 public class InterfaceExampleImpl implements InterfaceExample{
@@ -81,6 +85,7 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		return Arrays.asList(getUser("hong"), getUser("leiming"));
 	} 
 	
+	@RequestMapping(path="/map")
 	public List<Map<String, Object>> listMap() {
 		List<Map<String, Object>> res = new ArrayList<Map<String,Object>>();
 		res.add(map(1));
@@ -154,16 +159,23 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		return value;
 	} 
 	
-	public HttpMessage html() {
-		HttpMessage res = new HttpMessage();
+	public Message html() {
+		Message res = new Message();
 		res.setStatus(200);
-		res.setBody("html" + System.currentTimeMillis());
+		res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+		res.setBody("<h1>html" + System.currentTimeMillis()+"</h1>");
 		return res;
-	}
+	} 
 	
-	public String index(String defaultValue) { 
-		if(defaultValue == null) return "default";
-		return defaultValue;
+	@RequestMapping("/test")
+	public Message req(Message req) {
+		System.out.println(JSON.toJSONString(req, true));
+		
+		Message res = new Message();
+		res.setStatus(200);
+		res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+		res.setBody("<h1>request injected</h1>");
+		return res;
 	}
 }
 

@@ -38,24 +38,28 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 			</bean> 
 		</constructor-arg>
 	</bean>
-
+	
+	<bean id="processor" class="io.zbus.rpc.RpcProcessor" >  
+		<!-- 
+		<property name="authFilter" ref="authFilter"/> 
+		 -->
+		<property name="moduleTable">
+			<map>
+				<entry key="example" value-ref="example"/>
+				<entry key="db" value-ref="db"/> 
+				<entry key="sql" value-ref="sql"/>
+			</map>
+		</property>
+	</bean> 
 	
 	<bean class="io.zbus.rpc.RpcServer" init-method="start"> 
 		<property name="port" value="8080" />
 		<!-- 
 		<property name="certFile" value="ssl/zbus.crt"/>
 		<property name="keyFile" value="ssl/zbus.key"/>
-		-->
-		
-		<property name="onStart" ref="registerInterceptor"/>
-		<property name="authFilter" ref="authFilter"/> 
-		<property name="moduleTable">
-			<map>
-				<entry key="db" value-ref="db"/>
-				<entry key="example" value-ref="example"/>
-				<entry key="sql" value-ref="sql"/>
-			</map>
-		</property>
+		--> 
+		<property name="onStart" ref="registerInterceptor"/> 
+		<property name="processor" ref="processor"/> 
 	</bean> 
 	
 </beans>

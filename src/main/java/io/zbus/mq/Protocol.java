@@ -1,7 +1,5 @@
 package io.zbus.mq;
 
-import java.util.List;
-
 public interface Protocol {  
 	//Parameter keys(Message main key-value pairs)
 	public static final String CMD       = "cmd";       // Request message command
@@ -18,38 +16,43 @@ public interface Protocol {
 	public static final String ROUTE  = "route";    //Route message to specified sender client
 	public static final String CREATE = "create";   //Create or Update
 	public static final String REMOVE = "remove";   //Remove MQ/Channel
-	public static final String QUERY  = "query";    //Query MQ/Channel
+	public static final String QUERY  = "query";    //Query MQ/Channel 
 	public static final String PING   = "ping";     //Heartbeat ping
 	
 	//Parameter keys(for commands)
 	public static final String MQ             = "mq";  
 	public static final String CHANNEL        = "channel";  
-	public static final String TOPIC          = "topic";     //Topic filter message on Channel
+	public static final String FILTER         = "filter";    //Filter on message's tag
+	public static final String TAG            = "tag";       //Tag of message, if filter applied
 	public static final String OFFSET         = "offset";
 	public static final String CHECKSUM       = "checksum";  //Offset checksum
-	public static final String SOURCE         = "source"; 
-	public static final String TARGET         = "target"; 
+	public static final String SOURCE         = "source";    //message's source id(socket)
+	public static final String TARGET         = "target";    //route message's target id(socket)
 	public static final String MQ_TYPE        = "mqType";  
-	public static final String MQ_MASK        = "mqMask"; 
-	public static final String MQ_SIZE        = "mqSize";
+	public static final String MQ_MASK        = "mqMask";  
 	public static final String CHANNEL_MASK   = "channelMask"; 
 	public static final String WINDOW         = "window";
-	public static final String ACK            = "ack"; 
-	public static final String PAGE           = "page";
-	public static final String PAGE_SIZE      = "pageSize";
-	public static final String BODY_HTTP      = "bodyHttp"; //body  http
+	public static final String ACK            = "ack";   
+	
+	public static final String REMOTE_ADDR    = "remote-addr";   //HTTP remote address
 	
 	//Parameter mqType values
 	public static final String MEMORY  = "memory";  
 	public static final String DISK    = "disk";  
 	public static final String DB      = "db";  
 	
+	public static final int MASK_DELETE_ON_EXIT  = 1 << 0;  
+	public static final int MASK_EXCLUSIVE       = 1 << 1;  
+	
 	public static class MqInfo {   
 		public String name; 
 		public Integer mask; 
-		public long size;
+		public long messageDepth;
 		public String type;
-		public List<ChannelInfo> channels; 
+		public int channelCount;
+		public int consumerCount;
+		public String creator;
+		public Long createdAt; 
 	}
 
 	public static class ChannelInfo {   

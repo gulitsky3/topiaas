@@ -1,12 +1,11 @@
 package io.zbus.mq.inproc;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.zbus.mq.MqClient;
 import io.zbus.mq.MqServer;
 import io.zbus.mq.MqServerConfig;
+import io.zbus.transport.Message;
 
 public class Pub {
 
@@ -16,12 +15,12 @@ public class Pub {
 		
 		MqClient client = new MqClient(server); 
 		
-		String mq = "DiskQ";
+		String mq = "MyMQ";
 		
-		Map<String, Object> create = new HashMap<>();
-		create.put("cmd", "create");
-		create.put("mq", mq); 
-		create.put("mqType", "disk");
+		Message create = new Message();
+		create.setHeader("cmd", "create");
+		create.setHeader("mq", mq); 
+		create.setHeader("mqType", "disk");
 		client.invoke(create, res->{
 			System.out.println(res);
 		});
@@ -29,10 +28,10 @@ public class Pub {
 		
 		AtomicInteger count = new AtomicInteger(0);  
 		for (int i = 0; i < 200000; i++) {   
-			Map<String, Object> msg = new HashMap<>();
-			msg.put("cmd", "pub"); //Publish
-			msg.put("mq", mq);
-			msg.put("body", i);  
+			Message msg = new Message();
+			msg.setHeader("cmd", "pub"); //Publish
+			msg.setHeader("mq", mq);
+			msg.setBody(i);  
 			
 			client.invoke(msg, res->{
 				if(count.getAndIncrement() % 10000 == 0) {

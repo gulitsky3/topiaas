@@ -1,7 +1,12 @@
 package io.zbus.transport;
 
-import java.util.Map;
-
+/**
+ * 
+ * Provides an opportunity to adding/removing info of <code>Message</code>
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public interface MessageInterceptor {  
-	void intercept(Map<String, Object> message);
+	void intercept(Message message);
 }

@@ -34,9 +34,22 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.Attribute;
-import io.netty.util.AttributeKey; 
+import io.netty.util.AttributeKey;
+import io.zbus.kit.NetKit; 
 
+/**
+ * Server capable of start multiple ServerAdaptor in different ports.
+ * 
+ * <code>IoAdaptor</code> is the main battle field to start, it provides feature extension points to plugin
+ * business logic.
+ * 
+ * When SSL is required, start with an extra parameter SslContext which can be built from <code>Ssl</code>
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class Server implements Closeable {
+	
 	public static interface CodecInitializer {
 		void initPipeline(List<ChannelHandler> p);
 	}
@@ -46,8 +59,7 @@ public class Server implements Closeable {
 	protected CodecInitializer codecInitializer; 
 	
 	protected EventLoopGroup bossGroup;     
-	protected EventLoopGroup workGroup;   
-	protected SslContext sslContext; 
+	protected EventLoopGroup workGroup;    
 	
 	protected int idleTimeInSeconds = 180; //180s 
 	protected int packageSizeLimit = 1024*1024*1024; //maximum of 1G  
@@ -59,32 +71,31 @@ public class Server implements Closeable {
 	public Server(){
 		this.bossGroup = new NioEventLoopGroup(1);
 		this.workGroup = new NioEventLoopGroup();
-	} 
+	}  
 	
-	public void setSslContext(SslContext sslContext) {
-		this.sslContext = sslContext;
-	}
-	
-	public SslContext getSslContext() {
-		return sslContext;
-	}
- 
 	public void start(int port, IoAdaptor ioAdaptor) {
-		start("0.0.0.0", port, ioAdaptor, true);
+		start(port, ioAdaptor, null);
 	}
  
-	public void start(final String host, final int port, IoAdaptor ioAdaptor){
-		start(host, port, ioAdaptor, true);
-	} 
+	public void start(int port, IoAdaptor ioAdaptor, SslContext sslContext) {
+		start("0.0.0.0:"+port, ioAdaptor, sslContext);
+	}
+   
+	public void start(final String address, IoAdaptor ioAdaptor) {
+		start(address, ioAdaptor, null);
+	}
 	
-	public void start(final String host, final int port, IoAdaptor ioAdaptor, boolean isDefault) {  
+	public void start(final String address, IoAdaptor ioAdaptor, SslContext sslContext) {  
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(bossGroup, workGroup)
 		 .option(ChannelOption.SO_BACKLOG, maxSocketCount) 
 		 .channel(NioServerSocketChannel.class) 
 		 .handler(new LoggingHandler(LogLevel.DEBUG))
-		 .childHandler(new SocketChannelInitializer(ioAdaptor));
+		 .childHandler(new SocketChannelInitializer(ioAdaptor, sslContext));
 		
+		Object[] bb = NetKit.hostPort(address);
+		String host = (String)bb[0];
+		int port = (int)bb[1];
 		ServerInfo info = new ServerInfo(); 
 		info.bootstrap = b;
 		info.serverChanneFuture = b.bind(host, port).addListener(new ChannelFutureListener() {
@@ -104,6 +115,10 @@ public class Server implements Closeable {
 		}); 
 		listenTable.put(port, info); 
 	} 
+	
+	public boolean isStarted() {
+		return !this.listenTable.isEmpty();
+	}
 	
 	@Override
 	public void close() throws IOException {
@@ -139,14 +154,12 @@ public class Server implements Closeable {
 	class SocketChannelInitializer extends ChannelInitializer<SocketChannel>{ 
 		private NettyAdaptor nettyToIoAdaptor;
 		private CodecInitializer codecInitializer;
+		private SslContext sslContext;
 		
-		public SocketChannelInitializer(IoAdaptor ioAdaptor){
-			this(ioAdaptor, null);
-		}
-		public SocketChannelInitializer(IoAdaptor ioAdaptor, CodecInitializer codecInitializer){ 
+		public SocketChannelInitializer(IoAdaptor ioAdaptor, SslContext sslContext){
 			this.nettyToIoAdaptor = new NettyAdaptor(ioAdaptor);
-			this.codecInitializer = codecInitializer;
-		}
+			this.sslContext = sslContext;
+		} 
 		
 		private CodecInitializer getCodecInitializer(){
 			if(this.codecInitializer != null) return this.codecInitializer;

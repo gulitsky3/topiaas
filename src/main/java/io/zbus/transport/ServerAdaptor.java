@@ -7,6 +7,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Base server side <code>IoAdaptor</code>, handles all IO events except for onMessage.
+ * 
+ * Subclass ServerAdaptor can take advantage of the sessionTable management in this base class
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public abstract class ServerAdaptor implements IoAdaptor{    
 	private static final Logger logger = LoggerFactory.getLogger(ServerAdaptor.class); 
 	protected Map<String, Session> sessionTable;

@@ -4,34 +4,35 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.Map;
 
+import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Client;
-import io.zbus.transport.IoAdaptor; 
+import io.zbus.transport.IoAdaptor;
+import io.zbus.transport.Message; 
 
 public class RpcClient extends Client {  
-	public RpcClient(String address) {  
+	private String urlPrefix = "";
+	
+	public RpcClient(String address) {
+		this(address, null);
+	}
+	public RpcClient(String address, String urlPrefix) {  
 		super(address);
+		this.urlPrefix = urlPrefix; 
 	}   
 	
 	public RpcClient(IoAdaptor ioAdaptor) {
 		super(ioAdaptor);
+	} 
+	
+	public void setUrlPrefix(String urlPrefix) {
+		this.urlPrefix = urlPrefix;
 	}
 	
-	public void setMq(final String mq) { 
-		//add more controls for MQ before send
-		setBeforeSend(msg->{
-			msg.put(io.zbus.mq.Protocol.MQ, mq);
-			msg.put(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
-			msg.put(io.zbus.mq.Protocol.ACK, false);
-		});
-	}
-	
-	private static <T> T parseResult(Map<String, Object> resp, Class<T> clazz) { 
-		Object data = resp.get(Protocol.BODY);
-		Integer status = (Integer)resp.get(Protocol.STATUS);
+	private static <T> T parseResult(Message resp, Class<T> clazz) { 
+		Object data = resp.getBody();
+		Integer status = resp.getStatus();
 		if(status != null && status != 200){
 			if(data instanceof RuntimeException){
 				throw (RuntimeException)data;
@@ -45,14 +46,14 @@ public class RpcClient extends Client {
 			throw new RpcException(e.getMessage(), e.getCause());
 		}
 	}  
-	
-	
+	 
 	@SuppressWarnings("unchecked")
-	public <T> T createProxy(Class<T> clazz, String module){  
+	public <T> T createProxy(String module, Class<T> clazz){   
+		String urlPrefix = HttpKit.joinPath(this.urlPrefix, module);
 		Constructor<RpcInvocationHandler> rpcInvokerCtor;
 		try {
 			rpcInvokerCtor = RpcInvocationHandler.class.getConstructor(new Class[] {RpcClient.class, String.class }); 
-			RpcInvocationHandler rpcInvokerHandler = rpcInvokerCtor.newInstance(this, module); 
+			RpcInvocationHandler rpcInvokerHandler = rpcInvokerCtor.newInstance(this, urlPrefix); 
 			Class<T>[] interfaces = new Class[] { clazz }; 
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 			return (T) Proxy.newProxyInstance(classLoader, interfaces, rpcInvokerHandler);
@@ -64,12 +65,12 @@ public class RpcClient extends Client {
 	
 	public static class RpcInvocationHandler implements InvocationHandler {  
 		private RpcClient rpc; 
-		private String module;
+		private String urlPrefix;
 		private static final Object REMOTE_METHOD_CALL = new Object();
 
-		public RpcInvocationHandler(RpcClient rpc, String module) {
+		public RpcInvocationHandler(RpcClient rpc, String urlPrefix) {
 			this.rpc = rpc;
-			this.module = module;
+			this.urlPrefix = urlPrefix;
 		}
 		
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -79,12 +80,13 @@ public class RpcClient extends Client {
 			Object value = handleLocalMethod(proxy, method, args);
 			if (value != REMOTE_METHOD_CALL) return value; 
 			 
-			Map<String, Object> request = new HashMap<>();
-			request.put(Protocol.MODULE, module);
-			request.put(Protocol.METHOD, method.getName());  
-			request.put(Protocol.PARAMS, args);
+			 
+			String urlPath = HttpKit.joinPath(urlPrefix, method.getName());
+			Message request = new Message();
+			request.setUrl(urlPath);
+			request.setBody(args); //use body
 			
-			Map<String, Object> resp = rpc.invoke(request);
+			Message resp = rpc.invoke(request);
 			return parseResult(resp, method.getReturnType());
 		}
 

@@ -2,16 +2,28 @@ package io.zbus.mq.db;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import io.zbus.mq.Protocol;
+import io.zbus.mq.Protocol.MqInfo;
 import io.zbus.mq.model.ChannelReader;
 import io.zbus.mq.model.MessageQueue.AbstractMessageQueue;
+import io.zbus.transport.Message;
 
 public class DbQueue extends AbstractMessageQueue{
 	
-	public DbQueue(String mqName) { 
+	public DbQueue(String mqName, String creator) { 
 		super(mqName);
+	}
+	
+	@Override
+	public MqInfo info() {
+		MqInfo info = new MqInfo();
+		info.name = name();
+		info.type = type();
+		info.mask = getMask();
+		info.messageDepth = size(); 
+		info.channelCount = channels().size();  
+		return info;
 	}
 	
 	@Override
@@ -25,13 +37,13 @@ public class DbQueue extends AbstractMessageQueue{
 	}
 
 	@Override
-	public void write(Map<String, Object> message) {
+	public void write(Message message) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void write(List<Map<String, Object>> messages) {
+	public void write(List<Message> messages) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -1,7 +1,6 @@
 package io.zbus.mq.model;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -13,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.Protocol.MqInfo;
+import io.zbus.transport.Message;
 
 /** 
  *  
@@ -52,7 +52,7 @@ public interface MessageQueue {
 	 * Type of message queue, identifier
 	 * @return type of mq
 	 */
-	String type();
+	String type(); 
 	
 	/**
 	 * Message count
@@ -70,14 +70,14 @@ public interface MessageQueue {
 	 * 
 	 * @param message message
 	 */
-	void write(Map<String, Object> message); 
+	void write(Message message); 
 	
 	/**
 	 * Batch write message to queue
 	 * 
 	 * @param message message list
 	 */
-	void write(List<Map<String, Object>> messages); 
+	void write(List<Message> messages); 
 	
 	/**
 	 * Read message from queue by channel 
@@ -85,7 +85,7 @@ public interface MessageQueue {
 	 * @param channelId id of channel 
 	 * @return message
 	 */
-	Map<String, Object> read(String channelId) throws IOException;   
+	Message read(String channelId) throws IOException;   
 	
 	
 	/**
@@ -96,7 +96,7 @@ public interface MessageQueue {
 	 * @param count maximum count of message to read
 	 * @return list of message
 	 */
-	List<Map<String, Object>> read(String channelId, int count) throws IOException;   
+	List<Message> read(String channelId, int count) throws IOException;   
 	
 	/**
 	 * Add or update channel to the queue
@@ -138,7 +138,7 @@ public interface MessageQueue {
 	 * Set mask value
 	 * @param mask
 	 */
-	void setMask(Integer mask);
+	void setMask(Integer mask); 
 	
 	/**
 	 * Flush message in memory to disk if support
@@ -165,21 +165,10 @@ public interface MessageQueue {
 		@Override
 		public String name() { 
 			return name;
-		}  
-		
-		@Override
-		public MqInfo info() {
-			MqInfo info = new MqInfo();
-			info.name = name();
-			info.type = type();
-			info.mask = getMask();
-			info.size = size(); 
-			info.channels = new ArrayList<>(channels().values());
-			return info;
-		}
+		}   
 	 
 		@Override
-		public Map<String, Object> read(String channelId) throws IOException {
+		public Message read(String channelId) throws IOException {
 			ChannelReader reader = channelTable.get(channelId);
 			if(reader == null) {
 				throw new IllegalArgumentException("Missing channel: " + channelId);
@@ -188,7 +177,7 @@ public interface MessageQueue {
 		}
 
 		@Override
-		public List<Map<String, Object>> read(String channelId, int count) throws IOException { 
+		public List<Message> read(String channelId, int count) throws IOException { 
 			ChannelReader reader = channelTable.get(channelId);
 			if(reader == null) {
 				throw new IllegalArgumentException("Missing channel: " + channelId);
@@ -233,7 +222,7 @@ public interface MessageQueue {
 			if(dc != null) {
 				dc.destroy();
 			}
-		}
+		} 
 
 		@Override
 		public Map<String, ChannelInfo> channels() { 

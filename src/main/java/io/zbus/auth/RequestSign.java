@@ -1,6 +1,6 @@
 package io.zbus.auth;
 
-import java.util.Map;
+import io.zbus.transport.Message;
 
 /**
  * Digital signature for JSON typed request
@@ -21,7 +21,7 @@ public interface RequestSign {
 	 * @param secret private key for signature
 	 * @return signed string value of request
 	 */
-	String calcSignature(Map<String, Object> request, String apiKey, String secret); 
+	String calcSignature(Message request, String apiKey, String secret); 
 	
 	/**
 	 * Calculate digital signature value of JSON request based on apiKey and secret key, and
@@ -31,5 +31,5 @@ public interface RequestSign {
 	 * @param apiKey public key for signature
 	 * @param secret private key for signature
 	 */
-	void sign(Map<String, Object> request, String apiKey, String secret);
+	void sign(Message request, String apiKey, String secret);
 }

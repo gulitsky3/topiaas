@@ -1,13 +1,12 @@
 package io.zbus.mq.inproc;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.zbus.mq.MqClient;
 import io.zbus.mq.MqServer;
 import io.zbus.mq.MqServerConfig;
+import io.zbus.transport.Message;
 
 public class Sub { 
 	
@@ -17,7 +16,7 @@ public class Sub {
 		MqClient client = new MqClient(server);    
 		client.heartbeat(30, TimeUnit.SECONDS);
 		
-		final String mq = "DiskQ", channel = "MyChannel";
+		final String mq = "MyMQ", channel = "MyChannel";
 		AtomicInteger count = new AtomicInteger(0);  
 		client.addMqHandler(mq, channel, data->{
 			if(count.getAndIncrement() % 10000 == 0) {
@@ -26,19 +25,19 @@ public class Sub {
 		});  
 		
 		client.onOpen(()->{
-			Map<String, Object> req = new HashMap<>();
-			req.put("cmd", "create"); //create MQ/Channel
-			req.put("mq", mq); 
-			req.put("mqType", "disk"); //Set as Disk type
-			req.put("channel", channel);  
+			Message req = new Message();
+			req.setHeader("cmd", "create"); //create MQ/Channel
+			req.setHeader("mq", mq); 
+			req.setHeader("mqType", "disk"); //Set as Disk type
+			req.setHeader("channel", channel);  
 			client.invoke(req, res->{
 				System.out.println(res);
 			});  
 			
-			Map<String, Object> sub = new HashMap<>();
-			sub.put("cmd", "sub"); //Subscribe on MQ/Channel
-			sub.put("mq", mq); 
-			sub.put("channel", channel);
+			Message sub = new Message();
+			sub.setHeader("cmd", "sub"); //Subscribe on MQ/Channel
+			sub.setHeader("mq", mq); 
+			sub.setHeader("channel", channel);
 			client.invoke(sub, res->{
 				System.out.println(res);
 			});

@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.zbus.kit.JsonKit;
-import io.zbus.transport.DataHandler;
 import io.zbus.transport.AbastractClient;
+import io.zbus.transport.DataHandler;
+import io.zbus.transport.Message;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -19,6 +19,13 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 
+/**
+ * 
+ * Client of Websocket, via OkHttp3.
+ * 
+ * @author leiming.hong Jun 27, 2018
+ *
+ */
 public class WebsocketClient extends AbastractClient {
 	private static final Logger logger = LoggerFactory.getLogger(WebsocketClient.class);   
 	
@@ -43,9 +50,8 @@ public class WebsocketClient extends AbastractClient {
 		}
 		this.address = address; 
 		
-		onText = msg-> { 
-			@SuppressWarnings("unchecked")
-			Map<String, Object> response = JsonKit.parseObject(msg, Map.class); 
+		onText = msg-> {  
+			Message response = JsonKit.parseObject(msg, Message.class); 
 			if(onMessage != null) {
 				onMessage.handle(response);
 			} 
@@ -86,7 +92,7 @@ public class WebsocketClient extends AbastractClient {
 	} 
 	
 	@Override
-	protected void sendMessage0(Map<String, Object> data) {
+	protected void sendMessage0(Message data) {
 		sendMessage(JsonKit.toJSONString(data));
 	}  
 	
