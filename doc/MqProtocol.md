@@ -80,7 +80,7 @@ Response
 		headers: {
 			mq:          <mq_name>,     //required  
 			channel:     <channel_name> //required
-			sender:      <message from>
+			source:      <message from>
 			id:          <message id>
 		}, 
 		body:        <business_data>
@@ -122,7 +122,7 @@ Request
 			channelMask: <mask_integer>,
 			offset:      <channel_offset>,
 			checksum:    <offset_checksum>
-			topic:       <channel_topic>, 
+			filter:      <channel_filter>, 
 		} 
 	}
 
