@@ -13,7 +13,7 @@ public class RpcServerEmbedded {
 		Message res = new Message();
 		res.setStatus(200);
 		res.setHeader("content-type", "text/html; charset=utf8"); 
-		res.setBody("<h1>home page</h1>");
+		res.setBody("<h1>java home page</h1>");
 		
 		return res;
 	} 

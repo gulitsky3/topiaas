@@ -34,9 +34,9 @@ public class MqServerAdaptor extends ServerAdaptor {
 	
 	private RpcProcessor rpcProcessor;
 	
-	public MqServerAdaptor(MqServerConfig config) {
-		subscriptionManager = new SubscriptionManager();  
+	public MqServerAdaptor(MqServerConfig config) { 
 		mqManager = new MessageQueueManager();
+		subscriptionManager = new SubscriptionManager(mqManager);  
 		
 		messageDispatcher = new MessageDispatcher(subscriptionManager, sessionTable); 
 		mqManager.mqDir = config.mqDiskDir; 

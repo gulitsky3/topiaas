@@ -35,9 +35,9 @@ public class MessageQueueManager {
 		if(mqDirs != null && mqDirs.length > 0) {
 			for (File dir : mqDirs) { 
 				try {
-					MessageQueue mq = new DiskQueue(dir.getName(), new File(this.mqDir));
-					mqTable.put(dir.getName().toLowerCase(), mq);
-					logger.info("MQ({}) loaded", dir.getName()); 
+					MessageQueue mq = new DiskQueue(dir.getName(), new File(this.mqDir)); 
+					mqTable.put(mq.name(), mq);
+					logger.info("MQ({}) loaded", mq.name()); 
 				} catch (IOException e) {
 					logger.error(e.getMessage(), e);
 					continue;
@@ -53,7 +53,7 @@ public class MessageQueueManager {
 	
 	public MessageQueue get(String mqName) {
 		if(mqName == null) mqName = "";
-		return mqTable.get(mqName.toLowerCase());
+		return mqTable.get(mqName);
 	} 
 	
 	public MessageQueue saveQueue(String mqName, String channel) throws IOException { 
@@ -81,7 +81,7 @@ public class MessageQueueManager {
 			mqType = Protocol.MEMORY;
 		}
 		
-		MessageQueue mq = mqTable.get(mqName.toLowerCase()); 
+		MessageQueue mq = mqTable.get(mqName); 
 		if(mq == null) {
 			if(Protocol.MEMORY.equals(mqType)) {
 				mq = new MemoryQueue(mqName);
@@ -92,7 +92,7 @@ public class MessageQueueManager {
 			} else {
 				throw new IllegalArgumentException("mqType(" + mqType + ") Not Support");
 			}  
-			mqTable.put(mqName.toLowerCase(), mq);
+			mqTable.put(mqName, mq);
 		}
 		
 		mq.setMask(mqMask); 
@@ -114,14 +114,14 @@ public class MessageQueueManager {
 	 */ 
 	public void removeQueue(String mq, String channel) throws IOException { 
 		if(channel == null) {
-			MessageQueue q = mqTable.remove(mq.toLowerCase());
+			MessageQueue q = mqTable.remove(mq);
 			if(q != null) {
 				q.destroy();
 			}
 			return;
 		}
 		
-		MessageQueue q = mqTable.get(mq.toLowerCase());
+		MessageQueue q = mqTable.get(mq);
 		if(q != null) {
 			q.removeChannel(channel);
 		}

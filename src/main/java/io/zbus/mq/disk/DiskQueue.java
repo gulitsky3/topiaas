@@ -21,10 +21,10 @@ public class DiskQueue extends AbstractMessageQueue {
 	final Index index;     
 	private final QueueWriter writer;   
 	
-	public DiskQueue(String mqName, File baseDir) throws IOException { 
-		super(mqName); 
-		File mqDir = new File(baseDir, FileNameNormalizer.escapeName(mqName));
-		index = new Index(mqDir);
+	public DiskQueue(String mqDir, File baseDir) throws IOException { 
+		super(FileNameNormalizer.normalizeName(mqDir)); 
+		File mqDirFile = new File(baseDir, FileNameNormalizer.escapeName(mqDir));
+		index = new Index(mqDirFile);
 		writer = new QueueWriter(index);
 		
 		loadChannels();

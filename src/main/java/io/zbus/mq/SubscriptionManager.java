@@ -1,5 +1,6 @@
 package io.zbus.mq;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -7,11 +8,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.zbus.mq.model.MessageQueue;
 import io.zbus.mq.model.Subscription;
 
 public class SubscriptionManager {  
+	private static final Logger logger = LoggerFactory.getLogger(SubscriptionManager.class); 
 	private Map<String, Subscription> clientId2Subscription = new ConcurrentHashMap<>();
 	private Map<String, List<Subscription>> channel2Subscription = new ConcurrentHashMap<>();
+	
+	private MessageQueueManager messageQueueManager;
+	
+	public SubscriptionManager(MessageQueueManager messageQueueManager) {
+		this.messageQueueManager = messageQueueManager;
+	}
 	
 	public synchronized Subscription get(String clientId) {
 		return clientId2Subscription.get(clientId);
@@ -37,6 +49,19 @@ public class SubscriptionManager {
 	public synchronized void removeByClientId(String clientId) { 
 		Subscription sub = clientId2Subscription.remove(clientId);
 		if(sub == null) return;
+		
+		MessageQueue mq = messageQueueManager.get(sub.mq);
+		if(mq != null) {
+			Integer mask = mq.getMask();
+			if(mask != null && (Protocol.MASK_DELETE_ON_EXIT & mask) != 0) {
+				try {
+					messageQueueManager.removeQueue(mq.name(), null);
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+		}
+		
 		for(List<Subscription> subs : channel2Subscription.values()) {
 			subs.remove(sub);
 		} 

@@ -18,8 +18,7 @@ public interface Protocol {
 	public static final String ROUTE  = "route";    //Route message to specified sender client
 	public static final String CREATE = "create";   //Create or Update
 	public static final String REMOVE = "remove";   //Remove MQ/Channel
-	public static final String QUERY  = "query";    //Query MQ/Channel
-	public static final String BIND   = "bind";     //Bind URL mapping to MQ message(Make browser friendly)
+	public static final String QUERY  = "query";    //Query MQ/Channel 
 	public static final String PING   = "ping";     //Heartbeat ping
 	
 	//Parameter keys(for commands)
@@ -35,13 +34,15 @@ public interface Protocol {
 	public static final String MQ_MASK        = "mqMask";  
 	public static final String CHANNEL_MASK   = "channelMask"; 
 	public static final String WINDOW         = "window";
-	public static final String ACK            = "ack";  
-	public static final String CLEAR_BIND     = "clearBind";  
+	public static final String ACK            = "ack";   
 	
 	//Parameter mqType values
 	public static final String MEMORY  = "memory";  
 	public static final String DISK    = "disk";  
 	public static final String DB      = "db";  
+	
+	public static final int MASK_DELETE_ON_EXIT  = 1 << 0;  
+	public static final int MASK_EXCLUSIVE       = 1 << 1;  
 	
 	public static class MqInfo {   
 		public String name; 
