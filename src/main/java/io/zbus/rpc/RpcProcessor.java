@@ -518,6 +518,9 @@ public class RpcProcessor {
 	 * DELETE,/users/{uid}/pets/{pid}
 	 * PUT,/users/{uid}/pets/{pid}
 	 * PATCH,/users/{uid}/pets/{pid}
+	 * 
+	 * 3. nested dynamic path, 注意：**一定是出现在末尾的
+	 * GET,/api/{module}/filters/{filter_paths:**}
 	 */
 	private boolean matchDynamicPath(Entry<String, List<MethodInstance>> e, Message req, String routeKey) {
 		String reqMethod = req.getMethod();
@@ -534,12 +537,28 @@ public class RpcProcessor {
 		}
 		UrlInfo reqUrlInfo = HttpKit.parseUrl(req.getUrl());
 		UrlInfo routeUrlInfo = HttpKit.parseUrl(routePath);
+		// 通配符 /{key:**} (支持路径) 一定是放到最末尾的
+		String urlSuffixParamValue = null;
+		String urlSuffixParamName = null;
+		int lastIdx = routeUrlInfo.pathList.size()-1;
+		String lastRouteUrlPart = routeUrlInfo.pathList.get(lastIdx);
+		String lrup = lastRouteUrlPart;
+		if (lrup.startsWith("{") && lrup.endsWith(":**}")) {
+			urlSuffixParamName = lrup.substring(1, lrup.length()-4);
+			// 截断url
+			urlSuffixParamValue = String.join("/", reqUrlInfo.pathList.subList(lastIdx, reqUrlInfo.pathList.size()));
+			reqUrlInfo.pathList = reqUrlInfo.pathList.subList(0, lastIdx);
+			routeUrlInfo.pathList = routeUrlInfo.pathList.subList(0, lastIdx);
+		}
 		// 匹配路径，要求分割部分数量一致
 		if (routeUrlInfo.pathList.size() != reqUrlInfo.pathList.size()) {
 			return false;
 		}
 		boolean pathMatched = false;
 		Map<String, String> pathParams = new HashMap<String, String>();
+		if (urlSuffixParamName != null) {
+			pathParams.put(urlSuffixParamName, urlSuffixParamValue);
+		}
 		for (int i = 0; i < routeUrlInfo.pathList.size(); i++) {
 			String p1 = routeUrlInfo.pathList.get(i);
 			String p2 = reqUrlInfo.pathList.get(i);
