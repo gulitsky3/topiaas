@@ -14,8 +14,8 @@ public class RpcServerSimpleExample {
 	
 	public Map<String, Object> p(@Param("name") String name, @Param("age")int age) {
 		Map<String, Object> value = new HashMap<>();
-		value.put("key1", name);
-		value.put("key2", age);
+		value.put("name", name);
+		value.put("age", age);
 		value.put("nullKey", null);
 		return value;
 	}

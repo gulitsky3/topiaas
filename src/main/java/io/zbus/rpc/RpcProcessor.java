@@ -15,6 +15,8 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import io.zbus.kit.HttpKit;
@@ -250,7 +252,7 @@ public class RpcProcessor {
 		public Map<String, Object> queryMap;
 	}
 	 
-	private boolean httpMethodMatached(Message req, Route anno) { 
+	private boolean httpMethodMatched(Message req, Route anno) { 
 		if(anno.method().length == 0) {
 			return true;
 		}
@@ -317,7 +319,7 @@ public class RpcProcessor {
 		 
 		Route anno = target.methodInstance.info.urlAnnotation;
 		if(anno != null) {
-			boolean httpMethodMatched = httpMethodMatached(req, anno);
+			boolean httpMethodMatched = httpMethodMatched(req, anno);
 			if(!httpMethodMatched) {
 				reply(response, 405, String.format("Method(%s) Not Allowd", req.getMethod())); 
 				return null;
@@ -332,8 +334,13 @@ public class RpcProcessor {
 				if(form.files.isEmpty()) { //if no files upload, attributes same as queryString
 					target.queryMap = form.attributes;
 				} 
-			} else { 
-				params = JsonKit.convert(body, Object[].class);
+			} else {  
+				JSON paramObject = JsonKit.convert(body, JSON.class);
+				if(paramObject instanceof JSONArray) {
+					params = JsonKit.convert(paramObject, Object[].class);
+				} else {
+					target.queryMap = (JSONObject)paramObject; 
+				}
 			}
 		}   
 		if(params == null) { 
