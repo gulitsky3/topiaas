@@ -172,9 +172,10 @@ public class MqServerAdaptor extends ServerAdaptor {
 		if(mq == null) { 
 			if(info.pathList.size() > 0) {
 				mq = info.pathList.get(0);  
-			} else {
-				mq = "/";
 			} 
+			if(mqManager.get(mq) == null) {
+				mq = "/"; 
+			}
 			req.setHeader(Protocol.MQ, mq);
 		} 
 		

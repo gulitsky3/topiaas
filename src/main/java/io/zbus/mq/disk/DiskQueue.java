@@ -23,12 +23,12 @@ public class DiskQueue extends AbstractMessageQueue {
 	
 	public DiskQueue(String mqName, File baseDir) throws IOException { 
 		super(mqName); 
-		File mqDir = new File(baseDir, mqName);
+		File mqDir = new File(baseDir, FileNameNormalizer.escapeName(mqName));
 		index = new Index(mqDir);
 		writer = new QueueWriter(index);
 		
 		loadChannels();
-	} 
+	}  
 	
 	@Override
 	public String type() { 
@@ -53,6 +53,7 @@ public class DiskQueue extends AbstractMessageQueue {
             for (File channelFile : channelFiles) {  
             	String channelName = channelFile.getName();
             	channelName = channelName.substring(0, channelName.lastIndexOf('.'));   
+            	channelName = FileNameNormalizer.normalizeName(channelName);
 				try {
 					ChannelReader reader = buildChannelReader(channelName);
 					channelTable.put(channelName, reader);

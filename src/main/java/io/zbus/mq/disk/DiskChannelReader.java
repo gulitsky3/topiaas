@@ -23,7 +23,7 @@ public class DiskChannelReader implements ChannelReader {
 
 	public DiskChannelReader(String channel, DiskQueue diskQueue) throws IOException {
 		this.name = channel;
-		reader = new QueueReader(diskQueue.index, channel);
+		reader = new QueueReader(diskQueue.index, FileNameNormalizer.escapeName(channel));
 	}
 
 	public boolean isEnd() {
