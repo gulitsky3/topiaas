@@ -71,7 +71,8 @@ public class HttpWsServer extends Server {
 				.forAnyOrigin()
 				.allowNullOrigin()
 				.allowedRequestHeaders("X-Requested-With", "content-type")
-				.allowedRequestHeaders("PUT", "POST", "GET", "DELETE", "OPTIONS")
+				.allowedRequestMethods(HttpMethod.PUT, HttpMethod.POST, HttpMethod.GET, HttpMethod.OPTIONS)
+				.allowedRequestHeaders("*")
 				.allowCredentials()
 				.build();  
 		initCodec(corsConfig);
