@@ -5,10 +5,10 @@ import io.zbus.transport.Message;
 
 public class RpcClientTest { 
 	
-	public static void doTest(RpcClient rpc) throws Exception {    
+	public static void doTest(RpcClient rpc) throws Exception {     
 		//1) 原始的方法调用中的数据格式 
 		Message req = new Message();
-		req.setUrl("/plus");
+		req.setUrl("/example/plus");
 		req.setBody(new Object[] {1,2}); //body as parameter array
 		
 		Message res = rpc.invoke(req); //同步调用
@@ -20,14 +20,14 @@ public class RpcClientTest {
 		}); 
 		
 		//3) 动态代理
-		InterfaceExample example = rpc.createProxy("/", InterfaceExample.class);
+		InterfaceExample example = rpc.createProxy("example", InterfaceExample.class);
 		int c = example.plus(1, 2);
 		System.out.println(c);
 		
 		
-		//4) 基于URL的调用格式 
+		//4) 参数同时基于URL的调用格式 
 		req = new Message();
-		req.setUrl("/plus/1/2");
+		req.setUrl("/example/plus/1/2");
 		res = rpc.invoke(req); 
 		System.out.println("urlbased: " + res);
 	}

@@ -73,6 +73,16 @@ public abstract class AbastractClient implements Closeable {
 	public void sendMessage(Message data) {
 		if(beforeSend != null) {
 			beforeSend.intercept(data);
+		} 
+		if (authEnabled) {
+			if (apiKey == null) {
+				throw new IllegalStateException("apiKey not set");
+			}
+			if (secretKey == null) {
+				throw new IllegalStateException("secretKey not set");
+			}
+
+			requestSign.sign(data, apiKey, secretKey);
 		}
 		sendMessage0(data);
 	}
@@ -105,22 +115,8 @@ public abstract class AbastractClient implements Closeable {
 	public void invoke(Message req, DataHandler<Message> dataHandler,
 			ErrorHandler errorHandler) {
 
-		String id = (String) req.getHeader(Message.ID);
-		if (id == null) {
-			id = StrKit.uuid();
-			req.setHeader(Message.ID, id);
-		}
-		if (authEnabled) {
-			if (apiKey == null) {
-				throw new IllegalStateException("apiKey not set");
-			}
-			if (secretKey == null) {
-				throw new IllegalStateException("secretKey not set");
-			}
-
-			requestSign.sign(req, apiKey, secretKey);
-		}
-
+		String id = StrKit.uuid();
+		req.setHeader(Message.ID, id); 
 		AbastractClient.RequestContext ctx = new RequestContext(req, dataHandler, errorHandler);
 		callbackTable.put(id, ctx);
 

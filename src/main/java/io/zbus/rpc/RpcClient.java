@@ -12,22 +12,23 @@ import io.zbus.transport.IoAdaptor;
 import io.zbus.transport.Message; 
 
 public class RpcClient extends Client {  
-	public RpcClient(String address) {  
+	public RpcClient(String address) {
+		this(address, null);
+	}
+	public RpcClient(String address, String mq) {  
 		super(address);
+		if(mq != null) {
+			setBeforeSend(msg->{
+				msg.setHeader(io.zbus.mq.Protocol.MQ, mq);
+				msg.setHeader(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
+				msg.setHeader(io.zbus.mq.Protocol.ACK, false);
+			});
+		}
 	}   
 	
 	public RpcClient(IoAdaptor ioAdaptor) {
 		super(ioAdaptor);
-	}
-	
-	public void setMq(final String mq) { 
-		//add more controls for MQ before send
-		setBeforeSend(msg->{
-			msg.setHeader(io.zbus.mq.Protocol.MQ, mq);
-			msg.setHeader(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
-			msg.setHeader(io.zbus.mq.Protocol.ACK, false);
-		});
-	}
+	} 
 	
 	private static <T> T parseResult(Message resp, Class<T> clazz) { 
 		Object data = resp.getBody();

@@ -47,7 +47,7 @@ public class Message {
 	
 	public Message(Message msg) {
 		replace(msg);
-		this.headers = new HashMap<>(this.headers); //copy headers
+		this.headers = new HashMap<>(this.headers); //copy headers 
 	}
 	
 	public void replace(Message msg) {

@@ -77,6 +77,14 @@ public class MqServerAdaptor extends ServerAdaptor {
 			reply(req, 400, "json format required", sess); 
 			return;
 		} 
+		//check integrity 
+		if(requestAuth != null) {
+			AuthResult authResult = requestAuth.auth(req);
+			if(!authResult.success) {
+				reply(req, 403, authResult.message, sess); 
+				return; 
+			}
+		}
 		
 		attachInfo(req, sess);
 		
@@ -88,14 +96,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 			reply(req, 400, "cmd key required", sess); 
 			return;
 		} 
-		cmd = cmd.toLowerCase(); 
-		if(requestAuth != null) {
-			AuthResult authResult = requestAuth.auth(req);
-			if(!authResult.success) {
-				reply(req, 403, authResult.message, sess); 
-				return; 
-			}
-		}
+		cmd = cmd.toLowerCase();  
 		
 		CommandHandler handler = commandTable.get(cmd);
 		if(handler == null) {

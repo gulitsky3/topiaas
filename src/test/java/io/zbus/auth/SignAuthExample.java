@@ -23,12 +23,13 @@ public class SignAuthExample {
 		for(int i=0;i<10;i++) {
 			f.put("key"+i, new Random().nextInt());
 		}
-		req.setBody(f);
+		Object[] params = new Object[] {f};
+		req.setBody(params);
 		
 		String apiKey = "2ba912a8-4a8d-49d2-1a22-198fd285cb06";
-		String secret = "461277322-943d-4b2f-b9b6-3f860d746ffd";
+		String secretKey = "461277322-943d-4b2f-b9b6-3f860d746ffd";
 		
-		sign.sign(req, apiKey, secret);
+		sign.sign(req, apiKey, secretKey);
 		
 		String wired = JsonKit.toJSONString(req);
 		System.out.println(wired);

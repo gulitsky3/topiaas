@@ -32,7 +32,7 @@ public class DefaultAuth implements RequestAuth {
 		if(sign.equals(sign2)) {
 			return new AuthResult(true);
 		} else {
-			return new AuthResult(false, "signature unmatched");
+			return new AuthResult(false, "signature mismatched");
 		}
 	} 
 }
