@@ -5,6 +5,7 @@ import java.util.Map;
 
 import io.zbus.kit.FileKit;
 import io.zbus.rpc.annotation.Param;
+import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
@@ -61,6 +62,7 @@ public class RpcServerFullExamples {
 		return value;
 	} 
 	
+	@RequestMapping("null")
 	public Map<String, Object> nullValue() {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key1", null);
@@ -127,7 +129,7 @@ public class RpcServerFullExamples {
 		p.setDocFile("rpc.html");
 		
 		rpcServer.setMqServerAddress("zbus.io");
-		rpcServer.setMq("/qhee_survey/example");  
+		rpcServer.setMq("/");  
 		rpcServer.start();  
 	}  
 }
