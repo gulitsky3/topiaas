@@ -14,6 +14,6 @@ else
 fi
 
 LIB_OPTS="$ZBUS_HOME/lib/*:$ZBUS_HOME/classes:$ZBUS_HOME/*:$ZBUS_HOME/conf/"
-nohup $JAVA_HOME/bin/java $JAVA_OPTS -cp $LIB_OPTS $MAIN_CLASS $MAIN_OPTS /dev/null 2>&1
+nohup $JAVA_HOME/bin/java $JAVA_OPTS -cp $LIB_OPTS $MAIN_CLASS $MAIN_OPTS > /dev/null 2>&1&
 
 
