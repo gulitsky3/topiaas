@@ -12,12 +12,19 @@ import io.zbus.transport.http.Http;
 
 public class StaticResource {
 	private String basePath = "";
+	private String urlPrefix = "";
 	private FileKit fileKit = new FileKit();
 	
 	@Route(exclude=true)
 	public void setBasePath(String basePath) {
 		this.basePath = basePath;
 	}
+	
+	@Route(exclude=true)
+	public void setUrlPrefix(String urlPrefix) {
+		this.urlPrefix = urlPrefix;
+	}
+	
 	@Route(exclude=true)
 	public void setCacheEnabled(boolean cacheEnabled) {
 		this.fileKit.setCacheEnabled(cacheEnabled);
@@ -26,8 +33,11 @@ public class StaticResource {
 	@Route("/")
 	public Message file(Message req) {
 		Message res = new Message();
-		
-		UrlInfo info = HttpKit.parseUrl(req.getUrl());
+		String url = req.getUrl();
+		if(url.startsWith(this.urlPrefix)) {
+			url = url.substring(this.urlPrefix.length());
+		}
+		UrlInfo info = HttpKit.parseUrl(url);
 		String urlFile = info.urlPath;
 		if(urlFile == null) { //missing replace with default
 			urlFile = "index.html";
