@@ -336,7 +336,7 @@ public class RpcProcessor {
 		if(matched == null) {
 			reply(response, 404, String.format("URL=%s Not Found", url)); 
 			return null;
-		} 
+		}  
 		
 		String urlPathMatched = matched.getKey();
 		

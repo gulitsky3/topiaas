@@ -158,7 +158,7 @@ public class HttpWsServer extends Server {
 				httpMessage.headers().set(e.getKey().toLowerCase(), e.getValue());
 			}
 			byte[] body = Http.body(msg);
-			httpMessage.headers().add(Http.CONTENT_LENGTH, body.length+"");
+			httpMessage.headers().set(Http.CONTENT_LENGTH, body.length+"");
 			httpMessage.content().writeBytes(Http.body(msg)); 
 			out.add(httpMessage);
 		}

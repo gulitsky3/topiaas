@@ -81,7 +81,7 @@ public class HttpKit {
 		if(idx < 0) {
 			return null;
 		}
-		String mimeType = resource.substring(idx+1);
+		String mimeType = resource.substring(idx+1).toLowerCase();
 		return MIME_TYPES.get(mimeType); 
 	}
 	

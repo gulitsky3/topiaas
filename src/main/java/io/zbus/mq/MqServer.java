@@ -14,6 +14,8 @@ import io.zbus.kit.ConfigKit;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.MqServerConfig.CorsConfig;
 import io.zbus.mq.MqServerConfig.ServerConfig;
+import io.zbus.proxy.HttpProxy;
+import io.zbus.proxy.HttpProxyConfig.ProxyConfig;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
 import io.zbus.transport.Ssl;
@@ -34,6 +36,8 @@ public class MqServer extends HttpWsServer {
 	
 	private StaticResource staticResource = new StaticResource();
 	private RpcProcessor rpcProcessor;
+	
+	private List<HttpProxy> httpProxyList;
 	
 	public MqServer(MqServerConfig config) {  
 		super(corsConfig(config.getCors()));
@@ -182,6 +186,17 @@ public class MqServer extends HttpWsServer {
 			logger.info("Starting mointor server @" + monitorServerConfig.address);
 			this.start(monitorServerConfig.address, monitorServerAdaptor, sslContext); 
 		}  
+		
+		if(config.httpProxyConfig != null) {
+			httpProxyList = new ArrayList<>();
+			for(ProxyConfig pconfig : config.httpProxyConfig.proxyList) {
+				HttpProxy proxy = new HttpProxy(pconfig.backend);
+				proxy.setMqServer(this);
+				proxy.setMq(pconfig.location);
+				httpProxyList.add(proxy);
+				proxy.start();
+			} 
+		}
 	}
 	 
 	
