@@ -37,7 +37,7 @@ public class HttpKit {
 	public static String joinPath(String... paths) {
 		String url = "/";
 		for(String p : paths) {
-			url += p;
+			url += "/"+p;
 		}   
 		url = url.replaceAll("[/]+", "/"); 
         if(url.endsWith("/") && url.length()>1) {
