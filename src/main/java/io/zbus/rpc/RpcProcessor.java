@@ -519,10 +519,11 @@ public class RpcProcessor {
 	 * PUT,/users/{uid}/pets/{pid}
 	 * PATCH,/users/{uid}/pets/{pid}
 	 * 
-	 * 3. nested dynamic path, 注意：**一定是出现在末尾的
-	 * GET,/api/{module}/filters/{filter_paths:**}
+	 * 3. nested dynamic path, 注意：**一定是出现在末尾的, 若key前面有问号，则表示可选
+	 * GET,/api/{module}/filters/{?filter_paths:**}
 	 */
-	private boolean matchDynamicPath(Entry<String, List<MethodInstance>> e, Message req, String routeKey) {
+	private static boolean matchDynamicPath(Message req, String routeKey) {
+		routeKey = routeKey.replace("?", "~");
 		String reqMethod = req.getMethod();
 		String[] split1 = routeKey.split(",");
 		String routeMethod = null;
@@ -540,16 +541,30 @@ public class RpcProcessor {
 		// 通配符 /{key:**} (支持路径) 一定是放到最末尾的
 		String urlSuffixParamValue = null;
 		String urlSuffixParamName = null;
-		int lastIdx = routeUrlInfo.pathList.size()-1;
-        if (lastIdx < reqUrlInfo.pathList.size()) {
-            String lastRouteUrlPart = routeUrlInfo.pathList.get(lastIdx);
+		boolean urlSuffixParamOptional = false;
+		int lastPartIdxOfRoute = routeUrlInfo.pathList.size()-1;
+        if (lastPartIdxOfRoute <= reqUrlInfo.pathList.size()) {
+            String lastRouteUrlPart = routeUrlInfo.pathList.get(lastPartIdxOfRoute);
             String lrup = lastRouteUrlPart;
             if (lrup.startsWith("{") && lrup.endsWith(":**}") && lrup.length() > 5) {
                 urlSuffixParamName = lrup.substring(1, lrup.length() - 4);
-                // 截断url
-                urlSuffixParamValue = String.join("/", reqUrlInfo.pathList.subList(lastIdx, reqUrlInfo.pathList.size()));
-                reqUrlInfo.pathList = reqUrlInfo.pathList.subList(0, lastIdx);
-                routeUrlInfo.pathList = routeUrlInfo.pathList.subList(0, lastIdx);
+                urlSuffixParamOptional = urlSuffixParamName.startsWith("~");
+                if (urlSuffixParamOptional) {
+                	urlSuffixParamName = urlSuffixParamName.substring(1);
+                } else if (lastPartIdxOfRoute == reqUrlInfo.pathList.size()) {
+                	// 若动态后缀不是可选的，则严格要求请求的url必须要有后缀部分
+                	return false;
+                }
+                // 获取动态后缀
+                if (lastPartIdxOfRoute < reqUrlInfo.pathList.size()) {
+                	urlSuffixParamValue = String.join("/", reqUrlInfo.pathList.subList(lastPartIdxOfRoute, reqUrlInfo.pathList.size()));
+                	// 截断动态后缀url，让路由和截断后的url分割部分保持一致
+                    reqUrlInfo.pathList = reqUrlInfo.pathList.subList(0, lastPartIdxOfRoute);
+                } else {
+                	urlSuffixParamValue = "";
+                }
+                
+                routeUrlInfo.pathList = routeUrlInfo.pathList.subList(0, lastPartIdxOfRoute);
             }
         }
 		// 匹配路径，要求分割部分数量一致
@@ -599,7 +614,7 @@ public class RpcProcessor {
 					matched = e; 
 				}
 			} else {
-				boolean bool = this.matchDynamicPath(e, req, key);
+				boolean bool = matchDynamicPath(req, key);
 				if (bool) {
 					matched = e;
 					break;
