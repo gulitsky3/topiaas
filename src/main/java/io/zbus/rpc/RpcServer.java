@@ -151,8 +151,8 @@ public class RpcServer implements Closeable {
 		} 
 		
 		//Doc URL root generated
-		if(processor.isMethodPageEnabled()) {
-			processor.enableMethodPage();
+		if(processor.isDocEnabled()) {
+			processor.enableDoc();
 		}
 		
 		return this;

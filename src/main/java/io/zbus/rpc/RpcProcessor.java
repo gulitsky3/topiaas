@@ -32,11 +32,13 @@ public class RpcProcessor {
 	protected Map<String, Map<String, MethodInstance>> module2MethodTable = new HashMap<>(); //module =>{method => MethodInstance}
 	
 	protected String docUrlPrefix = "/";
-	protected boolean stackTraceEnabled = true;
-	protected boolean methodPageEnabled = true; 
-	protected boolean methodPageAuthEnabled = false;
+	protected boolean docEnabled = true; 
+	protected String docModule = "index";
+	protected boolean docAuthRequired = false;
+	
+	protected boolean stackTraceEnabled = true; 
 	protected boolean overrideMethod = true;
-	protected String methodPageModule = "index";
+	
 	
 	protected RpcFilter beforeFilter;
 	protected RpcFilter afterFilter;
@@ -78,12 +80,15 @@ public class RpcProcessor {
 					continue;
 				}
 				
+				RpcMethod info = new RpcMethod();
 				String methodName =  m.getName();
 				String urlPath = path(module, methodName);
 				
 				RequestMapping p = m.getAnnotation(RequestMapping.class);
-				if (p != null) {
+				if (p != null) { 
 					if (p.exclude()) continue; 
+					
+					info.urlAnnotation = p;
 					urlPath = annoPath(p);  
 					//add module prefix
 					if(!urlPath.startsWith("/")) {
@@ -103,13 +108,15 @@ public class RpcProcessor {
 
 				m.setAccessible(true);
 				
-				RpcMethod info = new RpcMethod();
+				
 				info.urlPath = urlPath;
 				info.module = module;
 				info.method = methodName;
 				info.authRequired = authRequired;
 				info.docEnabled = enableDoc;
 				info.returnType = m.getReturnType().getCanonicalName();
+				
+				
 				List<String> paramTypes = new ArrayList<String>();
 				for (Class<?> t : m.getParameterTypes()) {
 					paramTypes.add(t.getCanonicalName());
@@ -308,7 +315,7 @@ public class RpcProcessor {
 	
 	
 	private class MethodTarget{
-		public MethodInstance method;
+		public MethodInstance methodInstance;
 		public Object[] params;
 	}
 	
@@ -349,11 +356,21 @@ public class RpcProcessor {
 		}  
 		
 		MethodTarget target = new MethodTarget();
-		target.method = mi;
+		target.methodInstance = mi;
 		target.params = params;
 		return target;
 	}
-	 
+	
+	private boolean httpMethodMatached(Message req, RequestMapping anno) { 
+		if(anno.method().length == 0) {
+			return true;
+		}
+		String httpMethod = req.getMethod();
+		for(String m : anno.method()) {
+			if(m.equalsIgnoreCase(httpMethod)) return true;
+		}
+		return false;
+	}
 	
 	private MethodTarget findMethodByUrl(Message req, Message response) {  
 		String url = req.getUrl();  
@@ -376,10 +393,19 @@ public class RpcProcessor {
 		String urlPathMatched = matched.getKey();
 		
 		MethodTarget target = new MethodTarget(); 
-		target.method = matched.getValue();
+		target.methodInstance = matched.getValue();
 		Object[] params = null; 
 		
-		//TODO more support on URL params
+		//TODO more support on URL parameters 
+		RequestMapping anno = target.methodInstance.info.urlAnnotation;
+		if(anno != null) {
+			boolean httpMethodMatched = httpMethodMatached(req, anno);
+			if(!httpMethodMatched) {
+				reply(response, 405, String.format("Method(%s) Not Allowd", req.getMethod())); 
+				return null;
+			}
+		}
+		
 		Object body = req.getBody(); //assumed to be params 
 		if(body != null && body instanceof Object[]) {
 			params = (Object[])body;
@@ -409,7 +435,7 @@ public class RpcProcessor {
 		if(target == null) return;   
 		
 		Object[] params = target.params; 
-		MethodInstance mi = target.method;
+		MethodInstance mi = target.methodInstance;
 		
 		//Authentication step in if required
 		if(authFilter != null && mi.info.authRequired) { 
@@ -473,10 +499,10 @@ public class RpcProcessor {
 		}  
 	}
 	
-	public RpcProcessor enableMethodPage() { 
+	public RpcProcessor enableDoc() { 
 		DocRender render = new DocRender(this, docUrlPrefix); 
-		if(!this.urlPath2MethodTable.containsKey(path(methodPageModule, ""))) {
-			addModule(methodPageModule, render, false, false);
+		if(!this.urlPath2MethodTable.containsKey(path(docModule, ""))) {
+			addModule(docModule, render, false, false);
 		} 
 		if(!this.urlPath2MethodTable.containsKey("/")) {
 			addModule("", render, false, false);
@@ -508,26 +534,26 @@ public class RpcProcessor {
 		return this;
 	}
 
-	public boolean isMethodPageEnabled() {
-		return methodPageEnabled;
+	public boolean isDocEnabled() {
+		return docEnabled;
 	}
 
-	public RpcProcessor setMethodPageEnabled(boolean methodPageEnabled) {
-		this.methodPageEnabled = methodPageEnabled;
+	public RpcProcessor setDocEnabled(boolean docEnabled) {
+		this.docEnabled = docEnabled;
 		return this;
 	}
 	
-	public RpcProcessor setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
-		this.methodPageAuthEnabled = methodPageAuthEnabled;
+	public RpcProcessor setDocAuthRequired(boolean docAuthRequired) {
+		this.docAuthRequired = docAuthRequired;
 		return this;
 	}
 
-	public String getMethodPageModule() {
-		return methodPageModule;
+	public String getDocModule() {
+		return docModule;
 	}
 
-	public RpcProcessor setMethodPageModule(String methodPageModule) {
-		this.methodPageModule = methodPageModule;
+	public RpcProcessor setDocModule(String docModule) {
+		this.docModule = docModule;
 		return this;
 	}
 	

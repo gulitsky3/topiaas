@@ -18,7 +18,7 @@ public class RpcServerExample {
 		return res;
 	}
 	
-	@RequestMapping(path="/abc", method="GET" )
+	@RequestMapping(path="/abc", method="POST" )
 	public Object json() {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key", System.currentTimeMillis());
@@ -28,8 +28,9 @@ public class RpcServerExample {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {
 		
-		RpcProcessor p = new RpcProcessor() 
-			.addModule(RpcServerExample.class); 
+		RpcProcessor p = new RpcProcessor();
+		p.setDocModule("m");
+		p.addModule(RpcServerExample.class); 
 		
 		RpcServer server = new RpcServer();      
 		server.setProcessor(p); 

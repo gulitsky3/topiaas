@@ -3,6 +3,8 @@ package io.zbus.rpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.zbus.rpc.annotation.RequestMapping;
+
 public class RpcMethod {
 	public String urlPath; //if null, use module/method
 	public String module;
@@ -12,6 +14,7 @@ public class RpcMethod {
 	public String returnType; 
 	public boolean authRequired;
 	public boolean docEnabled = true;
+	public RequestMapping urlAnnotation;
 	
 	public RpcMethod() {
 		
