@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import io.zbus.mq.Protocol;
+import io.zbus.mq.Protocol.MqInfo;
 import io.zbus.mq.model.Channel;
 import io.zbus.mq.model.ChannelReader;
 import io.zbus.mq.model.MessageQueue.AbstractMessageQueue;
@@ -12,15 +13,31 @@ import io.zbus.transport.Message;
 public class MemoryQueue extends AbstractMessageQueue{  
 	private CircularArray data;   
 	private Integer mask = 0; 
+	private final String creator;
+	private long createdAt = System.currentTimeMillis();
 	
-	public MemoryQueue(String name, int maxSize) { 
-		super(name); 
+	public MemoryQueue(String name, int maxSize, String creator) { 
+		super(name);  
+		this.creator = creator;
 		this.data = new CircularArray(maxSize); 
 	}  
 	
-	public MemoryQueue(String name) { 
-		this(name, 1000); 
+	public MemoryQueue(String name, String creator) { 
+		this(name, 1000, creator); 
 	} 
+	
+	@Override
+	public MqInfo info() {
+		MqInfo info = new MqInfo();
+		info.name = name();
+		info.type = type();
+		info.mask = getMask();
+		info.messageDepth = size(); 
+		info.channelCount = channels().size(); 
+		info.createdAt = createdAt;
+		info.creator = creator;
+		return info;
+	}
 	
 	@Override
 	public String type() { 

@@ -7,7 +7,7 @@ public class HttpClientExample {
 	public static void main(String[] args) throws Exception {  
 		HttpClient client = new HttpClient();
 		Message message = new Message();
-		message.setUrl("https://coding.net/");
+		message.setUrl("https://zbus.io");
 		String res = client.string(message);
 		System.out.println(res); 
 	} 

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.kit.JsonKit;
 import io.zbus.mq.Protocol;
+import io.zbus.mq.Protocol.MqInfo;
 import io.zbus.mq.disk.support.DiskMessage;
 import io.zbus.mq.disk.support.Index;
 import io.zbus.mq.disk.support.QueueWriter;
@@ -21,7 +22,7 @@ public class DiskQueue extends AbstractMessageQueue {
 	final Index index;     
 	private final QueueWriter writer;   
 	
-	public DiskQueue(String mqDir, File baseDir) throws IOException { 
+	public DiskQueue(String mqDir, File baseDir, String creator) throws IOException { 
 		super(FileNameNormalizer.normalizeName(mqDir)); 
 		File mqDirFile = new File(baseDir, FileNameNormalizer.escapeName(mqDir));
 		index = new Index(mqDirFile);
@@ -29,6 +30,21 @@ public class DiskQueue extends AbstractMessageQueue {
 		
 		loadChannels();
 	}  
+	
+	public DiskQueue(String mqDir, File baseDir) throws IOException { 
+		this(mqDir,  baseDir, null);
+	}  
+	 
+	@Override
+	public MqInfo info() {
+		MqInfo info = new MqInfo();
+		info.name = name();
+		info.type = type();
+		info.mask = getMask();
+		info.messageDepth = size(); 
+		info.channelCount = channels().size();  
+		return info;
+	}
 	
 	@Override
 	public String type() { 

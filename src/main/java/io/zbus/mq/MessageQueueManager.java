@@ -3,13 +3,18 @@ package io.zbus.mq;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.zbus.mq.Protocol.ChannelInfo;
+import io.zbus.mq.Protocol.MqInfo;
 import io.zbus.mq.db.DbQueue;
 import io.zbus.mq.disk.DiskQueue;
 import io.zbus.mq.memory.MemoryQueue;
@@ -56,8 +61,8 @@ public class MessageQueueManager {
 		return mqTable.get(mqName);
 	} 
 	
-	public MessageQueue saveQueue(String mqName, String channel) throws IOException { 
-		return saveQueue(mqName, Protocol.MEMORY, null, channel, null, null);
+	public MessageQueue saveQueue(String mqName, String channel, String creator) throws IOException { 
+		return saveQueue(mqName, Protocol.MEMORY, null, channel, null, null, creator);
 	}
 	
 	/**
@@ -72,7 +77,9 @@ public class MessageQueueManager {
 	 */
 	public MessageQueue saveQueue(
 			String mqName, String mqType, Integer mqMask, 
-			String channel, Long channelOffset, Integer channelMask) throws IOException { 
+			String channel, Long channelOffset, Integer channelMask,
+			String creator
+			) throws IOException { 
 		
 		if(mqName == null) {
 			throw new IllegalArgumentException("Missing mqName");
@@ -84,11 +91,11 @@ public class MessageQueueManager {
 		MessageQueue mq = mqTable.get(mqName); 
 		if(mq == null) {
 			if(Protocol.MEMORY.equals(mqType)) {
-				mq = new MemoryQueue(mqName);
+				mq = new MemoryQueue(mqName, creator);
 			} else if (Protocol.DISK.equals(mqType)) {
-				mq = new DiskQueue(mqName, new File(mqDir));
+				mq = new DiskQueue(mqName, new File(mqDir), creator);
 			} else if(Protocol.DB.equals(mqName)) {
-				mq = new DbQueue(mqName);
+				mq = new DbQueue(mqName, creator);
 			} else {
 				throw new IllegalArgumentException("mqType(" + mqType + ") Not Support");
 			}  
@@ -126,4 +133,19 @@ public class MessageQueueManager {
 			q.removeChannel(channel);
 		}
 	} 
+	
+	public List<MqInfo> mqInfoList() {
+		List<MqInfo> res = new ArrayList<>();
+		for(Entry<String, MessageQueue> e : mqTable.entrySet()) {
+			MessageQueue mq = e.getValue();
+			res.add(mq.info());
+		}
+		return res;
+	}
+	
+	public ChannelInfo channelInfo(String mq, String channel) {
+		MessageQueue q = mqTable.get(mq);
+		if(q == null) return null;
+		return q.channel(channel);
+	}
 }

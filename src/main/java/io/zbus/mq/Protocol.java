@@ -1,7 +1,5 @@
 package io.zbus.mq;
 
-import java.util.List;
-
 public interface Protocol {  
 	//Parameter keys(Message main key-value pairs)
 	public static final String CMD       = "cmd";       // Request message command
@@ -47,9 +45,12 @@ public interface Protocol {
 	public static class MqInfo {   
 		public String name; 
 		public Integer mask; 
-		public long size;
+		public long messageDepth;
 		public String type;
-		public List<ChannelInfo> channels; 
+		public int channelCount;
+		public int consumerCount;
+		public String creator;
+		public Long createdAt; 
 	}
 
 	public static class ChannelInfo {   

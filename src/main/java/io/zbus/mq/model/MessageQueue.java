@@ -1,7 +1,6 @@
 package io.zbus.mq.model;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -53,7 +52,7 @@ public interface MessageQueue {
 	 * Type of message queue, identifier
 	 * @return type of mq
 	 */
-	String type();
+	String type(); 
 	
 	/**
 	 * Message count
@@ -139,7 +138,7 @@ public interface MessageQueue {
 	 * Set mask value
 	 * @param mask
 	 */
-	void setMask(Integer mask);
+	void setMask(Integer mask); 
 	
 	/**
 	 * Flush message in memory to disk if support
@@ -166,18 +165,7 @@ public interface MessageQueue {
 		@Override
 		public String name() { 
 			return name;
-		}  
-		
-		@Override
-		public MqInfo info() {
-			MqInfo info = new MqInfo();
-			info.name = name();
-			info.type = type();
-			info.mask = getMask();
-			info.size = size(); 
-			info.channels = new ArrayList<>(channels().values());
-			return info;
-		}
+		}   
 	 
 		@Override
 		public Message read(String channelId) throws IOException {
@@ -234,7 +222,7 @@ public interface MessageQueue {
 			if(dc != null) {
 				dc.destroy();
 			}
-		}
+		} 
 
 		@Override
 		public Map<String, ChannelInfo> channels() { 

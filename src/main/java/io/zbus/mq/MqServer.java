@@ -51,9 +51,17 @@ public class MqServer extends HttpWsServer {
 			}
 		}  
 		
+		MqServerAdaptor adaptor = this.publicServerAdaptor;
+		if(adaptor == null) {
+			adaptor = this.privateServerAdaptor;
+		}
+		if(adaptor == null) {
+			throw new IllegalStateException("Both public and private server missing");
+		}
+		
 		monitorServerConfig = config.monitorServer;
 		if(monitorServerConfig != null) {
-			monitorServerAdaptor = new MonitorServerAdaptor(this.config); 
+			monitorServerAdaptor = new MonitorServerAdaptor(this.config, adaptor.getMqManager(), adaptor.getSubscriptionManager()); 
 		}
 	} 
 	public MqServer(String configFile){
