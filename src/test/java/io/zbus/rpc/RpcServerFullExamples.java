@@ -17,7 +17,7 @@ public class RpcServerFullExamples {
 		return a+b;
 	} 
 	
-	@Route(path="/abc") //default path could be changed
+	@Route("/abc") //default path could be changed
 	public Object json() {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key", System.currentTimeMillis());

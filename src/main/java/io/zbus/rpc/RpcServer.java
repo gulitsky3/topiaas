@@ -26,7 +26,7 @@ public class RpcServer implements Closeable {
 	private String mqServerAddress;
 	private String mq;
 	private String mqType = Protocol.MEMORY;
-	private Integer mqMask;
+	private Integer mqMask = Protocol.MASK_DELETE_ON_EXIT;
 	private String channel;
 	private boolean authEnabled = false;
 	private String apiKey = "";

@@ -56,7 +56,7 @@ public class MqServer extends HttpWsServer {
 			adaptor = this.privateServerAdaptor;
 		}
 		if(adaptor == null) {
-			throw new IllegalStateException("Both public and private server missing");
+			adaptor = publicServerAdaptor = new MqServerAdaptor(this.config); 
 		}
 		
 		monitorServerConfig = config.monitorServer;
@@ -100,7 +100,7 @@ public class MqServer extends HttpWsServer {
 	}
 	
 	public void start() {
-		if(publicServerAdaptor != null) { 
+		if(publicServerAdaptor != null && publicServerConfig != null) { 
 			SslContext sslContext = null;
 			if (publicServerConfig.sslEnabled){  
 				try{  
@@ -114,7 +114,7 @@ public class MqServer extends HttpWsServer {
 			this.start(publicServerConfig.address, publicServerAdaptor, sslContext); 
 		} 
 		
-		if(privateServerAdaptor != null) { 
+		if(privateServerAdaptor != null && privateServerConfig != null) { 
 			SslContext sslContext = null;
 			if (privateServerConfig.sslEnabled){  
 				try{  
@@ -128,7 +128,7 @@ public class MqServer extends HttpWsServer {
 			this.start(privateServerConfig.address, privateServerAdaptor, sslContext); 
 		}  
 		
-		if(monitorServerAdaptor != null) {
+		if(monitorServerAdaptor != null & monitorServerConfig != null) {
 			SslContext sslContext = null;
 			if (monitorServerConfig.sslEnabled){  
 				try{  
