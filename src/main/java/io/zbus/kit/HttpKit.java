@@ -105,6 +105,12 @@ public class HttpKit {
 		if(resource.endsWith(".zip")){
 			return "application/zip";
 		}  
+		if(resource.endsWith(".ttf")){
+			return "application/x-font-ttf";
+		}  
+		if(resource.endsWith(".eot")){
+			return "font/opentype";
+		}  
 		
 		return null; 
 	}

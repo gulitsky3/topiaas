@@ -40,10 +40,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class FileKit {  
-	private final static Map<String, String> cache = new ConcurrentHashMap<String, String>();
-	private static boolean enableCache = true;
+	private final Map<String, String> cache = new ConcurrentHashMap<String, String>();
+	private boolean enableCache = true;
 	
-	public static void setCache(boolean value) {
+	public static FileKit INSTANCE = new FileKit();
+	
+	public void setCache(boolean value) {
 		enableCache = value;
 	}  
 	
@@ -77,7 +79,7 @@ public class FileKit {
 		return null;
 	}
 
-	public static String loadFile(String resource) throws IOException {
+	public String loadFile(String resource) throws IOException {
 		if(enableCache && cache.containsKey(resource)){
 			return cache.get(resource);
 		}
@@ -110,7 +112,7 @@ public class FileKit {
 	}
 	 
 	
-	public static String loadFile(String resource, Map<String, Object> model) throws IOException {
+	public String loadFile(String resource, Map<String, Object> model) throws IOException {
 		String template = loadFile(resource);
 		if(model == null) return template; 
 		
@@ -128,7 +130,7 @@ public class FileKit {
 		return template;
 	} 
 	
-	public static byte[] loadFileBytes(String resource) throws IOException {
+	public byte[] loadFileBytes(String resource) throws IOException {
 		InputStream in = inputStream(resource);
 		if (in == null)
 			throw new FileNotFoundException("File(" + resource + ") Not Found");

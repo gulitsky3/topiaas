@@ -51,8 +51,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 public class HttpMessage {  
 	private static final Logger log = LoggerFactory.getLogger(HttpMessage.class); 
 	private static final String DEFAULT_ENCODING = "UTF-8"; 
-	
-	public static final String HEARTBEAT        = "heartbeat";  
+	 
 	public static final String ID      		    = "id";	  
 	public static final String ENCODING      	= "encoding";	 
 	public static final String CMD      	    = "cmd";	

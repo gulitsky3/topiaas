@@ -74,7 +74,7 @@ public class HttpWsServerAdaptor extends ServerAdaptor{
     }  
     
     protected void handleUrlMessage(HttpMessage msg){ 
-    	if(msg.getCommand() != null){
+    	if(msg.getHeader("") != null){
     		return;
     	} 
     	String url = msg.getUrl(); 

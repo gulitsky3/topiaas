@@ -149,7 +149,7 @@ public class RpcProcessor {
 				for(Annotation annotation : annos) {
 					if(Param.class.isAssignableFrom(annotation.getClass())) {
 						Param p = (Param)annotation;
-						spec.paramNames.add(p.value());
+						spec.paramNames.add(p.value()); 
 						break;
 					}
 				} 
@@ -188,6 +188,25 @@ public class RpcProcessor {
 				m.setAccessible(true);
 				MethodInstance mi = new MethodInstance(m, service); 
 				mi.authRequired = authRequired;
+				
+				List<String> paramTypes = new ArrayList<String>();
+				for (Class<?> t : m.getParameterTypes()) {
+					paramTypes.add(t.getCanonicalName());
+				}
+				Annotation[][] paramAnnos = m.getParameterAnnotations(); 
+				int size = paramTypes.size(); 
+				for(int i=0; i<size; i++) {
+					Annotation[] annos = paramAnnos[i];
+					for(Annotation annotation : annos) {
+						if(Param.class.isAssignableFrom(annotation.getClass())) {
+							Param p = (Param)annotation; 
+							if(p.raw()) {
+								mi.isRawRequests.put(i, true); //parameter stands for raw request object
+							}
+							break;
+						}
+					} 
+				} 
 
 				String key = key(module, methodName);
 				if (this.methodTable.containsKey(key)) {
@@ -260,15 +279,7 @@ public class RpcProcessor {
 	private void bindRequestResponse(Map<String, Object> request, Map<String, Object> response) {
 		response.put(Protocol.ID, request.get(Protocol.ID)); //Id Match
 	}
-	
-	@SuppressWarnings("unchecked")
-	private Object[] getParams(Map<String, Object> req) {
-		Object params = req.get(Protocol.PARAMS); 
-		if(params instanceof List) {
-			return ((List<Object>)params).toArray();
-		}
-		return (Object[])params;
-	}
+	 
 	
 	@SuppressWarnings("unchecked")
 	private void invoke(Map<String, Object> req, Map<String, Object> response) throws IllegalAccessException, IllegalArgumentException {   
@@ -276,7 +287,8 @@ public class RpcProcessor {
 			MethodInstance target = matchMethod(req); 
 			String module = (String)req.get(Protocol.MODULE);
 			String method = (String)req.get(Protocol.METHOD); 
-			Object[] params = getParams(req);
+			Object[] params = JsonKit.getArray(req, Protocol.PARAMS);
+			req.put(Protocol.PARAMS, params); //normalize
 			
 			if(target == null) {
 				response.put(Protocol.STATUS,404);
@@ -294,6 +306,13 @@ public class RpcProcessor {
 				Class<?>[] targetParamTypes = target.reflectedMethod.getParameterTypes();
 				Object[] invokeParams = new Object[targetParamTypes.length]; 
 				for (int i = 0; i < targetParamTypes.length; i++) { 
+					if(target.isRawRequests.containsKey(i)) {
+						Class<?> type = targetParamTypes[i];
+						if(Map.class.isAssignableFrom(type)) {
+							invokeParams[i] = req;
+							continue;
+						}
+					}
 					if(i>=params.length) {
 						invokeParams[i] = null;
 					} else {
@@ -388,6 +407,7 @@ public class RpcProcessor {
 		
 		public Method reflectedMethod;
 		public Object instance;  
+		public Map<Integer, Boolean> isRawRequests = new HashMap<>();
 		
 		public MethodInvoker invokeBridge;   
 		public List<String> paramNames; 

@@ -13,6 +13,7 @@ import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.http.HttpMessage;
 
 public class DocRender { 
+	private FileKit fileKit = new FileKit();
 	private final RpcProcessor rpcProcessor;  
 	private final String urlPrefix;
 	public DocRender(RpcProcessor rpcProcessor, String urlPrefix) {
@@ -43,7 +44,7 @@ public class DocRender {
 		model.put("content", doc); 
 		model.put("urlPrefix", urlPrefix);
 		
-		String body = FileKit.loadFile("rpc.htm", model);
+		String body = fileKit.loadFile("rpc.htm", model);
 		result.setBody(body);
 		return result;
 	}

@@ -50,7 +50,7 @@ public class RpcServerAdaptor extends ServerAdaptor {
 			if (sessionType == SessionType.HTTP) {
 				if (res.getStatus() == null) {
 					res.setStatus(200);
-				}
+				} 
 				sess.write(res); 
 				return; 
 			} else {

@@ -12,4 +12,5 @@ import java.lang.annotation.Target;
 public @interface Param {
 	String value() default "";         //Name of parameter
 	String defaultValue() default "";  //Default value of parameter
+	boolean raw() default false;       //Raw request Map object
 }

@@ -10,12 +10,18 @@ public class RpcServerExample {
 	public static void main(String[] args) throws Exception {
 		RpcServerBootstrap b = new RpcServerBootstrap(); 
 		
+		FileService resource = new FileService();
+		//resource.setBasePath("");
+		//resource.setCacheEnabled(false);
+		
+		
 		InterfaceExample example = new InterfaceExampleImpl();
 		
 		b.setStackTraceEnabled(false);
 		//b.setAutoLoadService(true);
 		//b.setMethodPageModule("m");
 		b.addModule("example", example); 
+		b.addModule("static", resource);
 		
 		b.setPort(8080);
 		b.start();
