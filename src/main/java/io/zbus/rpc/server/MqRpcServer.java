@@ -1,4 +1,4 @@
-package io.zbus.rpc.mq;
+package io.zbus.rpc.server;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -18,8 +18,8 @@ import io.zbus.mq.Protocol;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.http.HttpMessage;
 
-public class MqRpcService implements Closeable {
-	private static final Logger logger = LoggerFactory.getLogger(MqRpcService.class);
+public class MqRpcServer implements Closeable {
+	private static final Logger logger = LoggerFactory.getLogger(MqRpcServer.class);
 
 	private MqServer mqServer;
 	private String address;
@@ -32,7 +32,7 @@ public class MqRpcService implements Closeable {
 	private List<MqClient> clients = new ArrayList<>();
 	private RpcProcessor processor;
 
-	public MqRpcService(RpcProcessor processor) {
+	public MqRpcServer(RpcProcessor processor) {
 		this.processor = processor;
 	}
 
@@ -79,7 +79,7 @@ public class MqRpcService implements Closeable {
 				}
 				res.setHeader(Protocol.ID, id);
 				response.put(Protocol.BODY_HTTP, true);
-				response.put(Protocol.BODY, res.toString()); 
+				response.put(Protocol.BODY, new String(res.toBytes())); //TODO support binary data
 			}
 			
 			if (response.get(Protocol.STATUS) == null) {

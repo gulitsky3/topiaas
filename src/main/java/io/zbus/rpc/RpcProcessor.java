@@ -392,9 +392,13 @@ public class RpcProcessor {
 		this.methodPageModule = methodPageModule;
 	}
 	
+	public void setDocUrlRoot(String docUrlRoot) {
+		this.docUrlRoot = docUrlRoot;
+	}
+	
 	private static String defaultModuleName(Object service) {
 		return service.getClass().getSimpleName();
-	} 
+	}  
 
 	static class MethodMatchResult {
 		MethodInstance method;

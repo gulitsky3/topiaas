@@ -30,7 +30,10 @@ public abstract class AbastractClient implements Closeable {
 	protected DataHandler<Map<String, Object>> onMessage;
 	protected EventHandler onClose;
 	protected EventHandler onOpen;
-	protected ErrorHandler onError;
+	protected ErrorHandler onError; 
+	
+	protected MessageInterceptor beforeSend;
+	protected MessageInterceptor afterReceived;
 
 	protected int reconnectDelay = 3000; // 3s
 
@@ -39,6 +42,10 @@ public abstract class AbastractClient implements Closeable {
 
 	public AbastractClient() {
 		onMessage = msg -> {
+			if(afterReceived != null) {
+				afterReceived.intercept(msg);
+			}
+			
 			handleInvokeResponse(msg);
 		};
 
@@ -63,7 +70,14 @@ public abstract class AbastractClient implements Closeable {
 		};
 	}
 
-	public abstract void sendMessage(Map<String, Object> data);
+	protected abstract void sendMessage0(Map<String, Object> data);
+	
+	public void sendMessage(Map<String, Object> data) {
+		if(beforeSend != null) {
+			beforeSend.intercept(data);
+		}
+		sendMessage0(data);
+	}
 
 	public void connect() {
 
@@ -197,6 +211,14 @@ public abstract class AbastractClient implements Closeable {
 
 	public void setReconnectDelay(int reconnectDelay) {
 		this.reconnectDelay = reconnectDelay;
+	}
+	
+	public void setAfterReceived(MessageInterceptor afterReceived) {
+		this.afterReceived = afterReceived;
+	}
+	
+	public void setBeforeSend(MessageInterceptor beforeSend) {
+		this.beforeSend = beforeSend;
 	}
 
 	public static class RequestContext {

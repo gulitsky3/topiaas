@@ -19,6 +19,10 @@ public class Client extends AbastractClient {
 		support = new InprocClient(ioAdaptor);
 	} 
 	
+	@Override
+	protected void sendMessage0(Map<String, Object> data) { 
+		support.sendMessage0(data);
+	}
 	
 	public void sendMessage(Map<String, Object> data) {
 		support.sendMessage(data);
@@ -93,5 +97,15 @@ public class Client extends AbastractClient {
 
 	public void setReconnectDelay(int reconnectDelay) {
 		support.setReconnectDelay(reconnectDelay);
+	}
+	
+	@Override
+	public void setAfterReceived(MessageInterceptor afterReceived) { 
+		support.setAfterReceived(afterReceived);
+	}
+	
+	@Override
+	public void setBeforeSend(MessageInterceptor beforeSend) { 
+		support.setBeforeSend(beforeSend);
 	}
 }

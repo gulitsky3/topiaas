@@ -13,25 +13,34 @@ import org.slf4j.LoggerFactory;
 import io.netty.handler.ssl.SslContext;
 import io.zbus.kit.ClassKit;
 import io.zbus.rpc.annotation.Remote;
-import io.zbus.rpc.http.RpcServerAdaptor;
-import io.zbus.transport.Ssl;
-import io.zbus.transport.http.HttpWsServer; 
+import io.zbus.rpc.server.HttpRpcServer;
+import io.zbus.rpc.server.MqRpcServer;
+import io.zbus.transport.IoAdaptor;
+import io.zbus.transport.Ssl; 
  
 
 public class RpcServerBootstrap implements Closeable {  
 	private static final Logger log = LoggerFactory.getLogger(RpcServerBootstrap.class);
 	
-	private RpcProcessor processor; 
-	private boolean autoLoadService = false;
+	private RpcProcessor processor;  
+	private boolean autoLoadService = false; 
+	private RpcStartInterceptor onStart;
+	
+	//RPC over HTTP/WS
 	private Integer port;
 	private String host = "0.0.0.0"; 
 	private String certFile;
 	private String keyFile;
-	private RpcServerAdaptor rpcServerAdaptor;
-	private HttpWsServer server;    
-	private RpcStartInterceptor onStart;
+	private HttpRpcServer httpRpcServer; 
 	
+	
+	//RPC over MQ
+	private String mq;
+	private String channel;         //Default to MQ
 	private String mqServerAddress; //Support MQ based RPC
+	private Integer mqClientCount;
+	private Integer mqHeartbeatInterval;
+	private MqRpcServer mqRpcServer;
 	
 	public RpcServerBootstrap() {
 		this.processor = new RpcProcessor(); 
@@ -46,6 +55,26 @@ public class RpcServerBootstrap implements Closeable {
 		this.host = host;
 		return this;
 	}    
+	
+	public RpcServerBootstrap setMq(String mq){ 
+		this.mq = mq;
+		return this;
+	}    
+	
+	public RpcServerBootstrap setMqClientCount(Integer count){ 
+		this.mqClientCount = count;
+		return this;
+	}    
+	
+	public RpcServerBootstrap setMqHeartbeatInterval(Integer mqHeartbeatInterval) {
+		this.mqHeartbeatInterval = mqHeartbeatInterval;
+		return this;
+	}
+	
+	public RpcServerBootstrap setChannel(String channel) {
+		this.channel = channel;
+		return this;
+	}
 	
 	public RpcServerBootstrap setAddress(String address){ 
 		this.mqServerAddress = address;
@@ -100,8 +129,9 @@ public class RpcServerBootstrap implements Closeable {
 		this.processor.setAuthFilter(authFilter);
 	} 
 	
-	public RpcServerAdaptor getRpcServerAdaptor() {
-		return rpcServerAdaptor;
+	public IoAdaptor getHttpRpcServerAdaptor() {
+		if(httpRpcServer == null) return null;
+		return httpRpcServer.getHttpRpcAdaptor();
 	}
 
 	public void setMqServerAddress(String mqServerAddress) {
@@ -136,27 +166,44 @@ public class RpcServerBootstrap implements Closeable {
 		
 		if(autoLoadService){
 			initProcessor();
-		} 
-		if(processor.isMethodPageEnabled()) {
-			processor.enableMethodPageModule();
-		}
+		}  
 		
 		if(onStart != null) {
 			onStart.onStart(processor);
-		}
-		
-		if(mqServerAddress == null) { //Direct RPC
-			this.rpcServerAdaptor = new RpcServerAdaptor(this.processor);
 		} 
 		
 		if(port != null) {
-			server = new HttpWsServer();    
+			this.httpRpcServer = new HttpRpcServer(this.processor); 
 			if(keyFile != null && certFile != null) {
 				SslContext context = Ssl.buildServerSsl(certFile, keyFile);
-				server.setSslContext(context);
+				httpRpcServer.setSslContext(context);
 			}  
 			 
-			server.start(this.host, this.port, this.rpcServerAdaptor); 
+			httpRpcServer.start(this.host, this.port); 
+		} 
+		
+		if(mqServerAddress != null && mq != null) { 
+			this.processor.setDocUrlRoot(this.mq+"/");
+			
+			this.mqRpcServer = new MqRpcServer(this.processor);
+			mqRpcServer.setAddress(mqServerAddress);
+			mqRpcServer.setMq(this.mq);
+			if(this.channel != null) {
+				mqRpcServer.setChannel(this.channel);
+			}
+			if(this.mqClientCount != null) {
+				mqRpcServer.setClientCount(mqClientCount);
+			}
+			if(this.mqHeartbeatInterval != null) {
+				mqRpcServer.setHeartbeatInterval(mqHeartbeatInterval);
+			}
+			
+			mqRpcServer.start();
+		} 
+		
+		//Doc URL root generated
+		if(processor.isMethodPageEnabled()) {
+			processor.enableMethodPageModule();
 		}
 		
 		return this;
@@ -222,8 +269,13 @@ public class RpcServerBootstrap implements Closeable {
 	
 	@Override
 	public void close() throws IOException {  
-		if(server != null) {
-			server.close();
+		if(httpRpcServer != null) {
+			httpRpcServer.close();
+			httpRpcServer = null;
 		} 
+		if(mqRpcServer != null) {
+			mqRpcServer.close();
+			mqRpcServer = null;
+		}
 	}   
 }

@@ -11,7 +11,7 @@ import io.zbus.kit.JsonKit;
 import io.zbus.transport.Client;
 import io.zbus.transport.IoAdaptor; 
 
-public class RpcClient extends Client {   
+public class RpcClient extends Client {  
 	public RpcClient(String address) {  
 		super(address);
 	}   
@@ -19,7 +19,16 @@ public class RpcClient extends Client {
 	public RpcClient(IoAdaptor ioAdaptor) {
 		super(ioAdaptor);
 	}
-	 
+	
+	public void setMq(final String mq) { 
+		//add more controls for MQ before send
+		setBeforeSend(msg->{
+			msg.put(io.zbus.mq.Protocol.MQ, mq);
+			msg.put(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
+			msg.put(io.zbus.mq.Protocol.ACK, false);
+		});
+	}
+	
 	private static <T> T parseResult(Map<String, Object> resp, Class<T> clazz) { 
 		Object data = resp.get(Protocol.BODY);
 		Integer status = (Integer)resp.get(Protocol.STATUS);

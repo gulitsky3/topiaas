@@ -97,7 +97,7 @@ public class InprocClient extends AbastractClient implements Session {
 	}
 	
 	@Override
-	public void sendMessage(Map<String, Object> data) {  //Session send out message
+	protected void sendMessage0(Map<String, Object> data) {  //Session send out message
 		synchronized (lock) {
 			if(!active) {
 				connect();

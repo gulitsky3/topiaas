@@ -86,7 +86,7 @@ public class WebsocketClient extends AbastractClient {
 	} 
 	
 	@Override
-	public void sendMessage(Map<String, Object> data) {
+	protected void sendMessage0(Map<String, Object> data) {
 		sendMessage(JsonKit.toJSONString(data));
 	}  
 	

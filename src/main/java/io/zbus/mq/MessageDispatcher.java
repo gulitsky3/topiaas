@@ -123,9 +123,18 @@ public class MessageDispatcher {
 		if (clientType == SessionType.HTTP) {
 			HttpMessage res = new HttpMessage();
 			Boolean bodyHttp = (Boolean)data.get(Protocol.BODY_HTTP);
-			String body = (String)data.get(Protocol.BODY);  
-			if(bodyHttp != null && bodyHttp && body != null) { // 
-				res = HttpMessage.parse(body.getBytes());
+			Object body = data.get(Protocol.BODY);  
+			if(bodyHttp != null && bodyHttp && body != null) { 
+				byte[] bytes = null;
+				if(body instanceof byte[]) {
+					bytes = (byte[])body; 
+				} else if(body instanceof String) {
+					bytes = ((String)body).getBytes();
+				} else {
+					logger.warn("Unsupport HTTP body type: " + body.getClass());
+					return;
+				}
+				res = HttpMessage.parse(bytes);
 			} else { 
 				Integer status = (Integer) data.get(Protocol.STATUS);
 				if (status == null) status = 200;
