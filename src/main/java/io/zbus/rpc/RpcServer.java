@@ -10,10 +10,20 @@ import io.zbus.transport.IoAdaptor;
 import io.zbus.transport.Ssl;
 import io.zbus.transport.http.HttpWsServer; 
  
-
+/**
+ * 
+ * Notes on authentication:
+ * 1) HTTP(WS) direct RPC, authentication through RpcProcessor's AuthFilter
+ * 2) MQ based RPC, authentication through MQ
+ * 
+ * These two authentications should not mix together, i.e, MQ based RPC should remove AuthFilter in RpcProcessor
+ * 
+ * @author leiming.hong Jun 30, 2018
+ *
+ */
 public class RpcServer implements Closeable {   
 	private RpcProcessor processor;   
-	private RpcStartInterceptor onStart;
+	private RpcStartInterceptor onStart; 
 	
 	//RPC over HTTP/WS
 	private Integer port;
@@ -32,6 +42,10 @@ public class RpcServer implements Closeable {
 	private Integer mqClientCount;
 	private Integer mqHeartbeatInterval;
 	private MqRpcServer mqRpcServer;
+	//Auth for mq client
+	private boolean authEnabled = false; //Enable mq channel's authentication
+	private String apiKey;
+	private String secretKey;
 	
 	public RpcServer() {
 		this.processor = new RpcProcessor();
@@ -97,8 +111,17 @@ public class RpcServer implements Closeable {
 	public RpcServer setKeyFile(String keyFile){ 
 		this.keyFile = keyFile;
 		return this;
-	}  
+	}   
 	   
+	public void setAuthEnabled(boolean mqAuthEnabled) {
+		this.authEnabled = mqAuthEnabled;
+	}
+	public void setApiKey(String mqApiKey) {
+		this.apiKey = mqApiKey;
+	}
+	public void setSecretKey(String mqSecretKey) {
+		this.secretKey = mqSecretKey;
+	}
 	public IoAdaptor getHttpRpcServerAdaptor() { 
 		return httpRpcServerAdaptor;
 	}
@@ -135,6 +158,10 @@ public class RpcServer implements Closeable {
 			this.mqRpcServer = new MqRpcServer(this.processor);
 			mqRpcServer.setAddress(mqServerAddress);
 			mqRpcServer.setMq(this.mq);
+			mqRpcServer.setAuthEnabled(authEnabled);
+			mqRpcServer.setApiKey(apiKey);
+			mqRpcServer.setSecretKey(secretKey);
+			
 			if(this.mqType != null) {
 				mqRpcServer.setMqType(mqType);
 			}

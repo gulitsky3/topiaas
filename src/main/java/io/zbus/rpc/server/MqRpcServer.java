@@ -25,6 +25,10 @@ public class MqRpcServer implements Closeable {
 	private String mq;
 	private String mqType = Protocol.MEMORY;
 	private String channel;
+	private boolean authEnabled = false;
+	private String apiKey = "";
+	private String secretKey = "";
+	
 	private int clientCount = 1;
 	private int heartbeatInterval = 30; // seconds
 
@@ -61,6 +65,11 @@ public class MqRpcServer implements Closeable {
 		
 		if (this.channel == null) this.channel = this.mq;  
 		
+		if(this.authEnabled) {
+			client.setAuthEnabled(this.authEnabled);
+			client.setApiKey(apiKey);
+			client.setSecretKey(secretKey);
+		}
 		final MqClient mqClient = client;
 		mqClient.heartbeat(heartbeatInterval, TimeUnit.SECONDS);
 
@@ -168,5 +177,17 @@ public class MqRpcServer implements Closeable {
 
 	public void setHeartbeatInterval(int heartbeatInterval) {
 		this.heartbeatInterval = heartbeatInterval;
-	} 
+	}
+
+	public void setAuthEnabled(boolean authEnabled) {
+		this.authEnabled = authEnabled;
+	}
+
+	public void setApiKey(String apiKey) {
+		this.apiKey = apiKey;
+	}
+
+	public void setSecretKey(String secretKey) {
+		this.secretKey = secretKey;
+	}  
 }
