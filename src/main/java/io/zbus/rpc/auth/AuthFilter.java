@@ -24,7 +24,7 @@ public class AuthFilter implements RpcFilter {
 		
 		String token = null;
 		if(cookieEnabled) {
-			token = (String)request.cookies().get(cookieKey);  
+			token = (String)request.getCookie(cookieKey);  
 		}
 		if(token == null && headerEnabled) { //cookie first
 			token = request.getHeader(headerKey);

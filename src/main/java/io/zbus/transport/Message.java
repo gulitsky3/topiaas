@@ -23,9 +23,11 @@
 package io.zbus.transport;
  
 
-import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import com.alibaba.fastjson.JSON;
@@ -65,6 +67,10 @@ public class Message {
 	@JSONField(serialize=false)
 	private UrlInfo urlInfo;
 	
+	@JSONField(serialize=false)
+	private Map<String, String> cookies; 
+	
+	
 	public Message() {
 		
 	}
@@ -84,11 +90,13 @@ public class Message {
 	}  
 	
 	public String getUrl(){
-		return this.url;
+		if(urlInfo == null) return this.url;
+		return String.format("%s?%s", urlInfo.urlPath, getQueryString()); 
 	} 
 	
 	public void setUrl(String url) {
-		this.url = url;  
+		this.url = url;   
+		this.urlInfo = null;
 	} 
 	
 	public void setStatus(Integer status) { 
@@ -109,15 +117,12 @@ public class Message {
 	
 	public Map<String, Object> getHeaders() {
 		return headers;
-	} 
-	
-	public Map<String, Object> headers() {
-		return headers;
-	} 
+	}  
 	
 	public void setHeaders(Map<String, Object> headers) {
 		this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); //copy headers 
 		this.headers.putAll(headers); 
+		cookies = null; //clear cookie to recalculate
 	} 
 	
 	public String getHeader(String key){
@@ -155,18 +160,25 @@ public class Message {
 	
 	public void setHeader(String key, Object value){
 		if(value == null) return;
+		if(key.toLowerCase().equals("cookie")) {
+			cookies = null; //invalidate cookie cache
+		}
 		this.headers.put(key, value);
 	}  
 	
 	public String removeHeader(String key){
 		Object exists = removeHeaderObject(key);
-		if(exists == null) return null; 
-		if(exists instanceof String) return (String)exists;
+		if(exists == null) return null;  
 		
+		if(exists instanceof String) return (String)exists; 
 		return exists.toString();
 	}
 	
 	public Object removeHeaderObject(String key){
+		if(key.toLowerCase().equals("cookie")) {
+			cookies = null; //invalidate cookie cache
+		}
+		
 		return this.headers.remove(key);
 	}
 	
@@ -177,49 +189,143 @@ public class Message {
 	public void setBody(Object body) { 
 		this.body = body; 
 	}  
+	 
 	
-	/**
-	 * Get URL query string param
-	 * @param key
-	 * @return
-	 */
 	public Object getParam(String key) {
-		if(url == null) return null;
-		if(urlInfo == null) {
-			urlInfo = HttpKit.parseUrl(url);
-		}
-		Object value = urlInfo.queryParamMap.get(key);
-		return value;
+		Map<String, Object> p = params();
+		return p.get(key); 
+	} 
+	
+	public <T> T getParam(String key, Class<T> clazz){ 
+		Object value = getParam(key);
+		if(value == null) return null;
+		return JsonKit.convert(value, clazz);
+	} 
+	
+	public void setParam(String key, String value) {
+		Map<String, Object> m = params();
+		m.put(key, value); 
+		calculateUrl();
 	}
 	
-	public Object param(String key) {
-		return getParam(key);
-	}  
-	
-	public String queryString() {
-		if(url == null) return null;
-		if(urlInfo == null) {
-			urlInfo = HttpKit.parseUrl(url);
-		}
-		return urlInfo.queryParamString;
+	public void setParam(String key, List<String> values) {
+		Map<String, Object> m = params();
+		m.put(key, values);
+		calculateUrl();
 	}
 	
-	public Map<String, Object> params() {
-		if(url == null) return new HashMap<>();
+	public void setParam(String key, String[] values) {
+		List<String> valueList = new ArrayList<>();
+		for(String v : values) valueList.add(v); 
+		setParam(key, valueList);
+	}
+	
+	@JSONField(deserialize=false, serialize=false)
+	public void setParam(String key) {
+		setParam(key, (String)null);
+	}
+	
+	private void calculateUrl() {
+		if(urlInfo == null) return;
+		url = String.format("%s?%s", urlInfo.urlPath, getQueryString());
+	}
+	
+	@JSONField(deserialize=false, serialize=false)
+	public String getQueryString() { 
 		if(urlInfo == null) {
-			urlInfo = HttpKit.parseUrl(url);
+			urlInfo = HttpKit.parseUrl(url); 
+			return urlInfo.queryParamString;
+		}  
+		
+		List<String> queryParts = new ArrayList<>();
+		for(Entry<String, Object> e : urlInfo.queryParamMap.entrySet()) {
+			String key = e.getKey();
+			Object val = e.getValue();
+			if(val == null) {
+				queryParts.add(key);
+				continue;
+			}
+			if(val instanceof List) {
+				@SuppressWarnings("unchecked")
+				List<Object> list = (List<Object>)val;
+				for(Object item : list) {
+					queryParts.add(key+"="+item.toString());
+				}
+			} else {
+				queryParts.add(key+"="+val);
+			}
 		}
+		return String.join("&", queryParts);
+	}   
+	
+	@JSONField(deserialize=false, serialize=false)
+	public Map<String, Object> getParams() {  
+		return new HashMap<>(params());
+	} 
+	
+	@JSONField(deserialize=false, serialize=false)
+	public void setParams(Map<String, Object> params) {  
+		if(urlInfo == null) { 
+			urlInfo = HttpKit.parseUrl(url); //null support 
+		}  
+		urlInfo.queryParamMap = new HashMap<>(params);
+		calculateUrl();
+	} 
+	
+	private Map<String, Object> params(){
+		if(urlInfo == null) { 
+			urlInfo = HttpKit.parseUrl(url); //null support 
+		}  
 		return urlInfo.queryParamMap;
 	}
 	
-	public Map<String, Object> cookies() {
+	public String getCookie(String key) {
+		Map<String, String> m = cookies();
+		return m.get(key); 
+	} 
+	
+	public void setCookie(String key, String value) {
+		Map<String, String> m = cookies();
+		m.put(key, value);  
+		
+		calculateCookieHeader();
+	}  
+	
+	private void calculateCookieHeader() {
+		if(cookies == null) return;
+		List<String> cookieList = new ArrayList<>();
+		for(Entry<String, String> e : cookies.entrySet()) {
+			String key = e.getKey();
+			String val = e.getValue();
+			cookieList.add(String.format("%s=%s", key, val));
+		}
+		
+		String cookieString = String.join("; ", cookieList);
+		setHeader("Cookie", cookieString);
+	}
+	
+	
+	@JSONField(deserialize=false, serialize=false)
+	public void setCookies(Map<String, String> cookies) {
+		this.cookies = cookies;
+		calculateCookieHeader();
+	}
+	
+	@JSONField(deserialize=false, serialize=false)
+	public Map<String, String> getCookies() {
+		return new HashMap<>(cookies()); 
+    } 
+	
+	private Map<String, String> cookies(){
+		if(cookies != null) return cookies;
+		
 		String cookieString = getHeader("cookie");
-        Map<String, Object> ret = new HashMap<>();
+		cookies = new HashMap<>();
         if (StrKit.isEmpty(cookieString)) {
-            return ret;
+            return cookies;
         } 
-        String[] cookies = cookieString.split(";"); 
-        for (String cookie : cookies) {
+        String[] cookieStrings = cookieString.split(";"); 
+        for (String cookie : cookieStrings) {
             if (StrKit.isEmpty(cookie)) {
                 continue;
             } 
@@ -228,17 +334,10 @@ public class Message {
             String value = cookie.substring(idx+1);
             if(key != null) key = key.trim();
             if(value != null) value = value.trim();
-            ret.put(key, value); 
+            cookies.put(key, value); 
         } 
-        return ret;
-    }
-	 
-	
-	public <T> T getParam(String key, Class<T> clazz){ 
-		Object value = getParam(key);
-		if(value == null) return null;
-		return JsonKit.convert(value, clazz);
-	}
+        return cookies;
+	} 
 	
 	@SuppressWarnings("unchecked")  
 	public <T> T getContext() {
@@ -291,20 +390,7 @@ public class Message {
 		json.put("method", this.method);
 		json.put("headers", this.headers);
 		json.put("body", this.body);
-		
-		return JSON.toJSONString(json, prettyFormat);
-	}
-	
-	public byte[] toJSONBytes() {
-		return toJSONString().getBytes();
-	}
-	
-	public byte[] toJSONBytes(String charset) {
-		String s = toJSONString();
-		try {
-			return s.getBytes(charset);
-		} catch (UnsupportedEncodingException e) { 
-			return s.getBytes();
-		}
-	}
+		 
+		return JsonKit.toJSONString(json, prettyFormat);
+	} 
 }

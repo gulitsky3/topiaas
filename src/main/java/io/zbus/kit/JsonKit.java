@@ -116,6 +116,23 @@ public class JsonKit {
 				SerializerFeature.MapSortField); 
 	}  
 	
+	public static String toJSONString(Object value, boolean prettyFormat) {
+		List<SerializerFeature> featuresList = new ArrayList<>(); 
+		featuresList.add(SerializerFeature.DisableCircularReferenceDetect);
+		featuresList.add(SerializerFeature.WriteMapNullValue);
+		featuresList.add(SerializerFeature.SortField);
+		featuresList.add(SerializerFeature.MapSortField);
+		if(prettyFormat) {
+			featuresList.add(SerializerFeature.PrettyFormat);
+		}
+		byte[] data = toJSONBytes(value, "utf8",featuresList.toArray(new SerializerFeature[0])); 
+		try {
+			return new String(data, "utf8");
+		} catch (UnsupportedEncodingException e) {
+			return new String(data);
+		}
+	}  
+	
 	
 	private static final byte[] toJSONBytes(Object object, String charsetName,
 			SerializerFeature... features) {
