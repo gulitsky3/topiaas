@@ -49,6 +49,9 @@ public class PublicUrlRouter implements UrlRouter {
 			if(rpcProcessor != null) {
 				if(rpcProcessor.matchUrl(url)) {
 					Message res = new Message();
+					res.setHeader("Access-Control-Allow-Origin", "*");
+					res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
+					res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
 					rpcProcessor.process(req, res);
 					sess.write(res); 
 					return true;
@@ -73,6 +76,10 @@ public class PublicUrlRouter implements UrlRouter {
 			if(rpcProcessor != null) {
 				if(rpcProcessor.matchUrl(url)) {
 					Message res = new Message();
+					//TODO
+					res.setHeader("Access-Control-Allow-Origin", "*");
+					res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
+					res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
 					rpcProcessor.process(req, res);
 					sess.write(res); 
 					return true;
@@ -83,8 +90,15 @@ public class PublicUrlRouter implements UrlRouter {
 		Message res = null;
 		if("/".equals(url)) { 
 			res = fileKit.loadResource("static/index.html"); 
+			res.setHeader("Access-Control-Allow-Origin", "*");
+			res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
+			res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
+			
 			if(res.getStatus() != 200) {
 				res = new Message();
+				res.setHeader("Access-Control-Allow-Origin", "*");
+				res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
+				res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
 				res.setStatus(200);
 				res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 				res.setBody("<h1> Welcome to zbus</h1>"); 
@@ -92,6 +106,9 @@ public class PublicUrlRouter implements UrlRouter {
 			 
 		} else {
 			res = new Message();
+			res.setHeader("Access-Control-Allow-Origin", "*");
+			res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
+			res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
 			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			res.setBody(String.format("URL=%s Not Found", url));

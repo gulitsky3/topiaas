@@ -45,6 +45,11 @@ public class MonitorUrlRouter implements UrlRouter {
 		if(rpcProcessor != null) {
 			if(rpcProcessor.matchUrl(url)) {
 				Message res = new Message();
+				//TODO
+				res.setHeader("Access-Control-Allow-Origin", "*");
+				res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
+				res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
+				
 				rpcProcessor.process(req, res);
 				sess.write(res); 
 				return true;

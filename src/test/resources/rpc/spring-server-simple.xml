@@ -27,6 +27,11 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	
 	<bean id="sql" class="io.zbus.rpc.biz.DbExample"/>  
 	
+	<bean id="freemarker" class="freemarker.template.Configuration">
+	  <property name="mapperInterface" value="io.zbus.rpc.biz.DbInterface" />
+	  <property name="sqlSessionFactory" ref="sqlSessionFactory" /> 
+	</bean>   
+	
 	<bean id="rpcProcessor" class="io.zbus.rpc.RpcProcessor" > 
 		<property name="docUrl" value="/"/>  
 		<property name="moduleTable">

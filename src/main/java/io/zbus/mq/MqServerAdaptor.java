@@ -129,6 +129,16 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		
 		if(config.verbose) { 
 			logger.info(sess.remoteAddress() + ":" + req); 
+		} 
+		
+		if("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+			Message res = new Message(); 
+			res.setHeader("Access-Control-Allow-Origin", "*");
+			res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type");
+			res.setHeader("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS"); 
+			res.setStatus(200);
+			sess.write(res);
+			return;
 		}
 		
 		if(cmd == null) { //Special case for favicon

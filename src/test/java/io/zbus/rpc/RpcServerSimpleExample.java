@@ -17,6 +17,7 @@ public class RpcServerSimpleExample {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key1", name);
 		value.put("key2", age);
+		value.put("nullKey", null);
 		return value;
 	}
 	
@@ -34,6 +35,16 @@ public class RpcServerSimpleExample {
 		res.setStatus(200);
 		res.setHeader("content-type", "text/html; charset=utf8"); 
 		res.setBody("<h1>java home page</h1>");
+		
+		return res;
+	}  
+	
+	@Route("/log")
+	public Message log() { 
+		Message res = new Message();
+		res.setStatus(200);
+		res.setHeader("content-type", "text/html; charset=utf8"); 
+		res.setBody("<h1>my log</h1>");
 		
 		return res;
 	}  
