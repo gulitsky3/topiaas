@@ -1,86 +1,191 @@
-## Protocol
 
-*Common headers*
+## MQ Protocol
 
-	cmd: <cmd>
-	topic: <topic> 
-	token: [token]
+zbus MQ protocol is pretty simple, just use websocket or http connect to zbus, send out the followsing json format data
 
-**produce**
-	
-	cmd: produce
-	tag: [tag]    //tag of message, used for consume-group filter
-	body: [body]
+### Common format [JSON Key-Value]
 
-**consume**
-	
-	cmd: consume
-	consume_group: [group_name]
-	consume_window: [window_size] //default to null, means 1
+	{
+		cmd:       pub|sub|create|remove|query|ping //Request required,
+		status:    200|400|404|403|500 ...          //Response required,
+		body:      <data>,
 
-**declare**
+		id:        <message_id>,
+		apiKey:    <apid_key>,
+		signature: <signature>
+	} 
 
-	cmd: declare
-	consume_group: [consume-group name] //short name=> group
-	
-	topic_mask:    [topic mask value]    
-	group_mask:    [consume-group mask value]
-	group_filter:  [message filter for group] //filter on message's tag
-	
-	//locate the group's start point
-	group_start_copy:   [consume-group name] //copy from
-	group_start_time:   [consume-group start time]
-	group_start_offset: [consume-group start offset]
-	group_start_msgid:  [consume-group start offset's msgid] //validate for offset value
+All requests to zbus should have id field (optional), when auth required, both apiKey and signature are required.
+
+Signature generation algorithm
+
+	1) sort key ascending in request (recursively on both key and value), and generate json string
+	2) Init HmacSHA256 with secretKey, do encrypt on 1)'s json string to generate bytes
+	3) signature = Hex format in upper case on the 2)'s bytes
+
+### Publish Message 
+
+Request
+
+	{
+		cmd:         pub,         //required
+		mq:          <mq_name>,   //required 
+		body:        <business data> 
+	}
+
+Response
+
+	{
+		status:      200|400|403|500,    
+		body:        <string_response> 
+	}
+
+### Subscribe Message 
+
+Request
+
+	{
+		cmd:         sub,           //required
+		mq:          <mq_name>,     //required  
+		channel:     <channel_name> //required
+		window:      <window_size>
+	}
+
+Response
+
+	First message: indicates subscribe success or failure
+	{
+		status:      200|400|403|500,    
+		body:        <string_response> 
+	}
+
+	Following messages:
+	{
+		mq:          <mq_name>,     //required  
+		channel:     <channel_name> //required
+		sender:      <message from>
+		id:          <message id>
+		body:        <business_data>
+	}
+
+### Take Message 
+
+Request
+
+	{
+		cmd:         take,          //required
+		mq:          <mq_name>,     //required 
+		channel:     <channel_name> //required
+		window:      <batch_size>
+	}
+
+Response
+
+	{
+		status:      200|400|403|500|604, //604 stands for NO data   
+		body:        <data> 
+	}
 
 
-**query**
+### Create MQ/Channel 
 
-	cmd: query
-	topic: [topic] //if not set, result is the server info
-	consume_group: [consume-group]
+Request
 
-**remove**
-	
-	cmd: remove
-	consume_group: [consume-group] //if not set, remove whole topic including groups belonging to the topic
+	{
+		cmd:         create,         //required
+		mq:          <mq_name>,      //required
 
-**empty**
-	
-	cmd: empty
-	consume_group: [consume-group] //if not set, empty whole topic including groups belonging to the topic
+		mqType:      memory|disk|db, //default to memory
+		mqMask:      <mask_integer>,
+		channel:     <channel_name>,
+		channelMask: <mask_integer>,
+		offset:      <channel_offset>,
+		checksum:    <offset_checksum>
+		topic:       <channel_topic>, 
+	}
+
+Response
+
+	{
+		status:      200|400|403|500,    
+		body:        <message_response> 
+	}
+
+### Remove MQ/Channel 
+
+Request
+
+	{
+		cmd:         remove,         //required
+		mq:          <mq_name>,      //required 
+		channel:     <channel_name> 
+	}
+
+Response
+
+	{
+		status:      200|400|403|500,    
+		body:        <message_response> 
+	}
 
 
-To be browser friendly, URL request and parameters are parsed if header key-value not populated, however,
-header key-value always take precedence over URL parse result.
+### Query MQ/Channel 
 
-	URL Pattern: /<cmd>/[topic]/[group]/[?k=v list]
-	
-	/produce/topic
-	/consume/topic/[group]
-	/declare/topic/[group]
-	/remove/topic/[group] 
-	/empty/topic/[group]
-	
-	/query/topic/[group] 
-	
-	/track_sub
-	/track_pub
-	
-	/rpc/topic/method/arg1/arg2.../[?module=xxx&&appid=xxx&&token=xxx]  *exception: rpc not follow 
+Request
+
+	{
+		cmd:         query,          //required
+		mq:          <mq_name>,      //required 
+		channel:     <channel_name> 
+	}
+
+Response
+
+	{
+		status:      200|400|403|500,    
+		body:        <mq_channel_info> 
+	}
+    
+	Example
+	{
+		body: {
+			channels: [ ],
+			mask: 0,
+			name: "DiskQ",
+			size: 200000,
+			type: "disk"
+		},
+		status: 200
+	}
 
 
-Exampels:
 
-	http://localhost:15555/consume/MyTopic  consume one message from topic=MyTopic, consume-group default to same name as topic name
-	http://localhost:15555/consume/MyTopic/group1   consume one message from group1 in MyTopic
-	http://localhost:15555/declare/MyTopic   declare a topic named MyTopic, consume-group with same MyTopic should be created as well.
-	http://localhost:15555/declare/MyTopic/group1   declare a topic named MyTopic, and consume-group named group1.
-	http://localhost:15555/declare/MyTopic/group1?group_filter=abc&&group_mask=16   same as above, but with consume-group filter set to abc, consume-group mask set to 16
-	http://localhost:15555/query/MyTopic  query topic info named MyTopic
-	http://localhost:15555/query/MyTopic/group1  query consume-group info named group1 in MyTopic
-	http://localhost:15555/remove/MyTopic  remove topic named MyTopic, which will remove all the consume-groups included
-	http://localhost:15555/remove/MyTopic/group1  remove consume-group named group1 in MyTopic
-	
-	http://localhost:15555/rpc/myrpc/plus/1/2  invoke remote method plus with parameter 1 and 2, remote service registered as myrpc topic
+## RPC Protocol 
+
+### Request
+
+	{ 
+		method:     <method_name>, //required 
+		params:     [param_array],
+		module:     <module_name>,
+
+		id:        <message_id>,
+		apiKey:    <apid_key>,
+		signature: <signature>
+	}
+    ----------------------------------------------------------
+	MQ based RPC, add 3 more key-value pairs(Required)
+	{
+		cmd:      'pub',     
+		mq:       <mq_name>,   //which MQ is the RPC based
+		ack:      false        //No ACK from zbus for RPC
+	}
+
+### Response
+
+	{
+		status:      200|400|403|500|604   //required
+		body:        <data_or_exception>,
+		id:          <message_id>
+	}
 

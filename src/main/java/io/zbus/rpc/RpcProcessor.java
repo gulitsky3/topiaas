@@ -1,513 +1,430 @@
 package io.zbus.rpc;
 
-import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.zbus.kit.FileKit;
-import io.zbus.kit.HttpKit;
-import io.zbus.kit.StrKit;
-import io.zbus.kit.logging.Logger;
-import io.zbus.kit.logging.LoggerFactory;
-import io.zbus.transport.http.Message; 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import io.zbus.kit.JsonKit;
+import io.zbus.kit.StrKit;
+import io.zbus.rpc.annotation.Auth;
+import io.zbus.rpc.annotation.Param;
+import io.zbus.rpc.annotation.Remote;
+import io.zbus.rpc.doc.DocRender;
 
 public class RpcProcessor {
-	private static final Logger log = LoggerFactory.getLogger(RpcProcessor.class);  
+	private static final Logger log = LoggerFactory.getLogger(RpcProcessor.class);
 	
-	private RpcCodec codec = new JsonRpcCodec();
-	private Map<String, MethodInstance> methods = new HashMap<String, MethodInstance>(); 
-	private Map<String, List<RpcMethod>> object2Methods = new HashMap<String, List<RpcMethod>>();	
+	public Map<String, Map<String, RpcMethod>> methodInfoTable = new HashMap<>(); //<module> => { method: => RpcMethod }
+
+	protected Map<String, MethodInstance> methodTable = new HashMap<>();      //<module>:<method> => MethodInstance 
 	
-	private String docUrlContext = "/";
-	private boolean enableStackTrace = true;
-	private boolean enableMethodPage = true;
+	protected String docUrlRoot = "/";
+	protected boolean stackTraceEnabled = true;
+	protected boolean methodPageEnabled = true; 
+	protected boolean methodPageAuthEnabled = false;
+	protected String methodPageModule = "index";
 	
-	public RpcProcessor(){
-		addModule("index", new DocRender());
+	protected RpcFilter beforeFilter;
+	protected RpcFilter afterFilter;
+	protected RpcFilter authFilter; 
+	
+	public void enableMethodPageModule() { 
+		DocRender render = new DocRender(this, docUrlRoot);
+		addModule(methodPageModule, render, false, methodPageAuthEnabled);
+	}   
+	
+	
+	public void addModule(Object service) {
+		String module = defaultModuleName(service);
+		addModule(module, service, true);
+	}
+
+	public void addModule(String module, Object service) {
+		addModule(module, service, true);
 	}
 	
-	public void addModule(Object... services){
-		for(Object obj : services){
-			if(obj == null) continue;
-			for(Class<?> intf : getAllInterfaces(obj.getClass())){
-				addModule(intf.getSimpleName(), obj);
-				addModule(intf.getName(), obj);
-			} 
-			addModule(obj.getClass().getSimpleName(), obj);
-			addModule(obj.getClass().getName(), obj);
+	public void addModule(String module, Object service, boolean enableModuleInfo) {
+		addModule(module, service, enableModuleInfo, true);
+	}
+	
+	public void addModule(String module, Object service, boolean enableModuleInfo, boolean defaultAuth) {
+		this.addServiceMethods(module, service, defaultAuth);
+		if(enableModuleInfo) {
+			addModuleInfo(module, service);
 		} 
-	}
-	
-	public void addModule(String module, Object... services){
-		for(Object service: services){
-			this.initCommandTable(module, service);
-		}
-	} 
-	
-	public void addModule(Class<?>... clazz){
-		Object[] services = new Object[clazz.length];
-		for(int i=0;i<clazz.length;i++){
-			Class<?> c = clazz[i];
-			try {
-				services[i] = c.newInstance();
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-			} 
-		} 
-		addModule(services);
-	}
-	
-	public void addModule(String module, Class<?>... clazz){
-		Object[] services = new Object[clazz.length];
-		for(int i=0;i<clazz.length;i++){
-			Class<?> c = clazz[i];
-			try {
-				services[i] = c.newInstance();
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-			} 
-		} 
-		addModule(module, services);
-	} 
-	
-	public void removeModule(Object... services){
-		for(Object obj : services){
-			for(Class<?> intf : getAllInterfaces(obj.getClass())){
-				removeModule(intf.getSimpleName(), obj);
-				removeModule(intf.getCanonicalName(), obj);
-			} 
-			removeModule(obj.getClass().getSimpleName(), obj);
-			removeModule(obj.getClass().getName(), obj);
-		}
-	}
-	
-	public void removeModule(String module, Object... services){
-		for(Object service: services){
-			this.removeCommandTable(module, service);
-		}
-	}
-	
-	private static List<Class<?>> getAllInterfaces(Class<?> clazz){
-		List<Class<?>> res = new ArrayList<Class<?>>();
-		while(clazz != null){ 
-			res.addAll(Arrays.asList(clazz.getInterfaces()));
-			clazz = clazz.getSuperclass();
-		}
-		return res;
 	}  
 	
-	private void addModuleInfo(String module, Object service){
-		List<RpcMethod> rpcMethods = null;
-		String serviceKey = service.getClass().getCanonicalName();
-		if(object2Methods.containsKey(serviceKey)){
-			rpcMethods = object2Methods.get(serviceKey); 
-		} else {
-			rpcMethods = new ArrayList<RpcMethod>();
-			object2Methods.put(serviceKey,rpcMethods);
+	public void removeModule(Object service) { 
+		String module = defaultModuleName(service);
+		removeModule(module, service);  
+	}
+
+	public void removeModule(String module, Object service) {
+		try {
+			Method[] methods = service.getClass().getMethods();
+			for (Method m : methods) {
+				String methodName = m.getName();
+				Remote cmd = m.getAnnotation(Remote.class);
+				if (cmd != null) {
+					methodName = cmd.id();
+					if (cmd.exclude()) continue;
+					if ("".equals(methodName)) {
+						methodName = m.getName();
+					}
+				} 
+				this.removeMethod(module, methodName);
+			}
+		} catch (SecurityException e) {
+			log.error(e.getMessage(), e);
 		}
-		  
+	} 
+	
+	public void addMethod(RpcMethod spec, MethodInvoker service) {
+		MethodInstance mi = new MethodInstance(spec.method, service);
+		mi.paramNames = spec.paramNames;
 		
-		Method [] methods = service.getClass().getMethods();  
-		for (Method m : methods) { 
-			if(m.getDeclaringClass() == Object.class) continue;
+		String key = key(spec.module, spec.method);
+		this.methodTable.put(key, mi);
+		addMethodInfo(spec);
+	}
+	
+	public void removeMethod(String module, String method) {
+		String key = key(module, method);
+		this.methodTable.remove(key); 
+		Map<String, RpcMethod> table = this.methodInfoTable.get(module);
+		if(table != null) {
+			table.remove(method);
+			if(table.isEmpty()) {
+				this.methodInfoTable.remove(module);
+			}
+		}
+	}
+	
+	private void addMethodInfo(RpcMethod spec) {
+		Map<String, RpcMethod> moduleMethods = null;  
+		if (methodInfoTable.containsKey(spec.module)) {
+			moduleMethods = methodInfoTable.get(spec.module);
+		} else {
+			moduleMethods = new HashMap<>();
+			methodInfoTable.put(spec.module, moduleMethods);
+		}
+		RpcMethod info = new RpcMethod(spec); 
+		moduleMethods.put(spec.method, info); 
+	}
+	
+	private void addModuleInfo(String module, Object service) {  
+		Method[] methods = service.getClass().getMethods();   
+		for (Method m : methods) {
+			if (m.getDeclaringClass() == Object.class) continue;
 			String method = m.getName();
 			Remote cmd = m.getAnnotation(Remote.class);
-			if(cmd != null){ 
+			if (cmd != null) {
 				method = cmd.id();
-				if(cmd.exclude()) continue;
-				if("".equals(method)){
+				if (cmd.exclude()) continue;
+				if ("".equals(method)) {
 					method = m.getName();
-				}  
-			}
-			RpcMethod rpcm = null;
-			for(RpcMethod rm : rpcMethods) {
-				if(rm.getName().equals(method)) {
-					rpcm = rm;
-					break;
 				}
 			}
-			if(rpcm != null) {
-				if(!rpcm.modules.contains(module)) {
-					rpcm.modules.add(module);
-				}
-			} else {
-				List<String> modules = new ArrayList<String>(); 
-				modules.add(module);
-				rpcm = new RpcMethod();
-				rpcm.setModules(modules);
-				rpcm.setName(method);
-				rpcm.setReturnType(m.getReturnType().getCanonicalName());
-				List<String> paramTypes = new ArrayList<String>();
-				for(Class<?> t : m.getParameterTypes()){
-					paramTypes.add(t.getCanonicalName());
-				}
-				rpcm.setParamTypes(paramTypes);
-				rpcMethods.add(rpcm);
+			RpcMethod spec = new RpcMethod(); 
+			spec.module = module;
+			spec.method = method;
+			spec.returnType = m.getReturnType().getCanonicalName();
+			List<String> paramTypes = new ArrayList<String>();
+			for (Class<?> t : m.getParameterTypes()) {
+				paramTypes.add(t.getCanonicalName());
+			}
+			spec.paramTypes = paramTypes; 
+			
+			Annotation[][] paramAnnos = m.getParameterAnnotations(); 
+			int size = paramTypes.size(); 
+			for(int i=0; i<size; i++) {
+				Annotation[] annos = paramAnnos[i];
+				for(Annotation annotation : annos) {
+					if(Param.class.isAssignableFrom(annotation.getClass())) {
+						Param p = (Param)annotation;
+						spec.paramNames.add(p.value()); 
+						break;
+					}
+				} 
 			} 
-		} 
-	}
-	
-	private void removeModuleInfo(Object service){
-		String serviceKey = service.getClass().getName();
-		object2Methods.remove(serviceKey);
+			addMethodInfo(spec);
+		}
 	} 
 	
-	private void initCommandTable(String module, Object service){
-		addModuleInfo(module, service);
-		
-		try {  
-			Method [] methods = service.getClass().getMethods(); 
-			for (Method m : methods) { 
-				if(m.getDeclaringClass() == Object.class) continue;   
-				
-				String method = m.getName();
+	private void addServiceMethods(String module, Object service, boolean defaultAuth) { 
+		try {
+			Method[] methods = service.getClass().getMethods();
+			boolean classAuthEnabled = defaultAuth;
+			Auth classAuth = service.getClass().getAnnotation(Auth.class);
+			if(classAuth != null) {
+				classAuthEnabled = !classAuth.exclude();
+			}
+			for (Method m : methods) {
+				if (m.getDeclaringClass() == Object.class) continue;
+
+				String methodName = m.getName();
 				Remote cmd = m.getAnnotation(Remote.class);
-				if(cmd != null){ 
-					method = cmd.id();
-					if(cmd.exclude()) continue;
-					if("".equals(method)){
-						method = m.getName();
-					}  
+				if (cmd != null) {
+					methodName = cmd.id();
+					if (cmd.exclude()) continue;
+					if ("".equals(methodName)) {
+						methodName = m.getName();
+					}
 				} 
 				
+				Auth auth = m.getAnnotation(Auth.class);
+				boolean authRequired = classAuthEnabled;
+				if(auth != null) {
+					authRequired = !auth.exclude();
+				}
+
 				m.setAccessible(true);
-				MethodInstance mi = new MethodInstance(m, service);
+				MethodInstance mi = new MethodInstance(m, service); 
+				mi.authRequired = authRequired;
 				
-				String[] keys = paramSignature(module, m);
-				for(String key : keys){
-					if(this.methods.containsKey(key)){
-						log.debug(key + " overrided"); 
-					}  
-					this.methods.put(key, mi); 
+				List<String> paramTypes = new ArrayList<String>();
+				for (Class<?> t : m.getParameterTypes()) {
+					paramTypes.add(t.getCanonicalName());
+				}
+				Annotation[][] paramAnnos = m.getParameterAnnotations(); 
+				int size = paramTypes.size(); 
+				for(int i=0; i<size; i++) {
+					Annotation[] annos = paramAnnos[i];
+					for(Annotation annotation : annos) {
+						if(Param.class.isAssignableFrom(annotation.getClass())) {
+							Param p = (Param)annotation; 
+							if(p.raw()) {
+								mi.isRawRequests.put(i, true); //parameter stands for raw request object
+							}
+							break;
+						}
+					} 
 				} 
-			}  
+
+				String key = key(module, methodName);
+				if (this.methodTable.containsKey(key)) {
+					log.debug(key + " overrided");
+				}
+				this.methodTable.put(key, mi); 
+			}
 		} catch (SecurityException e) {
 			log.error(e.getMessage(), e);
-		}   
+		}
+	} 
+	
+	private MethodInstance matchMethod(Map<String, Object> req) {
+		String module = (String)req.get(Protocol.MODULE);
+		String method = (String)req.get(Protocol.METHOD);
+		String key = key(module, method);
+		return methodTable.get(key); 
+	} 
+	
+	private String key(String module, String method) {
+		return module + ":" + method;
 	}
 	
-	private void removeCommandTable(String module, Object service){
-		removeModuleInfo(service);
-		
-		try {  
-			Method [] methods = service.getClass().getMethods(); 
-			for (Method m : methods) { 
-				String method = m.getName();
-				Remote cmd = m.getAnnotation(Remote.class);
-				if(cmd != null){ 
-					method = cmd.id();
-					if(cmd.exclude()) continue;
-					if("".equals(method)){
-						method = m.getName();
-					}  
-				} 
-				String[] keys = paramSignature(module, m);
-				for(String key : keys){ 
-					this.methods.remove(key);
-				}  
+	public Map<String, Object> process(Map<String, Object> req) {  
+		Map<String, Object> response = new HashMap<String, Object>();   
+		try { 
+			if (req == null) {
+				req = new HashMap<>(); 
+				req.put(Protocol.MODULE, "index");
+				req.put(Protocol.METHOD, "index");
 			}  
-		} catch (SecurityException e) {
-			log.error(e.getMessage(), e);
-		}   
+			
+			String module = (String)req.get(Protocol.MODULE);
+			String method = (String)req.get(Protocol.METHOD);  
+			
+			if(req.get(Protocol.PARAMS) == null){
+				req.put(Protocol.PARAMS, new Object[0]);
+			} 
+			
+			if (StrKit.isEmpty(module)) {
+				req.put(Protocol.MODULE, "index");
+			}
+			if (StrKit.isEmpty(method)) {
+				req.put(Protocol.METHOD, "index");
+			}   
+			
+			if(beforeFilter != null) {
+				boolean next = beforeFilter.doFilter(req, response);
+				if(!next) return response;
+			} 
+			
+			invoke(req, response);
+			
+			if(afterFilter != null) {
+				afterFilter.doFilter(req, response);
+			}
+			 
+		} catch (Throwable e) {
+			response.put(Protocol.BODY, new RpcException(e.getMessage(), e.getCause(), false, stackTraceEnabled)); 
+			response.put(Protocol.STATUS, 500);
+		} finally {
+			bindRequestResponse(req, response); 
+			if(response.get(Protocol.STATUS) == null) {
+				response.put(Protocol.STATUS, 200);
+			}
+		} 
+		return response;
+	}
+	
+	private void bindRequestResponse(Map<String, Object> request, Map<String, Object> response) {
+		response.put(Protocol.ID, request.get(Protocol.ID)); //Id Match
+	}
+	 
+	
+	@SuppressWarnings("unchecked")
+	private void invoke(Map<String, Object> req, Map<String, Object> response) throws IllegalAccessException, IllegalArgumentException {   
+		try {   
+			MethodInstance target = matchMethod(req); 
+			String module = (String)req.get(Protocol.MODULE);
+			String method = (String)req.get(Protocol.METHOD); 
+			Object[] params = JsonKit.getArray(req, Protocol.PARAMS);
+			req.put(Protocol.PARAMS, params); //normalize
+			
+			if(target == null) {
+				response.put(Protocol.STATUS,404);
+				response.put(Protocol.BODY, String.format("module=%s, method=%s Not Found", module, method));
+				return;
+			}
+			
+			if(authFilter != null && target.authRequired) { 
+				boolean next = authFilter.doFilter(req, response);
+				if(!next) return;
+			} 
+			
+			Object data = null;
+			if(target.reflectedMethod != null) {
+				Class<?>[] targetParamTypes = target.reflectedMethod.getParameterTypes();
+				Object[] invokeParams = new Object[targetParamTypes.length]; 
+				for (int i = 0; i < targetParamTypes.length; i++) { 
+					if(target.isRawRequests.containsKey(i)) {
+						Class<?> type = targetParamTypes[i];
+						if(Map.class.isAssignableFrom(type)) {
+							invokeParams[i] = req;
+							continue;
+						}
+					}
+					if(i>=params.length) {
+						invokeParams[i] = null;
+					} else {
+						invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
+					}
+				}
+				data = target.reflectedMethod.invoke(target.instance, invokeParams);
+				
+			} else if(target.invokeBridge != null) {
+				Map<String, Object> mapParams = new HashMap<>();  
+				if(params != null) {
+					if(params.length == 1 && params[0] instanceof Map) {
+						mapParams = (Map<String, Object>)params[0]; 
+					} else {
+						for(int i=0;i <params.length; i++) {
+							if(target.paramNames == null) break;
+							if(i<target.paramNames.size()) {
+								mapParams.put(target.paramNames.get(i), params[i]);
+							}
+						}
+					}
+				}
+				data = target.invokeBridge.invoke(method, mapParams);
+			}
+			
+			response.put(Protocol.BODY, data); 
+			response.put(Protocol.STATUS, 200);
+		} catch (InvocationTargetException e) {  
+			Throwable t = e.getTargetException();
+			if(t != null) {
+				if(!stackTraceEnabled) {
+					t.setStackTrace(new StackTraceElement[0]);
+				}
+			}
+			response.put(Protocol.BODY, t);
+			response.put(Protocol.STATUS, 500);
+		} 
+	}
+
+	public void setBeforeFilter(RpcFilter beforeFilter) {
+		this.beforeFilter = beforeFilter;
+	} 
+
+	public void setAfterFilter(RpcFilter afterFilter) {
+		this.afterFilter = afterFilter;
+	} 
+
+	public void setAuthFilter(RpcFilter authFilter) {
+		this.authFilter = authFilter;
+	} 
+
+	public boolean isStackTraceEnabled() {
+		return stackTraceEnabled;
+	}
+
+	public void setStackTraceEnabled(boolean stackTraceEnabled) {
+		this.stackTraceEnabled = stackTraceEnabled;
+	}
+
+	public boolean isMethodPageEnabled() {
+		return methodPageEnabled;
+	}
+
+	public void setMethodPageEnabled(boolean methodPageEnabled) {
+		this.methodPageEnabled = methodPageEnabled;
+	}
+	
+	public void setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
+		this.methodPageAuthEnabled = methodPageAuthEnabled;
+	}
+
+	public String getMethodPageModule() {
+		return methodPageModule;
+	}
+
+	public void setMethodPageModule(String methodPageModule) {
+		this.methodPageModule = methodPageModule;
+	}
+	
+	public void setDocUrlRoot(String docUrlRoot) {
+		this.docUrlRoot = docUrlRoot;
+	}
+	
+	private static String defaultModuleName(Object service) {
+		return service.getClass().getSimpleName();
 	}  
-	
-	
-	static class MethodMatchResult{
+
+	static class MethodMatchResult {
 		MethodInstance method;
 		boolean fullMatched;
 	}
 	
-	private MethodMatchResult matchMethod(Request req){ 
-		StringBuilder sb = new StringBuilder();
-		if(req.getParamTypes() != null){
-			for(String type : req.getParamTypes()){
-				sb.append(type+",");
-			}
-		}
-		String module = req.getModule(); 
-		String method = req.getMethod();
-		String key = module+":"+method+":"+sb.toString();  
-		String key2 = module+":"+method;
+	static class MethodInstance {
+		public String methodName; 
+		public boolean authRequired = true;
 		
-		MethodMatchResult result = new MethodMatchResult();
-		if(this.methods.containsKey(key)){
-			result.method = this.methods.get(key); 
-			result.fullMatched = true;
-			return result;
-		} else { 
-			if(this.methods.containsKey(key2)){
-				result.method = this.methods.get(key2); 
-				result.fullMatched = false; 
-				return result;
-			}
-			String errorMsg = String.format("%s:%s Not Found", module, method);
-			throw new IllegalArgumentException(errorMsg); 
-		}
-	}
-	
-	private String[] paramSignature(String module, Method m){
-		Class<?>[] paramTypes = m.getParameterTypes();
-		StringBuilder sb = new StringBuilder();
-		StringBuilder sb2 = new StringBuilder();
-		for(int i=0;i<paramTypes.length;i++){ 
-			sb.append(paramTypes[i].getSimpleName()+",");
-			sb2.append(paramTypes[i].getName()+",");
-		} 
+		public Method reflectedMethod;
+		public Object instance;  
+		public Map<Integer, Boolean> isRawRequests = new HashMap<>();
 		
-		String key = module + ":" + m.getName()+":"+sb.toString(); 
-		String key2 = module + ":" + m.getName()+":"+sb2.toString(); 
-		String key3 = module + ":" + m.getName();
-		if(key.equals(key2)){
-			return new String[]{ key, key3};
-		}
-		return new String[]{ key, key2, key3};
-	}
-	
-	
-	private void checkParamTypes(MethodInstance target, Request req){
-		Class<?>[] targetParamTypes = target.method.getParameterTypes();
-		int requiredLength = 0;
-		for(Class<?> clazz : targetParamTypes){
-			if(Message.class.isAssignableFrom(clazz)) continue; //ignore Message parameter
-			requiredLength++;
-		}
-		if(requiredLength !=  req.getParams().length){
-			String requiredParamTypeString = "";
-			for(int i=0;i<targetParamTypes.length;i++){
-				Class<?> paramType = targetParamTypes[i]; 
-				requiredParamTypeString += paramType.getName();
-				if(i<targetParamTypes.length-1){
-					requiredParamTypeString += ", ";
-				}
-			}
-			Object[] params = req.getParams();
-			String gotParamsString = "";
-			for(int i=0;i<params.length;i++){ 
-				gotParamsString += params[i];
-				if(i<params.length-1){
-					gotParamsString += ", ";
-				}
-			}
-			String errorMsg = String.format("Method:%s(%s), called with %s(%s)", 
-					target.method.getName(), requiredParamTypeString, target.method.getName(), gotParamsString);
-			throw new IllegalArgumentException(errorMsg);
-		}
-	} 
-	
-	public class DocRender {
-		public Message index(Message request) throws IOException { 
-			Message result = new Message(); 
-			Map<String, Object> model = new HashMap<String, Object>();
-			 
-			if(!enableMethodPage){
-				result.setBody("<h1>Method page disabled</h1>");
-				return result;
-			}
-			
-			String doc = "<div>";
-			int rowIdx = 0;
-			for(List<RpcMethod> objectMethods : object2Methods.values()) {
-				for(RpcMethod m : objectMethods) {
-					doc += rowDoc(m, rowIdx++);
-				}
-			}
-			doc += "</div>";
-			model.put("content", doc); 
-			
-			String body = FileKit.loadFile("rpc.htm", model);
-			result.setBody(body);
-			return result;
-		}
+		public MethodInvoker invokeBridge;   
+		public List<String> paramNames; 
 		
-		private String rowDoc(RpcMethod m, int idx) { 
-			String color = "altColor";
-			if(idx%2 != 0) {
-				color = "rowColor";
-			}
-			String fmt = 
-					"<tr class=\"%s\">" +  
-					"<td class=\"returnType\">%s</td>" +  
-					"<td class=\"methodParams\"><code><strong><a href=\"%s\">%s</a></strong>(%s)</code>" + 
-					"	<ul class=\"params\"> %s </ul>" + 
-					"	<div class=\"methodDesc\">%s</div>" + 
-					"</td>" +
-					
-					"<td class=\"modules\">" + 
-					"	<ul> %s </ul>" + 
-					"</td></tr>";
-			String methodLink = docUrlContext + m.modules.get(0) + "/" + m.name;
-			String method = m.name;
-			String paramList = "";
-			for(String type : m.paramTypes) {
-				paramList += type + ", ";
-			}
-			if(paramList.length() > 0) {
-				paramList = paramList.substring(0, paramList.length()-2);
-			}
-			String paramDesc = "";
-			String methodDesc = "";
-			String modules = "";
-			for(String module : m.modules) {
-				modules += "<li>"+module+"</li>";
-			}
-			return String.format(fmt, color, m.returnType, methodLink, method,
-					paramList, paramDesc, methodDesc, modules);
-		} 
-	}
-	 
-	public Message process(Message msg){   
-		String encoding = msg.getEncoding();
-		Object result = null;
-		int status = RpcCodec.STATUS_OK; //assumed to be successful
-		try { 
-			Request req = codec.decodeRequest(msg);  
-			if(req == null){
-				req = new Request();
-				req.setMethod("index");
-				req.setModule("index");
-			} 
-			if(StrKit.isEmpty(req.getModule())) {
-				req.setModule("index");
-			}
-			if(StrKit.isEmpty(req.getMethod())) {
-				req.setMethod("index");
-			}
-			if(req.getParams() == null){
-				req.setParams(new Object[0]);
-			}
-
-		
-			MethodMatchResult matchResult = matchMethod(req);
-			MethodInstance target = matchResult.method;
-			if(matchResult.fullMatched){
-				checkParamTypes(target, req);
-			}
-			
-			Class<?>[] targetParamTypes = target.method.getParameterTypes();
-			Object[] invokeParams = new Object[targetParamTypes.length];  
-			Object[] reqParams = req.getParams(); 
-			int j = 0;
-			for(int i=0; i<targetParamTypes.length; i++){  
-				if(Message.class.isAssignableFrom(targetParamTypes[i])){
-					invokeParams[i] = msg;
-				} else {
-					if(targetParamTypes.length == 1 
-					  && targetParamTypes[0] == String.class
-					  && reqParams.length > 1){ //special case: url length not matched with target
-						boolean hasTopic = msg.getHeader("topic") != null;
-						invokeParams[i] = HttpKit.rpcUrl(msg.getUrl(), hasTopic); 
-					} else {
-						if(j >= reqParams.length){
-							throw new IllegalArgumentException("Argument count not matched");
-						}
-						invokeParams[i] = codec.convert(reqParams[j], targetParamTypes[i]);
-						j++;
-					}
-				}
-			} 
-			result = target.method.invoke(target.instance, invokeParams);
-			if(result instanceof Message){ //special case for Message returned type
-				return (Message)result;   
-			} 
-		} catch (InvocationTargetException e) { 
-			status = RpcCodec.STATUS_APP_ERROR;
-			result = e.getTargetException(); 
-		} catch (Throwable e) { 
-			status = RpcCodec.STATUS_APP_ERROR; 
-			if(enableStackTrace){
-				result = new RpcException(e.getMessage()); //Support JDK6
-			} else {
-				result = new RpcException(e.getMessage(), e.getCause(), false, enableStackTrace); //Require JDK7+
-			}
-		} 
-		try {
-			Message res = codec.encodeResponse(result, encoding); 
-			res.setStatus(status);  
-			return res;
-		} catch (Throwable e) {
-			log.error(e.getMessage(), e);
-		} 
-		return null; //should not here
-	}
-	
-	public RpcCodec getCodec() {
-		return codec;
-	}
-
-	public void setCodec(RpcCodec codec) {
-		this.codec = codec;
-	}  
-	
-	public String getDocUrlContext() {
-		return docUrlContext;
-	}
-
-	public void setDocUrlContext(String docUrlContext) {
-		this.docUrlContext = docUrlContext;
-	}  
-
-	public boolean isEnableStackTrace() {
-		return enableStackTrace;
-	}
-
-	public void setEnableStackTrace(boolean enableStackTrace) {
-		this.enableStackTrace = enableStackTrace;
-	} 
-
-	public boolean isEnableMethodPage() {
-		return enableMethodPage;
-	}
-
-	public void setEnableMethodPage(boolean enableMethodPage) {
-		this.enableMethodPage = enableMethodPage;
-	}
-
-
-	private static class MethodInstance{
-		public Method method;
-		public Object instance;
-		
-		public MethodInstance(Method method, Object instance){
-			this.method = method;
+		public MethodInstance(Method reflectedMethod, Object instance) {
+			this.reflectedMethod = reflectedMethod;
 			this.instance = instance;
-		} 
-	}
-	
-	public static class RpcMethod {
-		private List<String> modules = new ArrayList<String>();
-		private String name;
-		private List<String> paramTypes = new ArrayList<String>();
-		private String returnType;
+			this.methodName = this.reflectedMethod.getName();
+		}
 		
-		public List<String> getModules() {
-			return modules;
+		public MethodInstance(String methodName, MethodInvoker invokeBridge) {  
+			this.methodName = methodName;
+			this.invokeBridge = invokeBridge;
 		}
-		public void setModules(List<String> modules) {
-			this.modules = modules;
-		}
-		public String getName() {
-			return name;
-		}
-		public void setName(String name) {
-			this.name = name;
-		}
-		public List<String> getParamTypes() {
-			return paramTypes;
-		}
-		public void setParamTypes(List<String> paramTypes) {
-			this.paramTypes = paramTypes;
-		}
-		public String getReturnType() {
-			return returnType;
-		}
-		public void setReturnType(String returnType) {
-			this.returnType = returnType;
-		} 
-	} 
+	}
 }

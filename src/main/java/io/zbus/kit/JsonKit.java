@@ -1,9 +1,11 @@
 package io.zbus.kit;
 
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.JSONSerializer;
@@ -17,6 +19,16 @@ public class JsonKit {
 		return JSON.parseObject(jsonString);
 	} 
 	
+	public static Map<String, Object> parseObject(byte[] bytes) {
+		String string;
+		try {
+			string = new String(bytes, DEFAULT_ENCODING);
+		} catch (UnsupportedEncodingException e) {
+			string = new String(bytes);
+		}
+		return JSON.parseObject(string);
+	} 
+	
 	public static <T> T parseObject(String jsonString, Class<T> clazz) {
 		try{
 			return JSON.parseObject(jsonString, clazz);
@@ -28,20 +40,35 @@ public class JsonKit {
 	
 	@SuppressWarnings("unchecked")
 	public static <T> T convert(Object json, Class<T> clazz) { 
-		if(json == null){ //fix zbus-java bug#1 
+		if(json == null){ 
 			return null;
 		}
 		if(clazz.isAssignableFrom(json.getClass())){ 
 			return (T)json;
 		}
+		/*
 		if(json instanceof JSONObject){
 			JSONObject jsonObject = (JSONObject)json;
 			return jsonObject.toJavaObject(clazz);
 		}
-		
-		String jsonString = JSON.toJSONString(json);
-		return parseObject(jsonString, clazz);
+		*/
+		String jsonString = null;
+		if(json instanceof String) {
+			jsonString = (String)json;
+		} else {
+			jsonString = JSON.toJSONString(json);
+		}
+		try {
+			return parseObject(jsonString, clazz);
+		} catch (JSONException e) {
+			return parseObject(fixJson(jsonString), clazz);
+		}
 	} 
+	
+	public static <T> T get(JSONObject json, String key, Class<T> clazz) { 
+		Object object = json.get(key);
+		return convert(object, clazz);
+	}
 	
 	public static String toJSONString(Object value) {
 		return toJSONString(value,DEFAULT_ENCODING);
@@ -99,4 +126,35 @@ public class JsonKit {
 			out.close();
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
+	public static Object[] getArray(Map<String, Object> req, String key) {
+		Object params = req.get(key); 
+		if(params == null) return null; 
+		if(params instanceof List) {
+			return ((List<Object>)params).toArray();
+		} else if (params instanceof JSONArray) {
+			JSONArray array = (JSONArray)params;
+			return array.toArray();
+		} 
+		return (Object[])params;
+	}
+	
+	public static String fixJson(String str){
+		if(!str.startsWith("{")) {
+			str = "{" + str + "}";
+		} 
+		str = str.replace(" ", "");
+		str = str.replace(":", "':'");
+		str = str.replace(",", "','");
+		str = str.replace("{", "{'");
+		str = str.replace("}", "'}");
+		str = str.replace("[", "['");
+		str = str.replace("]", "']"); 
+		str = str.replace("'[", "[");
+		str = str.replace("]'", "]");
+		str = str.replace("'{", "{");
+		str = str.replace("}'", "}");
+		return str;
+	} 
 } 

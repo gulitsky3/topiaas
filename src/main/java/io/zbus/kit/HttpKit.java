@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import io.zbus.rpc.Protocol;
 
 public class HttpKit {
 
@@ -56,6 +59,56 @@ public class HttpKit {
     		info.params = StrKit.kvp(params, "&");
     	} 
 		return info;
+	}
+	
+	public static Map<String, Object> parseRpcUrl(String url, boolean mqEnabled) { 
+		UrlInfo info = HttpKit.parseUrl(url);
+		int moduleIndex = 0;
+		int size = 2;
+		if(mqEnabled) {
+			String mq = info.params.get(io.zbus.mq.Protocol.MQ);
+			if(mq == null) { 
+				moduleIndex = 1;
+				size = 3;
+			}  
+		} 
+		Map<String, Object> req = new HashMap<String, Object>();
+		if(moduleIndex > 0) {
+			if (info.path.size() >= 1) {
+				req.put(io.zbus.mq.Protocol.MQ, info.path.get(0));
+			}
+		}
+		if (info.path.size() > moduleIndex) {
+			req.put(Protocol.MODULE, info.path.get(moduleIndex));
+		}
+		if (info.path.size() > moduleIndex+1) {
+			req.put(Protocol.METHOD, info.path.get(moduleIndex+1));
+		}
+
+		if (info.path.size() > size) {
+			Object[] params = new Object[info.path.size() - size];
+			req.put(Protocol.PARAMS, params);
+			for (int i = 0; i < info.path.size() - size; i++) {
+				params[i] = info.path.get(size + i);
+			}
+		}
+		
+		for(Entry<String, String> e : info.params.entrySet()) {
+			String key = e.getKey();
+			Object value = e.getValue();
+			
+			if(Protocol.PARAMS.equalsIgnoreCase(key)) {  //Special case for params
+				String[] bb = e.getValue().split("[/,]");
+				List<String> params = new ArrayList<>();
+				for(String b : bb) {
+					if(b.equals("")) continue;
+					params.add(b);
+				}
+				value = params.toArray();
+			}
+			req.put(key, value);
+		} 
+		return req;
 	}
 	
 	public static String rpcUrl(String url, boolean hasTopic){
@@ -104,6 +157,12 @@ public class HttpKit {
 		}  
 		if(resource.endsWith(".zip")){
 			return "application/zip";
+		}  
+		if(resource.endsWith(".ttf")){
+			return "application/x-font-ttf";
+		}  
+		if(resource.endsWith(".eot")){
+			return "font/opentype";
 		}  
 		
 		return null; 

@@ -24,19 +24,16 @@ package io.zbus.transport;
 
 import java.io.IOException;
  
- 
-
-/**
- * Session life-cycle events management. This adaptor is very important point to configure user specific behavior.
- * 
- * 
- * @author rushmore (洪磊明)
- *
- */
+  
 public interface IoAdaptor{   
 	void sessionCreated(Session sess) throws IOException; 
 	void sessionToDestroy(Session sess) throws IOException;  
 	void onMessage(Object msg, Session sess) throws IOException;  
-	void onError(Throwable e, Session sess) throws Exception; 
+	void onError(Throwable e, Session sess); 
 	void onIdle(Session sess) throws IOException; 
+	
+
+	public static interface MessageHandler<T> { 
+		void handle(T msg, Session session) throws IOException;   
+	}
 }
