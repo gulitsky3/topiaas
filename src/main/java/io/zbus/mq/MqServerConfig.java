@@ -218,7 +218,7 @@ public class MqServerConfig extends XmlConfig {
 	} 
 
 
-	public class CorsConfig{
+	public static class CorsConfig{
 		public String origin;
 		public String allowedRequestMethods;
 		public String allowedRequestHeaders;
