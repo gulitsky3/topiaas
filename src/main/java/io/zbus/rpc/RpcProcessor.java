@@ -239,6 +239,19 @@ public class RpcProcessor {
 		return p.path();
 	} 
 	
+	private void defaultExceptionHandler(Throwable t, Message response) {
+		Object errorMsg = t.getMessage();
+		if(errorMsg == null) errorMsg = t.getClass().toString(); 
+		response.setBody(errorMsg);
+		response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+		response.setStatus(500); 
+		
+		if(t instanceof RpcException) {
+			RpcException ex = (RpcException)t;
+			response.setStatus(ex.getStatus());
+		}  
+	}
+	
 	public void process(Message req, Message response) {   
 		try {  
 			if (req == null) {
@@ -253,25 +266,18 @@ public class RpcProcessor {
 			invoke(req, response);
 			
 			if(afterFilter != null) {
-				afterFilter.doFilter(req, response, null);
+				afterFilter.doFilter(req, response, null); 
 			} 
 		} catch (Throwable t) {
-			logger.info(t.getMessage(), t);   
-			
+			logger.info(t.getMessage(), t);    
 			if(exceptionFilter != null) {
-				exceptionFilter.doFilter(req, response, t);
-				
+				try {
+					exceptionFilter.doFilter(req, response, t);
+				} catch (Exception e) { 
+					defaultExceptionHandler(e, response);
+				}
 			} else {
-				Object errorMsg = t.getMessage();
-				if(errorMsg == null) errorMsg = t.getClass().toString(); 
-				response.setBody(errorMsg);
-				response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-				response.setStatus(500); 
-				
-				if(t instanceof RpcException) {
-					RpcException ex = (RpcException)t;
-					response.setStatus(ex.getStatus());
-				}  
+				defaultExceptionHandler(t, response);
 			} 
 		} finally {
 			response.setHeader(Protocol.ID, req.getHeader(Protocol.ID)); //Id Match
@@ -362,8 +368,11 @@ public class RpcProcessor {
 			
 			boolean matched = true;
 			for(int i=0;i<paramCount;i++) {
+				Object param = params.get(i);
+				if(param == null) continue; 
+				
 				Class<?> paramType = mi.info.params.get(i).type;
-				if(!classMatch(paramType, params.get(i).getClass())) {
+				if(!classMatch(paramType, param.getClass())) {
 					matched = false;
 					break;
 				}
@@ -464,11 +473,7 @@ public class RpcProcessor {
 		Object data = null;
 		if(mi.reflectedMethod != null) {
 			Class<?>[] targetParamTypes = mi.reflectedMethod.getParameterTypes();
-			Object[] invokeParams = new Object[targetParamTypes.length];  
-			if(target.params.length > targetParamTypes.length) {
-				reply(response, 400, String.format("URL=%s, Too many paramteter received", url));
-				return;   
-			}
+			Object[] invokeParams = new Object[targetParamTypes.length];   
 			
 			applyParams(req, response, target, invokeParams); 
 			
@@ -591,18 +596,13 @@ public class RpcProcessor {
 			}
 			
 			if(exceptionFilter != null) {
-				exceptionFilter.doFilter(req, response, t);
+				try {
+					exceptionFilter.doFilter(req, response, t);
+				}catch (Throwable ex) { 
+					defaultExceptionHandler(ex, response);
+				}
 			} else {
-				Object errorMsg = t.getMessage();
-				if(errorMsg == null) errorMsg = t.getClass().toString(); 
-				response.setBody(errorMsg);
-				response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
-				response.setStatus(500); 
-				
-				if(t instanceof RpcException) {
-					RpcException ex = (RpcException)t;
-					response.setStatus(ex.getStatus());
-				}  
+				defaultExceptionHandler(t, response);
 			} 
 		}  
 	}

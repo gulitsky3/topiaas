@@ -5,6 +5,10 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	
 	<bean id="client" class="io.zbus.rpc.RpcClient">
 		<constructor-arg type="java.lang.String" value="localhost:15555"/>  
+		
+		<property name="apiKey" value="2ba912a8-4a8d-49d2-1a22-198fd285cb06"/>
+		<property name="secretKey" value="461277322-943d-4b2f-b9b6-3f860d746ffd"/>
+		<property name="authEnabled" value="true"/>
 	</bean>
 	
 	<bean factory-bean="client" factory-method="createProxy">

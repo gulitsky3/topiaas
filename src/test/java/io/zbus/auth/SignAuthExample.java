@@ -1,7 +1,5 @@
 package io.zbus.auth;
 
-import com.alibaba.fastjson.JSON;
-
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 
@@ -29,8 +27,6 @@ public class SignAuthExample {
 		Message req2 = JsonKit.parseObject(wired, Message.class);
 		AuthResult res = auth.auth(req2);
 		
-		System.out.println(res.success); 
-		
-		System.out.println(JSON.toJSONString(false));
+		System.out.println(res.success);  
 	}
 }

@@ -113,6 +113,15 @@ public class RpcServerFullExamples {
 		spec.returnType = Map.class.getName(); 
 		p.mount(spec, new GenericService());    
 		
+		p.setExceptionFilter(new RpcFilter() { 
+			@Override
+			public boolean doFilter(Message request, Message response, Throwable exception) { 
+				response.setStatus(500);
+				response.setBody(exception.getMessage()); 
+				return false;
+			}
+		});
+		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
 		p.setDocFile("rpc.html");
