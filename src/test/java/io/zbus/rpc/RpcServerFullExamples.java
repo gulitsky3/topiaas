@@ -127,7 +127,7 @@ public class RpcServerFullExamples {
 		p.setDocFile("rpc.html");
 		
 		rpcServer.setMqServerAddress("zbus.io");
-		rpcServer.setMq("/");  
+		rpcServer.setMq("/qhee_survey/example");  
 		rpcServer.start();  
 	}  
 }
