@@ -2,6 +2,7 @@ package io.zbus.rpc;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
@@ -29,6 +30,11 @@ public class StaticResource {
 		} else {
 			absoluteBasePath = new File(System.getProperty("user.dir"), basePath).getAbsoluteFile();
 		}
+		try {
+			absoluteBasePath = absoluteBasePath.toPath().toRealPath().toFile();
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
 	}
 	 
 	public void setUrlPrefix(String urlPrefix) {
@@ -51,29 +57,35 @@ public class StaticResource {
 		if(urlFile == null) { //missing replace with default
 			urlFile = "index.html";
 		}
-		//String file = HttpKit.joinPath(basePath ,urlFile); //TODO security issue
-		String file;
 		// gz first
 		boolean isGzip = false;
 		File tgtFile;
 		File gzip = new File(absoluteBasePath, urlFile+".gz");
 		if (gzip.exists()) {
-			file = gzip.getAbsolutePath();
 			res.setHeader("Content-Encoding", "gzip");
 			isGzip = true;
 			tgtFile = gzip;
 		} else {
-			File fullPath = new File(absoluteBasePath, urlFile);
-			file = fullPath.getAbsolutePath();
-			tgtFile = fullPath;
+			tgtFile = new File(absoluteBasePath, urlFile);
 		}
-		if (!tgtFile.toPath().startsWith(absoluteBasePath.toPath())) {
+
+		Path realPath;
+		try {
+			realPath = tgtFile.toPath().toRealPath();
+		} catch (Throwable e) {
 			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 			res.setBody(urlFile + " Not Found");
 			return res;
 		}
-		 
+		// 安全检查，必须要在basePath目录里的文件
+		if (!realPath.startsWith(absoluteBasePath.toPath())) {
+			res.setStatus(404);
+			res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+			res.setBody(urlFile + " Not Found");
+			return res;
+		}
+
 		String contentType = HttpKit.contentType(urlFile);
 		if(contentType == null) {
 			contentType = "application/octet-stream";
@@ -82,6 +94,7 @@ public class StaticResource {
 		res.setHeader(Http.CONTENT_TYPE, contentType);   
 		res.setStatus(200); 
 		try {
+			String file = realPath.toFile().getAbsolutePath();
 			byte[] data = fileKit.loadFileBytes(file);
 			if(!isGzip && HttpKit.isText(contentType)) {
 				res.setBody(new String(data, "utf8")); //TODO
