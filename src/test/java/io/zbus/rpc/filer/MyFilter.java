@@ -8,7 +8,7 @@ public class MyFilter implements RpcFilter {
 	@Override
 	public boolean doFilter(Message request, Message response) { 
 		System.out.println("In Filter: " + request);
-		return false;
+		return true;
 	}
 
 }
