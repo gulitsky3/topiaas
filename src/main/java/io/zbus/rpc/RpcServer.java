@@ -67,7 +67,11 @@ public class RpcServer implements Closeable {
 		} 
 		started = false;
 	}
-	
+
+	public boolean isStarted() {
+		return started;
+	}
+
 	public void start() {  
 		synchronized(started) {
 			if(started) return;

@@ -97,7 +97,11 @@ public class MqServer extends HttpWsServer {
 	public MqServer() {
 		this(new MqServerConfig());
 	}
-	
+
+	public MqServerConfig getConfig() {
+		return config;
+	}
+
 	protected static io.netty.handler.codec.http.cors.CorsConfig corsConfig(CorsConfig cfg){
 		if(cfg == null) return null;
 		CorsConfigBuilder builder;

@@ -113,8 +113,8 @@ public class MqServerConfig extends XmlConfig {
 		String allowedRequestMethods = valueOf(xpath.evaluate("/zbus/cors/allowedRequestMethods", doc), null);
 		String allowedRequestHeaders = valueOf(xpath.evaluate("/zbus/cors/allowedRequestHeaders", doc), null);
 		String exposeHeaders = valueOf(xpath.evaluate("/zbus/cors/exposeHeaders", doc), null);
-		Boolean allowCredentials = valueOf(xpath.evaluate("/zbus/cors/allowCredentials", doc), (Boolean)null);
-		Boolean allowNullOrigin = valueOf(xpath.evaluate("/zbus/cors/allowNullOrigin", doc), (Boolean)null);
+		Boolean allowCredentials = valueOf(xpath.evaluate("/zbus/cors/allowCredentials", doc), false);
+		Boolean allowNullOrigin = valueOf(xpath.evaluate("/zbus/cors/allowNullOrigin", doc), false);
 
 		if(!(origin==null && allowedRequestHeaders == null && allowedRequestMethods == null &&
 				exposeHeaders == null && allowCredentials == null && allowNullOrigin == null)) {

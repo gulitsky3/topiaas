@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -91,6 +92,9 @@ public class Message {
 	
 	@JSONField(serialize=false)
 	private Map<String, String> pathParams;
+
+	@JSONField(serialize=false)
+	private Function<Void, Void> closeFn;
 	
 	public Message() {
 		
@@ -101,7 +105,17 @@ public class Message {
 		this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); //copy headers 
 		this.headers.putAll(msg.headers);
 	}
-	
+
+	public void setCloseFn(Function<Void, Void> closeFn) {
+		this.closeFn = closeFn;
+	}
+
+	public void close() {
+		if (this.closeFn != null) {
+			this.closeFn.apply(null);
+		}
+	}
+
 	public void replace(Message msg) {
 		this.url = msg.url;
 		this.method = msg.method;
