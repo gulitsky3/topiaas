@@ -18,9 +18,9 @@ public class Pub {
 		String mq = "MyMQ";
 		
 		Message create = new Message();
-		create.addHeader("cmd", "create");
-		create.addHeader("mq", mq); 
-		create.addHeader("mqType", "disk");
+		create.setHeader("cmd", "create");
+		create.setHeader("mq", mq); 
+		create.setHeader("mqType", "disk");
 		client.invoke(create, res->{
 			System.out.println(res);
 		});
@@ -29,8 +29,8 @@ public class Pub {
 		AtomicInteger count = new AtomicInteger(0);  
 		for (int i = 0; i < 200000; i++) {   
 			Message msg = new Message();
-			msg.addHeader("cmd", "pub"); //Publish
-			msg.addHeader("mq", mq);
+			msg.setHeader("cmd", "pub"); //Publish
+			msg.setHeader("mq", mq);
 			msg.setBody(i);  
 			
 			client.invoke(msg, res->{

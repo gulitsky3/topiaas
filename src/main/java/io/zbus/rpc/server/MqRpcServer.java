@@ -82,27 +82,27 @@ public class MqRpcServer implements Closeable {
 				response.setStatus(200);
 			}
 			
-			response.addHeader(Protocol.CMD, Protocol.ROUTE);
-			response.addHeader(Protocol.TARGET, source);
-			response.addHeader(Protocol.ID, id);
+			response.setHeader(Protocol.CMD, Protocol.ROUTE);
+			response.setHeader(Protocol.TARGET, source);
+			response.setHeader(Protocol.ID, id);
 
 			mqClient.sendMessage(response); 
 		});
 
 		mqClient.onOpen(() -> {
 			Message req = new Message();
-			req.addHeader(Protocol.CMD, Protocol.CREATE); // create MQ/Channel
-			req.addHeader(Protocol.MQ, mq);
-			req.addHeader(Protocol.MQ_TYPE, mqType);
-			req.addHeader(Protocol.CHANNEL, channel);
+			req.setHeader(Protocol.CMD, Protocol.CREATE); // create MQ/Channel
+			req.setHeader(Protocol.MQ, mq);
+			req.setHeader(Protocol.MQ_TYPE, mqType);
+			req.setHeader(Protocol.CHANNEL, channel);
 
 			Message res = mqClient.invoke(req);
 			logger.info(JsonKit.toJSONString(res));
 
 			Message sub = new Message();
-			sub.addHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
-			sub.addHeader(Protocol.MQ, mq);
-			sub.addHeader(Protocol.CHANNEL, channel);
+			sub.setHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
+			sub.setHeader(Protocol.MQ, mq);
+			sub.setHeader(Protocol.CHANNEL, channel);
 			mqClient.invoke(sub, data -> {
 				logger.info(JsonKit.toJSONString(data));
 			});

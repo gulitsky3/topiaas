@@ -40,7 +40,7 @@ public class DiskChannelReader implements ChannelReader {
 			return null;
 		}
 		Message res = JsonKit.parseObject(data.body, Message.class);
-		res.addHeader(Protocol.OFFSET, data.offset);
+		res.setHeader(Protocol.OFFSET, data.offset);
 		return res;
 	}
 

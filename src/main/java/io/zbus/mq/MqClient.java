@@ -56,7 +56,7 @@ public class MqClient extends Client{
 	public synchronized void heartbeat(long interval, TimeUnit timeUnit) {
 		heartbeat(interval, timeUnit, ()->{
 			Message msg = new Message();
-			msg.addHeader(Protocol.CMD, Protocol.PING);
+			msg.setHeader(Protocol.CMD, Protocol.PING);
 			return msg;
 		});
 	}  

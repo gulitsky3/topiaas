@@ -3,6 +3,7 @@ package io.zbus.rpc;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,7 +20,7 @@ import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.JsonKit;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.Path;
+import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.doc.DocRender;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
@@ -30,7 +31,7 @@ public class RpcProcessor {
 	protected Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();             //path => MethodInstance 
 	protected Map<String, Map<String, MethodInstance>> module2MethodTable = new HashMap<>(); //module =>{method => MethodInstance}
 	
-	protected String docUrlRoot = "/";
+	protected String docUrlPrefix = "/";
 	protected boolean stackTraceEnabled = true;
 	protected boolean methodPageEnabled = true; 
 	protected boolean methodPageAuthEnabled = false;
@@ -40,17 +41,29 @@ public class RpcProcessor {
 	protected RpcFilter beforeFilter;
 	protected RpcFilter afterFilter;
 	protected RpcFilter authFilter;  
-	 
-	public void addModule(String module, Object service) {
-		addModule(module, service, true);
-	}
 	
-	public void addModule(String module, Object service, boolean enableDoc) {
-		addModule(module, service, enableDoc, true);
+	public RpcProcessor addModule(Object service) {
+		return addModule("", service);
 	} 
 	
-	public void addModule(String module, Object service, boolean defaultAuth, boolean enableDoc) {   
+	public RpcProcessor addModule(String module, Object service) { 
+		return addModule(module, service, true);
+	}
+	
+	public RpcProcessor addModule(String module, Object service, boolean enableDoc) {
+		return addModule(module, service, enableDoc, true);
+	} 
+	
+	public RpcProcessor addModule(String module, Object service, boolean defaultAuth, boolean enableDoc) {  
+		
+		if(module.startsWith("/")) {
+			module = module.substring(1);
+		}
 		try {
+			if(service instanceof Class<?>) {
+				service = ((Class<?>)service).newInstance();
+			} 
+			
 			Method[] methods = service.getClass().getMethods();
 			boolean classAuthEnabled = defaultAuth;
 			Auth classAuth = service.getClass().getAnnotation(Auth.class);
@@ -59,15 +72,27 @@ public class RpcProcessor {
 			}
 			
 			for (Method m : methods) {
-				if (m.getDeclaringClass() == Object.class) continue; 
+				if (m.getDeclaringClass() == Object.class) continue;  
+				
+				if(Modifier.isStatic(m.getModifiers())) {
+					continue;
+				}
 				
 				String methodName =  m.getName();
 				String urlPath = path(module, methodName);
 				
-				Path p = m.getAnnotation(Path.class);
+				RequestMapping p = m.getAnnotation(RequestMapping.class);
 				if (p != null) {
 					if (p.exclude()) continue; 
-					urlPath = p.value(); 
+					urlPath = annoPath(p);  
+					//add module prefix
+					if(!urlPath.startsWith("/")) {
+						urlPath = "/"+urlPath;
+					}
+					urlPath = module + urlPath;
+					if(!urlPath.startsWith("/")) {
+						urlPath = "/"+urlPath;
+					}
 				} 
 				
 				Auth auth = m.getAnnotation(Auth.class);
@@ -106,17 +131,18 @@ public class RpcProcessor {
 				//register in tables
 				addMethod(new MethodInstance(info, m, service));  
 			}
-		} catch (SecurityException e) {
+		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
+		return this;
 	} 
 	
-	public void addMethod(RpcMethod spec, MethodInvoker service) {
+	public RpcProcessor addMethod(RpcMethod spec, MethodInvoker service) {
 		MethodInstance mi = new MethodInstance(spec, service);  
-		addMethod(mi);
+		return addMethod(mi);
 	}
 	
-	public void addMethod(MethodInstance mi) { 
+	public RpcProcessor addMethod(MethodInstance mi) { 
 		RpcMethod spec = mi.info;
 		String urlPath = spec.urlPath;
 		if(urlPath == null) {
@@ -155,39 +181,42 @@ public class RpcProcessor {
 		} else {
 			methodTable.put(methodName, mi); 
 		} 
+		return this;
 	} 
 	
-	public void removeModule(String module, Object service) {
+	public RpcProcessor removeModule(String module, Object service) {
 		try {
 			Method[] methods = service.getClass().getMethods();
 			for (Method m : methods) {
 				String path = path(module, m.getName());
-				Path cmd = m.getAnnotation(Path.class);
-				if (cmd != null) {
-					path = cmd.value();
-					if (cmd.exclude()) continue; 
+				RequestMapping p = m.getAnnotation(RequestMapping.class);
+				if (p != null) {
+					if (p.exclude()) continue; 
+					path = annoPath(p); 
 				} 
-				this.removeMethod(path);
+				this.removeMethod(path); 
 				this.removeMethod(module, m.getName());
 			}
 		} catch (SecurityException e) {
 			logger.error(e.getMessage(), e);
 		}
+		return this;
 	}  
 	
-	public void removeMethod(String path) { 
+	public RpcProcessor removeMethod(String path) { 
 		MethodInstance mi = this.urlPath2MethodTable.get(path);  
 		if(mi != null) { 
 			removeMethod(mi.info.module, mi.info.method);
-		}
+		} 
+		return this;
 	} 
 	
-	public void removeMethod(String module, String method) {  
+	public RpcProcessor removeMethod(String module, String method) {  
 		Map<String, MethodInstance> table = this.module2MethodTable.get(module);
 		if(table == null) {
 			String path = path(module, method);
 			this.urlPath2MethodTable.remove(path);  
-			return;
+			return this;
 		}
 		MethodInstance mi = table.remove(method);
 		if(table.isEmpty()) {
@@ -196,35 +225,15 @@ public class RpcProcessor {
 		if(mi != null && mi.info.urlPath != null) {
 			this.urlPath2MethodTable.remove(mi.info.urlPath);  
 		}
-	} 
+		return this;
+	}  
 	
-	private Entry<String, MethodInstance> matchMethodByUrl(String url) {  
-		int length = 0;
-		Entry<String, MethodInstance> res = null;
-		for(Entry<String, MethodInstance> e : urlPath2MethodTable.entrySet()) {
-			String key = e.getKey();
-			if(url.startsWith(key)) {
-				if(key.length() > length) {
-					length = key.length();
-					res = e;
-				}
-			}
-		}
-		return res;
-	} 
-	
-	private MethodInstance matchMethod(String module, String method) {  
-		if(module == null) {
-			module = "";
-		}
-		Map<String, MethodInstance> table = this.module2MethodTable.get(module);
-		if(table == null) {
-			return null;
-		}
-		return table.get(method);
-	} 
-	
-	static String path(String module, String method) {
+	private String annoPath(RequestMapping p) {
+		if(p.path().length() == 0) return p.value();
+		return p.path();
+	}
+	 
+	private static String path(String module, String method) {
 		if(!module.startsWith("/")) module = "/"+module;
 		if(!module.endsWith("/")) module += "/";
 		return module + method;
@@ -245,130 +254,196 @@ public class RpcProcessor {
 			
 			if(afterFilter != null) {
 				afterFilter.doFilter(req, response);
-			}
-			 
+			} 
 		} catch (Throwable e) {
 			logger.info(e.getMessage(), e);  
 			response.setBody(e.getMessage()); 
-			response.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			response.setStatus(500);
 		} finally {
-			bindRequestResponse(req, response); 
+			response.setHeader(Protocol.ID, req.getHeader(Protocol.ID)); //Id Match
 			if(response.getStatus() == null) {
 				response.setStatus(200);
 			}
 		}  
-	}
-	
-	private void bindRequestResponse(Message request, Message response) {
-		response.addHeader(Protocol.ID, request.getHeader(Protocol.ID)); //Id Match
 	} 
 	 
 	private void reply(Message response, int status, String message) {
 		response.setStatus(status);
-		response.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+		response.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 		response.setBody(message);
 	}  
 	
 	
-	@SuppressWarnings("unchecked")
-	private void invoke0(Message req, Message response) throws Exception {    
-		String url = req.getUrl(); 
-		String pathMatched = null;
-		MethodInstance target = null;
-		Object[] params = null; 
-		String resource = url;
-		
-		if(url == null) { //match by Message body
-			Object body = req.getBody();
-			if(body == null || !(body instanceof Map)) {
-				reply(response, 400, "Message body should be RPC request map"); 
-				return;
+	private boolean checkParams(Message req, Message res, Method method, Object[] params, Object[] invokeParams) {
+		Class<?>[] targetParamTypes = method.getParameterTypes();
+		int count = 0;
+		for(Class<?> paramType : targetParamTypes) {
+			if(Message.class.isAssignableFrom(paramType)) {
+				continue;
 			}
-			Map<String, Object> reqBody = (Map<String, Object>)body;
-			String module = (String)reqBody.get(Protocol.MODULE);  
-			String method = (String)reqBody.get(Protocol.METHOD);
-			if(module == null) module = "index";
-			if(method == null) method = "index";
-			
-			params = JsonKit.getArray(reqBody, Protocol.PARAMS);
-			if(params == null) {
-				params = new Object[0];
-			}
-			
-			resource = String.format("module=%s, method=%s", module, method); 
-			target = matchMethod(module, method);
-		} else { //match by URL
-			Entry<String, MethodInstance> e = matchMethodByUrl(url);  
-			if(e != null) {
-				target = e.getValue();
-				pathMatched = e.getKey();
-			}
+			count++;
 		}
 		
-		if(target == null) {
-			reply(response, 404, String.format("%s Not Found", resource)); 
-			return;
+		if(count != params.length) { 
+			String msg = String.format("Request(Url=%s, Method=%s, Params=%s) Bad Format", req.getUrl(), method.getName(), JsonKit.toJSONString(params));
+			reply(res, 400, msg);
+			return false;
 		}
 		
-		if(url != null) {
-			Object body = req.getBody(); //assumed to be params 
-			if(body != null && body instanceof Object[]) {
-				params = (Object[])body;
-			}  
-			
-			if(params == null) { 
-				String subUrl = url.substring(pathMatched.length());
-				UrlInfo info = HttpKit.parseUrl(subUrl);
-				List<Object> paramList = new ArrayList<>(info.path); 
-				if(!info.params.isEmpty()) {
-					paramList.add(info.params);
-				}
-				params = paramList.toArray();
+		for (int i = 0; i < targetParamTypes.length; i++) { 
+			Class<?> paramType = targetParamTypes[i];
+			if(Message.class.isAssignableFrom(paramType)) {
+				invokeParams[i] = req;
+				continue;
+			}
+			if(i >= params.length) {
+				invokeParams[i] = null;
+			} else {
+				invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
 			}
 		} 
-		//////////////////////////////location of method completed/////////////////////////////////
+		return true;
+	}
+	
+	
+	private class MethodTarget{
+		public MethodInstance method;
+		public Object[] params;
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	private MethodTarget findMethodByRpcFormat(Message req, Message response) { 
+		Object body = req.getBody();
+		if(body == null) {
+			reply(response, 400, "Message body missing in RPC request"); 
+			return null;
+		}
+		Map<String, Object> reqBody = null;
+		try {
+			reqBody = JsonKit.convert(body,Map.class);
+		}catch (Exception e) { 
+			reply(response, 400, "Message body should be RPC request format"); 
+		}
 		
+		String module = (String)reqBody.get(Protocol.MODULE);  
+		String method = (String)reqBody.get(Protocol.METHOD);
+		if(module == null) module = "index";
+		if(method == null) method = "index";
 		
-		if(authFilter != null && target.info.authRequired) { 
+		Object[] params = JsonKit.getArray(reqBody, Protocol.PARAMS);
+		if(params == null) {
+			params = new Object[0];
+		} 
+		
+		Map<String, MethodInstance> table = this.module2MethodTable.get(module);
+		if(table == null) {
+			reply(response, 404, String.format("module=%s Not Found", module, method)); 
+			return null;
+		} 
+		MethodInstance mi = table.get(method);
+		if(mi == null) {
+			reply(response, 404, String.format("module=%s, method=%s Not Found", module, method)); 
+			return null;
+		}  
+		
+		MethodTarget target = new MethodTarget();
+		target.method = mi;
+		target.params = params;
+		return target;
+	}
+	 
+	
+	private MethodTarget findMethodByUrl(Message req, Message response) {  
+		String url = req.getUrl();  
+		int length = 0;
+		Entry<String, MethodInstance> matched = null;
+		for(Entry<String, MethodInstance> e : urlPath2MethodTable.entrySet()) {
+			String key = e.getKey();
+			if(url.startsWith(key)) {
+				if(key.length() > length) {
+					length = key.length();
+					matched = e; 
+				}
+			}
+		}  
+		if(matched == null) {
+			reply(response, 404, String.format("Url=%s Not Found", url)); 
+			return null;
+		}
+		
+		String urlPathMatched = matched.getKey();
+		
+		MethodTarget target = new MethodTarget(); 
+		target.method = matched.getValue();
+		Object[] params = null; 
+		
+		//TODO more support on URL params
+		Object body = req.getBody(); //assumed to be params 
+		if(body != null && body instanceof Object[]) {
+			params = (Object[])body;
+		}   
+		if(params == null) { 
+			String subUrl = url.substring(urlPathMatched.length());
+			UrlInfo info = HttpKit.parseUrl(subUrl);
+			List<Object> paramList = new ArrayList<>(info.path); 
+			if(!info.params.isEmpty()) {
+				paramList.add(info.params);
+			}
+			params = paramList.toArray();
+		} 
+		target.params = params; 
+		return target;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void invoke0(Message req, Message response) throws Exception {    
+		String url = req.getUrl();  
+		MethodTarget target = null; 
+		if(url == null) { //match by Message body
+			target = findMethodByRpcFormat(req, response); 
+		} else { //match by URL
+			target = findMethodByUrl(req, response); 
+		} 
+		if(target == null) return;   
+		
+		Object[] params = target.params; 
+		MethodInstance mi = target.method;
+		
+		//Authentication step in if required
+		if(authFilter != null && mi.info.authRequired) { 
 			boolean next = authFilter.doFilter(req, response);
 			if(!next) return;
 		}  
 		
 		Object data = null;
-		if(target.reflectedMethod != null) {
-			Class<?>[] targetParamTypes = target.reflectedMethod.getParameterTypes();
-			Object[] invokeParams = new Object[targetParamTypes.length]; 
-			for (int i = 0; i < targetParamTypes.length; i++) { 
-				Class<?> paramType = targetParamTypes[i];
-				if(Message.class.isAssignableFrom(paramType)) {
-					invokeParams[i] = req;
-					continue;
-				}
-				if(i>=params.length) {
-					invokeParams[i] = null;
-				} else {
-					invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
-				}
-			}
-			data = target.reflectedMethod.invoke(target.instance, invokeParams);
+		if(mi.reflectedMethod != null) {
+			Class<?>[] targetParamTypes = mi.reflectedMethod.getParameterTypes();
+			Object[] invokeParams = new Object[targetParamTypes.length];  
 			
-		} else if(target.target != null) {
+			boolean ok = checkParams(req, response, mi.reflectedMethod, params, invokeParams);
+			if(!ok) return;
+
+			data = mi.reflectedMethod.invoke(mi.instance, invokeParams);
+			
+		} else if(mi.target != null) {
 			Map<String, Object> mapParams = new HashMap<>();  
 			if(params != null) {
 				if(params.length == 1 && params[0] instanceof Map) {
 					mapParams = (Map<String, Object>)params[0]; 
 				} else {
 					for(int i=0;i <params.length; i++) {
-						if(target.info.paramNames == null) break;
-						if(i<target.info.paramNames.size()) {
-							mapParams.put(target.info.paramNames.get(i), params[i]);
+						if(mi.info.paramNames == null) break;
+						if(i<mi.info.paramNames.size()) {
+							mapParams.put(mi.info.paramNames.get(i), params[i]);
 						}
 					}
 				}
 			}
-			data = target.target.invoke(target.info.method, mapParams);
+			data = mi.target.invoke(mi.info.method, mapParams);
 		}
+		
 		if(data instanceof Message) {
 			response.replace((Message)data);
 		} else {
@@ -393,59 +468,85 @@ public class RpcProcessor {
 				t.setStackTrace(new StackTraceElement[0]);
 			}
 			response.setBody(t.getMessage());
-			response.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+			response.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			response.setStatus(500); 
 		}  
 	}
 	
-	public void enableMethodPage() { 
-		DocRender render = new DocRender(this, docUrlRoot);
-		addModule(methodPageModule, render, false, false);
-		addModule("", render, false, false);
+	public RpcProcessor enableMethodPage() { 
+		DocRender render = new DocRender(this, docUrlPrefix); 
+		if(!this.urlPath2MethodTable.containsKey(path(methodPageModule, ""))) {
+			addModule(methodPageModule, render, false, false);
+		} 
+		if(!this.urlPath2MethodTable.containsKey("/")) {
+			addModule("", render, false, false);
+		} 
+		return this;
 	}   
 
-	public void setBeforeFilter(RpcFilter beforeFilter) {
+	public RpcProcessor setBeforeFilter(RpcFilter beforeFilter) {
 		this.beforeFilter = beforeFilter;
+		return this;
 	} 
 
-	public void setAfterFilter(RpcFilter afterFilter) {
+	public RpcProcessor setAfterFilter(RpcFilter afterFilter) {
 		this.afterFilter = afterFilter;
+		return this;
 	} 
 
-	public void setAuthFilter(RpcFilter authFilter) {
+	public RpcProcessor setAuthFilter(RpcFilter authFilter) {
 		this.authFilter = authFilter;
+		return this;
 	} 
 
 	public boolean isStackTraceEnabled() {
 		return stackTraceEnabled;
 	}
 
-	public void setStackTraceEnabled(boolean stackTraceEnabled) {
+	public RpcProcessor setStackTraceEnabled(boolean stackTraceEnabled) {
 		this.stackTraceEnabled = stackTraceEnabled;
+		return this;
 	}
 
 	public boolean isMethodPageEnabled() {
 		return methodPageEnabled;
 	}
 
-	public void setMethodPageEnabled(boolean methodPageEnabled) {
+	public RpcProcessor setMethodPageEnabled(boolean methodPageEnabled) {
 		this.methodPageEnabled = methodPageEnabled;
+		return this;
 	}
 	
-	public void setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
+	public RpcProcessor setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
 		this.methodPageAuthEnabled = methodPageAuthEnabled;
+		return this;
 	}
 
 	public String getMethodPageModule() {
 		return methodPageModule;
 	}
 
-	public void setMethodPageModule(String methodPageModule) {
+	public RpcProcessor setMethodPageModule(String methodPageModule) {
 		this.methodPageModule = methodPageModule;
+		return this;
 	}
 	
-	public void setDocUrlRoot(String docUrlRoot) {
-		this.docUrlRoot = docUrlRoot;
+	@SuppressWarnings("unchecked")
+	public void setModuleTable(Map<String, Object> instances){
+		if(instances == null) return;
+		for(Entry<String, Object> e : instances.entrySet()){
+			Object svc = e.getValue();
+			if(svc instanceof List) {
+				addModule(e.getKey(), (List<Object>)svc); 
+			} else {
+				addModule(e.getKey(), svc);
+			}
+		}
+	}
+	
+	public RpcProcessor setDocUrlPrefix(String docUrlPrefix) {
+		this.docUrlPrefix = docUrlPrefix;
+		return this;
 	} 
 	 
 	

@@ -49,9 +49,9 @@ public class MqServerAdaptor extends ServerAdaptor {
 	}
 	
 	protected void attachInfo(Message request, Session sess) {
-		request.addHeader(Protocol.SOURCE, sess.id());
+		request.setHeader(Protocol.SOURCE, sess.id());
 		if(request.getHeader(Protocol.ID) == null) {
-			request.addHeader(Protocol.ID, StrKit.uuid());
+			request.setHeader(Protocol.ID, StrKit.uuid());
 		}
 	}
 	 
@@ -112,15 +112,15 @@ public class MqServerAdaptor extends ServerAdaptor {
 					msg.setBody(value);
 					continue;
 				}
-				msg.addHeader(key.toLowerCase(), value);
+				msg.setHeader(key.toLowerCase(), value);
 			}
 			return;
 		}
 		
 		//Handle RPC protocol
 		if(msg.getHeader(Protocol.CMD) == null) { // RPC assumed
-			msg.addHeader(Protocol.CMD, Protocol.PUB);
-			msg.addHeader(Protocol.ACK, false); //ACK should be disabled
+			msg.setHeader(Protocol.CMD, Protocol.PUB);
+			msg.setHeader(Protocol.ACK, false); //ACK should be disabled
 		}  
 		
 		int moduleIndex = 1;
@@ -129,7 +129,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		msg.setBody(req);
 		if(moduleIndex > 0) {
 			if (info.path.size() >= 1) {
-				msg.addHeader(Protocol.MQ, info.path.get(0)); 
+				msg.setHeader(Protocol.MQ, info.path.get(0)); 
 			}
 		}
 		if (info.path.size() > moduleIndex) {
@@ -358,13 +358,13 @@ public class MqServerAdaptor extends ServerAdaptor {
 		Message res = new Message();
 		res.setStatus(status);
 		res.setBody(message);  
-		res.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+		res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 		reply(req, res, sess);
 	}
 	
 	private void reply(Message req, Message res, Session sess) {
 		if(req != null) {
-			res.addHeader(Protocol.ID, (String)req.getHeader(Protocol.ID)); 
+			res.setHeader(Protocol.ID, (String)req.getHeader(Protocol.ID)); 
 		}
 		sess.write(res); 
 	}

@@ -29,17 +29,17 @@ public class Sub {
 		
 		client.onOpen(()->{
 			Message req = new Message();
-			req.addHeader("cmd", "create"); //create MQ/Channel
-			req.addHeader("mq", mq); 
-			req.addHeader("mqType", mqType); 
-			req.addHeader("channel", channel);  
+			req.setHeader("cmd", "create"); //create MQ/Channel
+			req.setHeader("mq", mq); 
+			req.setHeader("mqType", mqType); 
+			req.setHeader("channel", channel);  
 			Message res = client.invoke(req);
 			System.out.println(res);
 			
 			Message sub = new Message();
-			sub.addHeader("cmd", "sub"); //Subscribe on MQ/Channel
-			sub.addHeader("mq", mq); 
-			sub.addHeader("channel", channel);
+			sub.setHeader("cmd", "sub"); //Subscribe on MQ/Channel
+			sub.setHeader("mq", mq); 
+			sub.setHeader("channel", channel);
 			client.invoke(sub, data->{
 				System.out.println(data);
 			});

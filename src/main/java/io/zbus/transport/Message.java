@@ -121,7 +121,7 @@ public class Message {
 		return Boolean.valueOf(value);
 	} 
 	
-	public void addHeader(String key, Object value){
+	public void setHeader(String key, Object value){
 		if(value == null) return;
 		this.headers.put(key, value.toString());
 	}  

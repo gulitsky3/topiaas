@@ -51,7 +51,7 @@ public class MemoryChannelReader implements ChannelReader {
 			while (channel.offset < queue.end) {
 				int idx = (int) (channel.offset % queue.maxSize);
 				Message data = (Message)queue.array[idx];
-				data.addHeader(Protocol.OFFSET, channel.offset); //Add offset
+				data.setHeader(Protocol.OFFSET, channel.offset); //Add offset
 				res.add(data);
 				channel.offset++;
 				c++;
@@ -71,7 +71,7 @@ public class MemoryChannelReader implements ChannelReader {
 			if (channel.offset < queue.end) {
 				int idx = (int) (channel.offset % queue.maxSize);
 				res = (Message)queue.array[idx];
-				res.addHeader(Protocol.OFFSET, channel.offset); //Add offset
+				res.setHeader(Protocol.OFFSET, channel.offset); //Add offset
 				channel.offset++; 
 			}
 			return res;

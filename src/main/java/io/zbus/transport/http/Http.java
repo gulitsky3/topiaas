@@ -170,7 +170,7 @@ public class Http {
 	        while (line != null && line.trim().length() > 0) {
 	            int p = line.indexOf(':');
 	            if (p >= 0){ 
-	                msg.addHeader(line.substring(0, p).trim().toLowerCase(), line.substring(p + 1).trim());
+	                msg.setHeader(line.substring(0, p).trim().toLowerCase(), line.substring(p + 1).trim());
 	            } 
 	            line = bufferedReader.readLine();
 	        }

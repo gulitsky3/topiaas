@@ -1,17 +1,18 @@
 package io.zbus.rpc;
 
-import io.zbus.rpc.biz.InterfaceExample;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 
 public class MqRpcServiceExample {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {  
-		RpcServer server = new RpcServer();  
+		  
+		RpcProcessor p = new RpcProcessor();
+		p.addModule("example", InterfaceExampleImpl.class);  
 		
-		InterfaceExample example = new InterfaceExampleImpl(); 
-		server.addModule("example", example);  
 		
+		RpcServer server = new RpcServer();
+		server.setProcessor(p);
 		//connect to zbus
 		server.setAddress("localhost:15555");
 		server.setMq("MyRpc");

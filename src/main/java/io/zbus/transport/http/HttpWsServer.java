@@ -190,7 +190,7 @@ public class HttpWsServer extends Server {
 			Iterator<Entry<String, String>> iter = httpMsg.headers().iteratorAsString();
 			while (iter.hasNext()) {
 				Entry<String, String> e = iter.next();
-				msg.addHeader(e.getKey().toLowerCase(), e.getValue()); 
+				msg.setHeader(e.getKey().toLowerCase(), e.getValue()); 
 			}  
 	
 			if (httpMsg instanceof HttpRequest) {

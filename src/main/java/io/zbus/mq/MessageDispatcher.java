@@ -68,7 +68,7 @@ public class MessageDispatcher {
 							Session sess = sessionTable.get(sub.clientId);
 							if (sess == null)
 								continue;
-							message.addHeader(Protocol.CHANNEL, channel); 
+							message.setHeader(Protocol.CHANNEL, channel); 
 							sess.write(message); 
 							break;
 						}
@@ -94,9 +94,9 @@ public class MessageDispatcher {
 		Message message = new Message();  
 		int status = data.size()>0? 200 : 604;//Special status code, no DATA
 		message.setStatus(status); 
-		message.addHeader(Protocol.ID, reqMsgId);
-		message.addHeader(Protocol.MQ, mq.name());
-		message.addHeader(Protocol.CHANNEL, channel);   
+		message.setHeader(Protocol.ID, reqMsgId);
+		message.setHeader(Protocol.MQ, mq.name());
+		message.setHeader(Protocol.CHANNEL, channel);   
 		message.setBody(data); 
 		
 		

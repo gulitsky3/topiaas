@@ -1,8 +1,8 @@
 package io.zbus.rpc.biz.generic;
 
-import io.zbus.rpc.annotation.Path;
+import io.zbus.rpc.annotation.RequestMapping;
 
-@Path
+@RequestMapping
 public class GenericMethodImpl implements GenericMethod{
 
 	@Override

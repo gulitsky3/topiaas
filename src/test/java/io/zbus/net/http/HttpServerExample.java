@@ -19,8 +19,8 @@ public class HttpServerExample {
 				Message res = new Message();
 				res.setStatus(200);
 				
-				res.addHeader("id", res.getHeader("id")); 
-				res.addHeader("content-type", "text/plain; charset=utf8");
+				res.setHeader("id", res.getHeader("id")); 
+				res.setHeader("content-type", "text/plain; charset=utf8");
 				
 				res.setBody("中文"+System.currentTimeMillis());
 				

@@ -16,7 +16,7 @@ public class SignAuthExample {
 		
 		Message req = new Message();
 		for(int i=0;i<10;i++) {
-			req.addHeader("key"+i, new Random().nextInt());
+			req.setHeader("key"+i, new Random().nextInt());
 		}
 		
 		Map<String, Object> f = new HashMap<>();

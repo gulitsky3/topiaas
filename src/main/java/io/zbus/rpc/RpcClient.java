@@ -24,9 +24,9 @@ public class RpcClient extends Client {
 	public void setMq(final String mq) { 
 		//add more controls for MQ before send
 		setBeforeSend(msg->{
-			msg.addHeader(io.zbus.mq.Protocol.MQ, mq);
-			msg.addHeader(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
-			msg.addHeader(io.zbus.mq.Protocol.ACK, false);
+			msg.setHeader(io.zbus.mq.Protocol.MQ, mq);
+			msg.setHeader(io.zbus.mq.Protocol.CMD, io.zbus.mq.Protocol.PUB);
+			msg.setHeader(io.zbus.mq.Protocol.ACK, false);
 		});
 	}
 	

@@ -10,17 +10,19 @@ public class InprocClientExample {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {
-		RpcServer b = new RpcServer();   
-		b.addModule("example", new InterfaceExampleImpl());  
-		b.start(); 
+		RpcProcessor p = new RpcProcessor();
+		p.addModule("example", InterfaceExampleImpl.class);
 		
-		InprocClient rpc = new InprocClient(b.getHttpRpcServerAdaptor());
+		RpcServer server = new RpcServer(p);    
+		server.start(); 
+		
+		InprocClient rpc = new InprocClient(server.getHttpRpcServerAdaptor());
 		
 		AtomicInteger count = new AtomicInteger(0);  
 		for (int i = 0; i < 1000000; i++) {
 			Message req = new Message();
-			req.addHeader("module", "example");
-			req.addHeader("method", "getOrder"); 
+			req.setHeader("module", "example");
+			req.setHeader("method", "getOrder"); 
 			 
 			rpc.invoke(req, res->{
 				int c = count.getAndIncrement();

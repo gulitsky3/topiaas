@@ -6,7 +6,7 @@ import java.util.Map;
 import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
 import io.zbus.rpc.annotation.Auth;
-import io.zbus.rpc.annotation.Path;
+import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http; 
 
@@ -27,12 +27,12 @@ public class FileService {
 	private String basePath = ".";
 	private FileKit kit = new FileKit();  
 	
-	@Path(exclude=true)
+	@RequestMapping(exclude=true)
 	public void setCacheEnabled(boolean cache) {
 		kit.setCache(cache);
 	}
 	
-	@Path(exclude=true)
+	@RequestMapping(exclude=true)
 	public void setBasePath(String basePath) {
 		this.basePath = basePath;
 	} 
@@ -55,7 +55,7 @@ public class FileService {
 				res.setStatus(404);
 			} else {
 				res.setStatus(200);
-				res.addHeader(Http.CONTENT_TYPE, HttpKit.contentType(resource));
+				res.setHeader(Http.CONTENT_TYPE, HttpKit.contentType(resource));
 				res.setBody(data);
 			}
 		} catch (IOException e) {

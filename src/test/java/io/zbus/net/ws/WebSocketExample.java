@@ -26,9 +26,9 @@ public class WebSocketExample {
 			message.setBody(command);
 			
 			//for MQ
-			message.addHeader("cmd", "pub");
-			message.addHeader("mq", "MyRpc");
-			message.addHeader("ack", false); 
+			message.setHeader("cmd", "pub");
+			message.setHeader("mq", "MyRpc");
+			message.setHeader("ack", false); 
 			
 			ws.sendMessage(message);
 			

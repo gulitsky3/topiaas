@@ -8,7 +8,7 @@ import java.util.Map;
 import io.zbus.kit.FileKit;
 import io.zbus.rpc.RpcMethod;
 import io.zbus.rpc.RpcProcessor;
-import io.zbus.rpc.annotation.Path;
+import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
@@ -20,8 +20,8 @@ public class DocRender {
 		this.rpcProcessor = rpcProcessor; 
 		this.docRootPath = docRootPath;
 	}
-
-	@Path("/")
+ 
+	@RequestMapping("/")
 	public Message index() throws IOException { 
 		Message result = new Message(); 
 		Map<String, Object> model = new HashMap<String, Object>(); 
@@ -43,7 +43,7 @@ public class DocRender {
 		
 		String body = fileKit.loadFile("rpc.htm", model);
 		result.setBody(body);
-		result.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+		result.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 		return result;
 	}
 	

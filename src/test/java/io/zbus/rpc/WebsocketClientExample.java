@@ -14,8 +14,8 @@ public class WebsocketClientExample {
 		AtomicInteger count = new AtomicInteger(0);  
 		for (int i = 0; i < 100000; i++) {
 			Message req = new Message();
-			req.addHeader("method", "getOrder");
-			req.addHeader("module", "example");
+			req.setHeader("method", "getOrder");
+			req.setHeader("module", "example");
 			 
 			
 			rpc.invoke(req, res->{

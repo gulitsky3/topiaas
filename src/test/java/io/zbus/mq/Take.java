@@ -16,9 +16,9 @@ public class Take {
 		final String mq = "MyMQ", channel = "MyChannel";
 		
 		Message req = new Message();
-		req.addHeader("cmd", "take");  
-		req.addHeader("mq", mq); 
-		req.addHeader("channel", channel); 
+		req.setHeader("cmd", "take");  
+		req.setHeader("mq", mq); 
+		req.setHeader("channel", channel); 
 		
 		client.invoke(req, res->{
 			System.out.println(res);

@@ -11,7 +11,7 @@ import com.alibaba.fastjson.JSON;
 
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.Path;
+import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http; 
 
@@ -161,18 +161,18 @@ public class InterfaceExampleImpl implements InterfaceExample{
 	public Message html() {
 		Message res = new Message();
 		res.setStatus(200);
-		res.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
+		res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 		res.setBody("html" + System.currentTimeMillis());
 		return res;
 	} 
 	
-	@Path("/test")
+	@RequestMapping("/test")
 	public Message req(Message req) {
 		System.out.println(JSON.toJSONString(req, true));
 		
 		Message res = new Message();
 		res.setStatus(200);
-		res.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+		res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 		res.setBody("<h1>request injected</h1>");
 		return res;
 	}

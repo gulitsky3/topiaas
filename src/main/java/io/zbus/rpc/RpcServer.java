@@ -2,12 +2,6 @@ package io.zbus.rpc;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.netty.handler.ssl.SslContext;
 import io.zbus.rpc.server.HttpRpcServer;
@@ -16,9 +10,7 @@ import io.zbus.transport.IoAdaptor;
 import io.zbus.transport.Ssl; 
  
 
-public class RpcServer implements Closeable {  
-	private static final Logger log = LoggerFactory.getLogger(RpcServer.class);
-	
+public class RpcServer implements Closeable {   
 	private RpcProcessor processor;   
 	private RpcStartInterceptor onStart;
 	
@@ -40,7 +32,19 @@ public class RpcServer implements Closeable {
 	private MqRpcServer mqRpcServer;
 	
 	public RpcServer() {
-		this.processor = new RpcProcessor(); 
+		
+	}
+	public RpcServer(RpcProcessor processor) {
+		this.processor = processor;
+	}
+	
+	public RpcServer setProcessor(RpcProcessor processor) {
+		this.processor = processor;
+		return this;
+	}
+	
+	public RpcProcessor getProcessor() {
+		return this.processor;
 	}
 	
 	public RpcServer setPort(Integer port){ 
@@ -92,40 +96,7 @@ public class RpcServer implements Closeable {
 		this.keyFile = keyFile;
 		return this;
 	}  
-	  
-	public RpcServer setStackTraceEnabled(boolean stackTraceEnabled) {
-		this.processor.setStackTraceEnabled(stackTraceEnabled);
-		return this;
-	} 
-	
-	public RpcServer setMethodPageEnabled(boolean methodPageEnabled) {
-		this.processor.setMethodPageEnabled(methodPageEnabled);
-		return this;
-	}  
-	
-	public RpcServer setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
-		this.processor.setMethodPageAuthEnabled(methodPageAuthEnabled);
-		return this;
-	}
-	
-	public RpcServer setMethodPageModule(String monitorModuleName) {
-		this.processor.setMethodPageModule(monitorModuleName);
-		return this;
-	}  
-	
-	
-	public void setBeforeFilter(RpcFilter beforeFilter) {
-		this.processor.setBeforeFilter(beforeFilter);
-	}
-
-	public void setAfterFilter(RpcFilter afterFilter) {
-		this.processor.setAfterFilter(afterFilter);
-	}
-
-	public void setAuthFilter(RpcFilter authFilter) {
-		this.processor.setAuthFilter(authFilter);
-	} 
-	
+	   
 	public IoAdaptor getHttpRpcServerAdaptor() {
 		if(httpRpcServer == null) return null;
 		return httpRpcServer.getHttpRpcAdaptor();
@@ -137,19 +108,12 @@ public class RpcServer implements Closeable {
 
 	public void setOnStart(RpcStartInterceptor onStart) {
 		this.onStart = onStart;
-	}
-
-	private void validate(){ 
-		
 	} 
-	
-	public RpcProcessor processor() {
-		return this.processor;
-	}
 	 
-	public RpcServer start() throws Exception{
-		validate();   
-		
+	public RpcServer start() throws Exception{ 
+		if(this.processor == null) {
+			this.processor = new RpcProcessor();
+		}
 		if(onStart != null) {
 			onStart.onStart(processor);
 		} 
@@ -165,7 +129,7 @@ public class RpcServer implements Closeable {
 		} 
 		
 		if(mqServerAddress != null && mq != null) { 
-			this.processor.setDocUrlRoot("/"+this.mq);
+			this.processor.setDocUrlPrefix("/"+this.mq);
 			
 			this.mqRpcServer = new MqRpcServer(this.processor);
 			mqRpcServer.setAddress(mqServerAddress);
@@ -192,55 +156,7 @@ public class RpcServer implements Closeable {
 		}
 		
 		return this;
-	}   
-	  
-	
-	public RpcServer addModule(String module, Class<?> service){
-		try {
-			Object obj = service.newInstance();
-			processor.addModule(module, obj);
-		} catch (InstantiationException | IllegalAccessException e) {
-			log.error(e.getMessage(),e);
-		} 
-		return this;
-	}
-	
-	public RpcServer addModule(String module, Object service){
-		processor.addModule(module, service);
-		return this;
-	}
-	 
-	
-	public RpcServer addModule(String module, List<Object> services){
-		for(Object svc : services) {
-			processor.addModule(module, svc);
-		}
-		return this;
-	}  
-	
-	
-	@SuppressWarnings("unchecked")
-	public void setModuleTable(Map<String, Object> instances){
-		if(instances == null) return;
-		for(Entry<String, Object> e : instances.entrySet()){
-			Object svc = e.getValue();
-			if(svc instanceof List) {
-				addModule(e.getKey(), (List<Object>)svc); 
-			} else {
-				addModule(e.getKey(), svc);
-			}
-		}
-	}
-	
-	public RpcServer addMethod(RpcMethod spec, MethodInvoker genericInvocation){
-		processor.addMethod(spec, genericInvocation);
-		return this;
-	}   
-	
-	public RpcServer removeMethod(String module, String method){
-		processor.removeMethod(module, method);
-		return this;
-	}  
+	}     
 	
 	@Override
 	public void close() throws IOException {  

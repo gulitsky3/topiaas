@@ -108,7 +108,7 @@ public abstract class AbastractClient implements Closeable {
 		String id = (String) req.getHeader(Message.ID);
 		if (id == null) {
 			id = StrKit.uuid();
-			req.addHeader(Message.ID, id);
+			req.setHeader(Message.ID, id);
 		}
 		if (authEnabled) {
 			if (apiKey == null) {

@@ -23,9 +23,9 @@ public class Pub {
 		
 		//1) Create MQ if necessary
 		Message req = new Message();
-		req.addHeader("cmd", "create");  //Create
-		req.addHeader("mq", mq); 
-		req.addHeader("mqType", mqType); //disk|memory|db
+		req.setHeader("cmd", "create");  //Create
+		req.setHeader("mq", mq); 
+		req.setHeader("mqType", mqType); //disk|memory|db
 		
 		client.invoke(req);
 		
@@ -33,8 +33,8 @@ public class Pub {
 		for (int i = 0; i < 100000; i++) {   
 			//2) Publish Message
 			Message msg = new Message();
-			msg.addHeader("cmd", "pub");  //Publish
-			msg.addHeader("mq", mq);
+			msg.setHeader("cmd", "pub");  //Publish
+			msg.setHeader("mq", mq);
 			msg.setBody(i);    //set business data in body
 			
 			client.invoke(msg, res->{ //async call
