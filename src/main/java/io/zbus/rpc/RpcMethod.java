@@ -1,5 +1,6 @@
 package io.zbus.rpc;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,8 @@ public class RpcMethod {
 	public String urlPath;  // java method's url path 
 	public String method;   // java method 
 	public List<MethodParam> params = new ArrayList<>(); //param list of (type,name)
-	public String returnType;  
+	public String returnType;
+	public String genericReturnType;
 	@JSONField(serialize = false)
 	public boolean docEnabled = true;
 	@JSONField(serialize = false)
@@ -56,9 +58,14 @@ public class RpcMethod {
 	public void setReturnType(Class<?> returnType) {
 		this.returnType = returnType.getName();
 	} 
-	  
-	
-	
+
+	public void setGenericReturnType(String genericReturnType) {
+		this.genericReturnType = genericReturnType;
+	}
+	public void setGenericReturnType(Type genericReturnType) {
+		this.setGenericReturnType(genericReturnType.getTypeName());
+	}
+
 	public RpcMethod() {
 		
 	}

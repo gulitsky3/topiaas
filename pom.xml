@@ -25,6 +25,10 @@
 			<name>rushmore</name>
 			<email>44194462@qq.com</email>
 		</developer>
+		<developer>
+			<name>laiweiwei</name>
+			<email>l.weiwei@163.com</email>
+		</developer>
 	</developers>
 
 	<scm>
@@ -192,7 +196,7 @@
 								<goals>
 									<goal>jar</goal>
 								</goals>
-								<configuration> <!-- add this to disable checking -->
+								<configuration>
 									<additionalparam>-Xdoclint:none</additionalparam>
 								</configuration>
 							</execution>

@@ -130,6 +130,7 @@ public class RpcProcessor {
 				info.urlPath = urlPath;
 				info.method = methodName; 
 				info.docEnabled = enableDoc;
+				info.setGenericReturnType(m.getGenericReturnType());
 				info.setReturnType(m.getReturnType());
 				
 				Route p = m.getAnnotation(Route.class); 
