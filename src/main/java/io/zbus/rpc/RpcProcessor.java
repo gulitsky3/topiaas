@@ -824,7 +824,7 @@ public class RpcProcessor {
 		try {    
 			invoke0(req, response);
 		} catch (Throwable e) {  
-			logger.info(e.getMessage(), e); //no need to print
+			//logger.info(e.getMessage(), e); //no need to print
 			Throwable t = e;
 			if(t instanceof InvocationTargetException) {
 				t  = ((InvocationTargetException)e).getTargetException();

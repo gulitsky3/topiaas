@@ -35,6 +35,7 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.annotation.JSONField;
 
@@ -108,6 +109,8 @@ public class Message {
 		this.body = msg.body; 
 		this.bodyAsRawString = msg.bodyAsRawString;
 		this.pathParams = msg.pathParams;
+		this.serverPort = msg.serverPort;
+		this.pathMatched = msg.pathMatched;
 	}  
 	
 	public String getUrl(){
@@ -592,14 +595,24 @@ public class Message {
 			if (fd.files != null) {
 				bodyParams.putAll(fd.files);
 			}
+			body = bodyParams;
 		} else {// Body JSONObject
 			try {
-				JSONObject bodyObj = JsonKit.convert(body, JSONObject.class);
-				if (bodyObj != null) {
-					bodyParams.putAll(bodyObj);
+				JSONObject bodyMap = JsonKit.convert(body, JSONObject.class);
+				if (bodyMap != null) {
+					bodyParams.putAll(bodyMap);
+					body = bodyMap;
 				}
 			} catch (Throwable e) {
 				// ignore
+				try {
+					JSONArray bodyList = JsonKit.convert(body, JSONArray.class);
+					if (bodyList != null) {
+						body = bodyList;
+					}
+				} catch (Throwable e2) {
+					// ignore
+				}
 			}
 		}
 		// Url(QueryString、PathParam)
@@ -617,9 +630,11 @@ public class Message {
 		// params 包括以下这些（相同参数名的时候，后面可以覆盖前面）
 		if (headerParams != null)
 			params.putAll(headerParams);// Headers
-		if (bodyParams != null) {
-			params.putAll(bodyParams);// Body
-			params.put("body", bodyParams);
+		if (bodyParams != null && !bodyParams.isEmpty()) {
+			params.putAll(bodyParams);// Body Map
+		}
+		if (body != null) {
+			params.put("body", body);// Body Object ( Map, List, String, etc. )
 		}
 		if (queryParams != null)
 			params.putAll(queryParams);// Url QueryString
