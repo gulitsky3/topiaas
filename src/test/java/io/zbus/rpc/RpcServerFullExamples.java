@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.zbus.kit.FileKit;
+import io.zbus.rpc.annotation.Param;
 import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
@@ -36,6 +37,13 @@ public class RpcServerFullExamples {
 		
 		return res;
 	}  
+	
+	public Map<String, Object> p(@Param("name") String name, @Param("age")int age) {
+		Map<String, Object> value = new HashMap<>();
+		value.put("key1", name);
+		value.put("key2", age);
+		return value;
+	} 
 	
 	
 	@RequestMapping("/showUpload")

@@ -438,7 +438,8 @@ public class RpcProcessor {
 					String value = target.queryMap.get(mp.name);
 					if(value != null) { 
 						invokeParams[i] = convert(value, paramType);    
-					}
+						continue;
+					} 
 				}
 			}
 			
