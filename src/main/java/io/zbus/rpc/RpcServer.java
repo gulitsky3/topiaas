@@ -32,7 +32,7 @@ public class RpcServer implements Closeable {
 	private MqRpcServer mqRpcServer;
 	
 	public RpcServer() {
-		
+		this.processor = new RpcProcessor();
 	}
 	public RpcServer(RpcProcessor processor) {
 		this.processor = processor;
