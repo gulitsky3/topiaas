@@ -258,11 +258,17 @@ public class Http {
 		public Map<String, Object> attributes = new HashMap<String, Object>();
 		public Map<String, List<FileUpload>> files = new HashMap<String, List<FileUpload>>();
 		
+		@SuppressWarnings("unchecked")
 		public void addAttribute(String key, Object value) {
-			Object exists = attributes.get(key);
+			Object exists = attributes.get(key); 
 			if(exists != null) {
-				List<Object> values = new ArrayList<>();
-				values.add(exists);
+				List<Object> values;
+				if(exists instanceof List) {
+					values = (List<Object>)exists;
+				} else{
+					values = new ArrayList<>();
+					values.add(exists);
+				} 
 				values.add(value);
 				value = values;
 			}
