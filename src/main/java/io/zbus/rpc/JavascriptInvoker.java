@@ -74,11 +74,20 @@ public class JavascriptInvoker {
 			res.setBody("Missing function path");
 			return res;
 		}    
+		if(info.pathList.size() < 2) {
+			Message res = new Message();
+			res.setStatus(400);
+			res.setBody("Missing function name");
+			return res;
+		}
 		
+		String method = info.pathList.get(info.pathList.size()-1); 
+		int idx = urlFile.lastIndexOf('/');
+		urlFile = urlFile.substring(0, idx);
 		if(!urlFile.endsWith(".js")) {
 			urlFile += ".js";
 		}
-		File fullPath = new File(absoluteBasePath, urlFile);
+		File fullPath = new File(absoluteBasePath, urlFile); 
 		String file = fullPath.getPath();  
 		String js = null;
 		try {
@@ -92,7 +101,7 @@ public class JavascriptInvoker {
 		
 		engine.eval(js);
 		Invocable inv = (Invocable) engine; 
-		Object res = inv.invokeFunction("main", InvocationContext.getRequest(),
+		Object res = inv.invokeFunction(method, InvocationContext.getRequest(),
 				InvocationContext.getResponse(), context);
 		return JsKit.convert(res);
 	}
