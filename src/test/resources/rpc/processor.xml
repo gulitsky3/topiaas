@@ -24,7 +24,7 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	<bean id="example" class="io.zbus.rpc.biz.InterfaceExampleImpl"/>   
 	<bean id="static" class="io.zbus.rpc.StaticResource" scope="singleton">
     	<property name="basePath" value="static"/>
-    	<property name="urlPrefix" value="/static/"/> <!-- 相对稳健路径过滤掉这部分 -->
+    	<property name="urlPrefix" value="/static/"/> <!-- 相对路径过滤掉这部分 -->
     	<property name="cacheEnabled" value="false"/>
     </bean>
     
