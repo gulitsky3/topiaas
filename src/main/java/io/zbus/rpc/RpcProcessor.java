@@ -544,7 +544,7 @@ public class RpcProcessor {
         if (lastIdx < reqUrlInfo.pathList.size()) {
             String lastRouteUrlPart = routeUrlInfo.pathList.get(lastIdx);
             String lrup = lastRouteUrlPart;
-            if (lrup.startsWith("{") && lrup.endsWith(":**}")) {
+            if (lrup.startsWith("{") && lrup.endsWith(":**}") && lrup.length() > 5) {
                 urlSuffixParamName = lrup.substring(1, lrup.length() - 4);
                 // 截断url
                 urlSuffixParamValue = String.join("/", reqUrlInfo.pathList.subList(lastIdx, reqUrlInfo.pathList.size()));
