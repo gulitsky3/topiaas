@@ -19,7 +19,10 @@ public class StaticResource {
 	private File absoluteBasePath = new File(basePath).getAbsoluteFile();
 	 
 	public void setBasePath(String basePath) {
-		this.basePath = basePath;
+		if(basePath == null) {
+			basePath = ".";
+		}
+		this.basePath = basePath; 
 		File file = new File(this.basePath);
 		if(file.isAbsolute()) {
 			absoluteBasePath = file;
