@@ -41,6 +41,7 @@ public class RpcProcessor {
 	private String rootUrl = "/"; 
 	 
 	private boolean stackTraceEnabled = true;   
+	private boolean threadContextEnabled = true;
 	
 	private RpcFilter beforeFilter;
 	private RpcFilter afterFilter; 
@@ -508,7 +509,10 @@ public class RpcProcessor {
 	}
 	 
 	private void invoke(Message req, Message response) {   
-		try {     
+		try {    
+			if(threadContextEnabled) {
+				InvocationContext.set(req, response);
+			}
 			invoke0(req, response);
 		} catch (Throwable e) {  
 			logger.info(e.getMessage(), e); //no need to print
@@ -617,6 +621,10 @@ public class RpcProcessor {
 		this.exceptionFilter = exceptionFilter;
 	}
 
+	public void setThreadContextEnabled(boolean threadContextEnabled) {
+		this.threadContextEnabled = threadContextEnabled;
+	}
+	
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();
 		TreeMap<String, MethodInstance> methods = new TreeMap<>(this.urlPath2MethodTable);
