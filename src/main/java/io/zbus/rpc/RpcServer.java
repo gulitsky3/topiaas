@@ -19,8 +19,8 @@ import io.zbus.transport.IoAdaptor;
 import io.zbus.transport.Ssl; 
  
 
-public class RpcServerBootstrap implements Closeable {  
-	private static final Logger log = LoggerFactory.getLogger(RpcServerBootstrap.class);
+public class RpcServer implements Closeable {  
+	private static final Logger log = LoggerFactory.getLogger(RpcServer.class);
 	
 	private RpcProcessor processor;  
 	private boolean autoLoadService = false; 
@@ -43,81 +43,81 @@ public class RpcServerBootstrap implements Closeable {
 	private Integer mqHeartbeatInterval;
 	private MqRpcServer mqRpcServer;
 	
-	public RpcServerBootstrap() {
+	public RpcServer() {
 		this.processor = new RpcProcessor(); 
 	}
 	
-	public RpcServerBootstrap setPort(Integer port){ 
+	public RpcServer setPort(Integer port){ 
 		this.port = port;
 		return this;
 	} 
 	 
-	public RpcServerBootstrap setHost(String host){ 
+	public RpcServer setHost(String host){ 
 		this.host = host;
 		return this;
 	}    
 	
-	public RpcServerBootstrap setMq(String mq){ 
+	public RpcServer setMq(String mq){ 
 		this.mq = mq;
 		return this;
 	}    
 	
-	public RpcServerBootstrap setMqType(String mqType){ 
+	public RpcServer setMqType(String mqType){ 
 		this.mqType = mqType;
 		return this;
 	}    
 	
-	public RpcServerBootstrap setMqClientCount(Integer count){ 
+	public RpcServer setMqClientCount(Integer count){ 
 		this.mqClientCount = count;
 		return this;
 	}    
 	
-	public RpcServerBootstrap setMqHeartbeatInterval(Integer mqHeartbeatInterval) {
+	public RpcServer setMqHeartbeatInterval(Integer mqHeartbeatInterval) {
 		this.mqHeartbeatInterval = mqHeartbeatInterval;
 		return this;
 	}
 	
-	public RpcServerBootstrap setChannel(String channel) {
+	public RpcServer setChannel(String channel) {
 		this.channel = channel;
 		return this;
 	}
 	
-	public RpcServerBootstrap setAddress(String address){ 
+	public RpcServer setAddress(String address){ 
 		this.mqServerAddress = address;
 		return this;
 	} 
 	
-	public RpcServerBootstrap setCertFile(String certFile){ 
+	public RpcServer setCertFile(String certFile){ 
 		this.certFile = certFile; 
 		return this;
 	}  
 	
-	public RpcServerBootstrap setKeyFile(String keyFile){ 
+	public RpcServer setKeyFile(String keyFile){ 
 		this.keyFile = keyFile;
 		return this;
 	}  
 	 
-	public RpcServerBootstrap setAutoLoadService(boolean autoLoadService) {
+	public RpcServer setAutoLoadService(boolean autoLoadService) {
 		this.autoLoadService = autoLoadService;
 		return this;
 	}  
 	
-	public RpcServerBootstrap setStackTraceEnabled(boolean stackTraceEnabled) {
+	public RpcServer setStackTraceEnabled(boolean stackTraceEnabled) {
 		this.processor.setStackTraceEnabled(stackTraceEnabled);
 		return this;
 	} 
 	
-	public RpcServerBootstrap setMethodPageEnabled(boolean methodPageEnabled) {
+	public RpcServer setMethodPageEnabled(boolean methodPageEnabled) {
 		this.processor.setMethodPageEnabled(methodPageEnabled);
 		return this;
 	}  
 	
-	public RpcServerBootstrap setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
+	public RpcServer setMethodPageAuthEnabled(boolean methodPageAuthEnabled) {
 		this.processor.setMethodPageAuthEnabled(methodPageAuthEnabled);
 		return this;
 	}
 	
-	public RpcServerBootstrap setMethodPageModule(String monitorModuleName) {
+	public RpcServer setMethodPageModule(String monitorModuleName) {
 		this.processor.setMethodPageModule(monitorModuleName);
 		return this;
 	}  
@@ -167,7 +167,7 @@ public class RpcServerBootstrap implements Closeable {
 		return this.processor;
 	}
 	 
-	public RpcServerBootstrap start() throws Exception{
+	public RpcServer start() throws Exception{
 		validate();  
 		
 		if(autoLoadService){
@@ -218,12 +218,12 @@ public class RpcServerBootstrap implements Closeable {
 		return this;
 	}   
 	 
-	public RpcServerBootstrap addModule(Object service){
+	public RpcServer addModule(Object service){
 		processor.addModule(service);
 		return this;
 	}
 	
-	public RpcServerBootstrap addModule(String module, Class<?> service){
+	public RpcServer addModule(String module, Class<?> service){
 		try {
 			Object obj = service.newInstance();
 			processor.addModule(module, obj);
@@ -233,19 +233,19 @@ public class RpcServerBootstrap implements Closeable {
 		return this;
 	}
 	
-	public RpcServerBootstrap addModule(String module, Object service){
+	public RpcServer addModule(String module, Object service){
 		processor.addModule(module, service);
 		return this;
 	}
 	
-	public RpcServerBootstrap addModule(List<Object> services){
+	public RpcServer addModule(List<Object> services){
 		for(Object svc : services) {
 			processor.addModule(svc);
 		}
 		return this;
 	}
 	
-	public RpcServerBootstrap addModule(String module, List<Object> services){
+	public RpcServer addModule(String module, List<Object> services){
 		for(Object svc : services) {
 			processor.addModule(module, svc);
 		}
@@ -266,12 +266,12 @@ public class RpcServerBootstrap implements Closeable {
 		}
 	}
 	
-	public RpcServerBootstrap addMethod(RpcMethod spec, MethodInvoker genericInvocation){
+	public RpcServer addMethod(RpcMethod spec, MethodInvoker genericInvocation){
 		processor.addMethod(spec, genericInvocation);
 		return this;
 	}  
 	
-	public RpcServerBootstrap removeMethod(String module, String method){
+	public RpcServer removeMethod(String module, String method){
 		processor.removeMethod(module, method);
 		return this;
 	}  

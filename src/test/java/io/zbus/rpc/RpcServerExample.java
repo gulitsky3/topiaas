@@ -8,7 +8,7 @@ public class RpcServerExample {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {
-		RpcServerBootstrap b = new RpcServerBootstrap(); 
+		RpcServer b = new RpcServer(); 
 		
 		FileService resource = new FileService();
 		//resource.setBasePath("");

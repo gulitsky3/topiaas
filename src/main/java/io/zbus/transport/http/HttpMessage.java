@@ -58,9 +58,8 @@ public class HttpMessage {
 	
 	public static final String REMOTE_ADDR      = "remote-addr";
 	public static final String CONTENT_LENGTH   = "content-length";
-	public static final String CONTENT_TYPE     = "content-type";    
-	public static final String CONTENT_TYPE_BINARY   = "application/octet-stream"; 
-	public static final String CONTENT_TYPE_JSON     = "application/json"; 
+	public static final String CONTENT_TYPE     = "content-type";     
+	public static final String CONTENT_TYPE_JSON     = "application/json; charset=utf8"; 
 	public static final String CONTENT_TYPE_UPLOAD   = "multipart/form-data";
 	 
 	protected Integer status; //null: request, otherwise: response

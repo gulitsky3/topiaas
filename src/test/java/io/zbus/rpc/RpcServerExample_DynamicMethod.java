@@ -8,7 +8,7 @@ public class RpcServerExample_DynamicMethod {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {
-		RpcServerBootstrap b = new RpcServerBootstrap(); 
+		RpcServer b = new RpcServer(); 
 		b.setStackTraceEnabled(false); 
 		
 		GenericService service = new GenericService();

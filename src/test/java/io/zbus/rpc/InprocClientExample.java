@@ -11,7 +11,7 @@ public class InprocClientExample {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {
-		RpcServerBootstrap b = new RpcServerBootstrap();   
+		RpcServer b = new RpcServer();   
 		b.addModule("example", new InterfaceExampleImpl());  
 		b.start(); 
 		
