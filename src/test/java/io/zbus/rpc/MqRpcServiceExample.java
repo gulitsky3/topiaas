@@ -14,7 +14,7 @@ public class MqRpcServiceExample {
 		RpcServer server = new RpcServer();
 		server.setProcessor(p);
 		//connect to zbus
-		server.setAddress("localhost:15555");
+		server.setAddress("111.230.136.74:15555");
 		server.setMq("MyRpc");
 		server.start();
 	} 

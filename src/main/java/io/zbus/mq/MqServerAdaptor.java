@@ -74,6 +74,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 	@Override
 	public void onMessage(Object msg, Session sess) throws IOException {
 		Message req = (Message)msg;  
+		logger.info("" + req);
 		if (req == null) {
 			reply(req, 400, "json format required", sess); 
 			return;
