@@ -4,9 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.zbus.kit.FileKit;
-import io.zbus.mq.MqServer;
 import io.zbus.rpc.annotation.Param;
-import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.annotation.Route;
 import io.zbus.rpc.biz.InterfaceExampleImpl;
 import io.zbus.transport.Message;
@@ -47,8 +45,7 @@ public class RpcServerFullExamples {
 		value.put("key2", age);
 		return value;
 	} 
-	
-	@RequestMapping("null")
+	 
 	public Map<String, Object> nullValue() {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key1", null);
@@ -114,9 +111,9 @@ public class RpcServerFullExamples {
 		rpcServer.setRpcProcessor(p); 
 		p.setDocFile("rpc.html");
 		
-		//rpcServer.setMqServerAddress("localhost:15555");
-		//rpcServer.setMq("/");  
-		rpcServer.setMqServer(new MqServer(15555));
+		rpcServer.setMqServerAddress("localhost:15555");
+		rpcServer.setMq("/");  
+		//rpcServer.setMqServer(new MqServer(15555));
 		rpcServer.start();  
 	}  
 }

@@ -14,7 +14,7 @@ public class Pub {
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {   
-		MqClient client = new MqClient("localhost:15555"); 
+		MqClient client = new MqClient("zbus.io"); 
 		
 		//MqClient client = buildInproClient();
 		
@@ -42,6 +42,7 @@ public class Pub {
 					System.out.println(res); 
 				}
 			});
+			Thread.sleep(1000);
 		}  
 	}
 }
