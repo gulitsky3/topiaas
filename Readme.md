@@ -16,7 +16,7 @@ zbus carefully designed on its protocol and components to embrace KISS(Keep It S
 ## Features
 - Fast MQ of disk|memory|db, capable of unicast, multicast and broadcast messaging models
 - Easy RPC support out of box 
-- HTTP/WebSocket/InProc + JSON simple format
+- HTTP/WebSocket/InProc + JSON simple format, multiple languages support
 - SSL + API Auth secured
 - Extremely light-weighted 
  
