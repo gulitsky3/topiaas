@@ -7,11 +7,11 @@ import io.zbus.transport.Message;
 public class Sub {  
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception { 
-		MqClient client = new MqClient("zbus.io");    
+		MqClient client = new MqClient("wss://zbus.io");    
 		
 		client.heartbeat(30, TimeUnit.SECONDS);
 		
-		final String mq = "MyMQ", channel = "MyChannel2", mqType = Protocol.MEMORY;
+		final String mq = "MyMQ", channel = "MyChannel", mqType = Protocol.MEMORY;
 		
 		client.addMqHandler(mq, channel, data->{  
 			System.out.println(data);  

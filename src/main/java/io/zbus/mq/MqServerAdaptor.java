@@ -19,6 +19,7 @@ import io.zbus.kit.StrKit;
 import io.zbus.mq.commands.CommandHandler;
 import io.zbus.mq.commands.CreateHandler;
 import io.zbus.mq.commands.MsgKit;
+import io.zbus.mq.commands.NotifyHandler;
 import io.zbus.mq.commands.PubHandler;
 import io.zbus.mq.commands.QueryHandler;
 import io.zbus.mq.commands.RemoveHandler;
@@ -46,6 +47,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	protected SubscriptionManager subscriptionManager;
 	protected MessageDispatcher messageDispatcher;
 	protected MqManager mqManager; 
+	protected NotifyManager notifyManager = new NotifyManager();
 	protected RequestAuth requestAuth; 
 	protected Map<String, CommandHandler> commandTable = new HashMap<>(); 
 	
@@ -77,6 +79,9 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		commandTable.put(Protocol.CREATE, new CreateHandler(mqManager)); 
 		commandTable.put(Protocol.REMOVE, new RemoveHandler(mqManager)); 
 		commandTable.put(Protocol.QUERY, new QueryHandler(mqManager));  
+		commandTable.put(Protocol.ON_NOTIFY, new NotifyHandler(notifyManager));  
+		commandTable.put(Protocol.BIND, new NotifyHandler(notifyManager)); 
+		
 		commandTable.put(Protocol.PING, (req, sess)->{});  
 	} 
 	
@@ -213,8 +218,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		if (cmd == null) {
 			MsgKit.reply(req, 400, "cmd key required", sess); 
 			return;
-		} 
-		cmd = cmd.toLowerCase();  
+		}  
 		
 		CommandHandler handler = commandTable.get(cmd);
 		if(handler == null) {

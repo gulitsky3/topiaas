@@ -1,0 +1,99 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"> 
+ 	<bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+ 	
+ 	<import resource="mysql.xml"/>  
+ 	
+	<bean id="sqlSessionFactory"  class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:/rpc/mybatis.xml" />
+		<property name="mapperLocations">
+			<list>
+				<value>classpath*:/rpc/mapper/*.xml</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">  
+	  <constructor-arg ref="sqlSessionFactory"/>
+	</bean>    
+	
+	<bean id="db" class="io.zbus.rpc.biz.DbExample"/> 
+	<bean id="example" class="io.zbus.rpc.biz.InterfaceExampleImpl"/>   
+	<bean id="userService" class="io.zbus.rpc.auth.UserService.DefaultUserService"/>  
+	
+	
+	<bean id="static" class="io.zbus.rpc.StaticResource" scope="singleton">
+    	<property name="basePath" value="static"/>
+    	<property name="urlPrefix" value="/static/"/> <!-- 相对路径过滤掉这部分 -->
+    	<property name="cacheEnabled" value="false"/>
+    </bean>
+    
+	<!-- Filter Config -->
+	<bean class="io.zbus.rpc.filter.GlobalBeforeFilter"/>  
+	<bean class="io.zbus.rpc.filter.GlobalExceptionFilter"/>  <!-- global filter can not be excluded --> 
+	
+	<bean id="adminFilter" class="io.zbus.rpc.filter.AdminLoginFilter"/>  
+	<bean id="loggerFilter" class="io.zbus.rpc.filter.LoggerFilter"/>     
+	
+	<bean id="loginFilter" class="io.zbus.rpc.auth.AuthFilter">
+		<property name="userService" ref="userService"/>
+		<property name="secretKey" value="461277322-943d-4b2f-b9b6-3f860d746ffd"/>
+	</bean>  
+	
+	<bean id="loginApi" class="io.zbus.rpc.auth.LoginApi">
+		<property name="userService" ref="userService"/>
+		<property name="expireTimeInSeconds" value="-1"/>
+		<property name="secretKey" value="461277322-943d-4b2f-b9b6-3f860d746ffd"/> <!-- should be the same secretKey as auth filter's -->
+	</bean>  
+	
+	
+	<bean id="rpcProcessor" class="io.zbus.rpc.RpcProcessor" >
+		<property name="docUrl" value="/doc"/>  
+		
+		<property name="moduleTable">
+			<map> 
+                <entry key="/static" value-ref="static"/>    
+                <entry key="/example">
+                	<list>
+                        <ref bean="example"/> 
+                    </list>
+                </entry> 
+                <entry key="/db" value-ref="db"/> 
+                
+                <entry key="/auth" value-ref="loginApi"/> 
+            </map>
+        </property>
+        
+        <!-- module/method -->
+        <property name="urlExcludedSet">
+			<set> 
+				<value>/example/echo</value> 
+				<value>/example/abc/*</value> 
+            </set>
+        </property>
+        
+        <property name="urlFilterTable">
+			<map>  
+                <entry key="/db/*"> <!-- support pattern(*) and full match -->
+                	<list>
+                        <ref bean="loginFilter"/> 
+                    </list>
+                </entry> 
+            </map>
+        </property>
+        
+        <property name="urlExcludedFilterTable">
+			<map>  
+                <entry key="/static/*">
+                	<list>
+                        <ref bean="loginFilter"/> 
+                    </list>
+                </entry> 
+            </map>
+        </property> 
+    </bean> 
+    
+</beans>

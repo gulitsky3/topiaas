@@ -25,12 +25,14 @@ package io.zbus.transport;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.annotation.JSONField;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
@@ -55,12 +57,14 @@ public class Message {
 	
 	protected Integer status; //null: request, otherwise: response  
 	
-	protected TreeMap<String, String> headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+	protected TreeMap<String, Object> headers = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
 	protected Object body;  
 	
+	@JSONField(serialize=false)
 	private Object context;
 	
 	//URL parser helper
+	@JSONField(serialize=false)
 	private UrlInfo urlInfo;
 	
 	public Message() {
@@ -105,43 +109,62 @@ public class Message {
 		this.method = method;
 	} 
 	
-	public Map<String,String> getHeaders() {
+	public Map<String, Object> getHeaders() {
 		return headers;
 	} 
 	
-	public void setHeaders(Map<String, String> headers) {
+	public void setHeaders(Map<String, Object> headers) {
 		this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); //copy headers 
 		this.headers.putAll(headers); 
 	} 
 	
 	public String getHeader(String key){
-		return this.headers.get(key);
+		Object value = this.headers.get(key);
+		if(value == null) return null;
+		if(value instanceof String) return (String)value;  
+		
+		return value.toString();
 	}
 	
+	public Object getHeaderObject(String key){
+		return this.headers.get(key);
+	}
+	 
 	public Integer getHeaderInt(String key){
-		String value = this.headers.get(key);
+		Object value = getHeaderObject(key);
 		if(value == null) return null;
-		return Integer.valueOf(value);
-	} 
+		if(value instanceof Integer) return (Integer) value;
+		return Integer.valueOf(value.toString());
+	}  
 	
 	public Long getHeaderLong(String key){
-		String value = this.headers.get(key);
+		Object value = getHeaderObject(key);
 		if(value == null) return null;
-		return Long.valueOf(value);
+		if(value instanceof Long) return (Long) value;
+		return Long.valueOf(value.toString());
 	} 
 	
 	public Boolean getHeaderBool(String key){
-		String value = this.headers.get(key);
+		Object value = getHeaderObject(key);
 		if(value == null) return null;
-		return Boolean.valueOf(value);
+		if(value instanceof Boolean) return (Boolean) value;
+		return Boolean.valueOf(value.toString());
 	} 
 	
 	public void setHeader(String key, Object value){
 		if(value == null) return;
-		this.headers.put(key, value.toString());
+		this.headers.put(key, value);
 	}  
 	
 	public String removeHeader(String key){
+		Object exists = removeHeaderObject(key);
+		if(exists == null) return null; 
+		if(exists instanceof String) return (String)exists;
+		
+		return exists.toString();
+	}
+	
+	public Object removeHeaderObject(String key){
 		return this.headers.remove(key);
 	}
 	
@@ -167,6 +190,43 @@ public class Message {
 		return value;
 	}
 	
+	public String param(String key) {
+		return getParam(key);
+	}
+	
+	public List<String> paramArray(String key) {
+		return getParamArray(key);
+	}
+	
+	public String queryString() {
+		if(url == null) return null;
+		if(urlInfo == null) {
+			urlInfo = HttpKit.parseUrl(url);
+		}
+		return urlInfo.queryParamString;
+	}
+	
+	public Map<String, Object> cookies() {
+		String cookieString = getHeader("cookie");
+        Map<String, Object> ret = new HashMap<>();
+        if (StrKit.isEmpty(cookieString)) {
+            return ret;
+        } 
+        String[] cookies = cookieString.split(";"); 
+        for (String cookie : cookies) {
+            if (StrKit.isEmpty(cookie)) {
+                continue;
+            } 
+            int idx = cookie.indexOf("=");
+            String key = cookie.substring(0, idx);
+            String value = cookie.substring(idx+1);
+            if(key != null) key = key.trim();
+            if(value != null) value = value.trim();
+            ret.put(key, value); 
+        } 
+        return ret;
+    }
+	
 	public List<String> getParamArray(String key) {
 		if(url == null) return new ArrayList<>();
 		if(urlInfo == null) {
@@ -181,7 +241,7 @@ public class Message {
 		return JsonKit.convert(value, clazz);
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked") 
 	public <T> T getContext() {
 		return (T)context;
 	}

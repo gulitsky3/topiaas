@@ -185,6 +185,27 @@ public class InterfaceExampleImpl implements InterfaceExample{
 		return res;
 	}
 	
+	public Object testOverride(String data) {
+		return "testOverride(String data)" + data;
+	}
+	
+	public Object testOverride(Map<String, Object> data) {
+		return data;
+	}
+	
+	public Object testOverride(Object data) {
+		return "Object:" + data;
+	}
+	
+	public Object testOverride(int i, Map<String, Object> data) {
+		return "testOverride(int i, Map<String, Object> data)" + data;
+	}
+	
+	public Object testOverride() {
+		return "testOverride()";
+	}
+	
+	
 	public Object getContext(@Param(ctx=true) Map<String, Object> ctx) {
 		return ctx;
 	}
@@ -194,7 +215,7 @@ public class InterfaceExampleImpl implements InterfaceExample{
 	} 
 	
 	ScriptEngineManager factory = new ScriptEngineManager();
-	ScriptEngine engine = factory.getEngineByName("nashorn");
+	ScriptEngine engine = factory.getEngineByName("javascript");
 	@Override
 	public Object callJs() { 
 		try {  
@@ -233,6 +254,19 @@ public class InterfaceExampleImpl implements InterfaceExample{
 	public Object callJava() { 
 		hi();
 		return null;
+	}
+	 
+	public Message testCookie() { 
+		Message response = new Message();
+		List<String> cookies = new ArrayList<>(); 
+		cookies.add("token1=abc; path=/;");
+		cookies.add("token2=abc; path=/;");
+		
+		response.setHeader("Set-Cookie", cookies);
+		
+		response.setBody("check cookie mate!");
+		
+		return response;
 	}
 }
 

@@ -3,15 +3,8 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
 http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"> 
  	<bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
- 	
- 	<import resource="mysql.xml"/>  
- 	<import resource="spring-context.xml"/> 
-	
-	<bean id="static" class="io.zbus.rpc.StaticResource" scope="singleton">
-    	<property name="basePath" value="static"/>
-    	<property name="urlPrefix" value="/static/"/> <!-- 相对稳健路径过滤掉这部分 -->
-    	<property name="cacheEnabled" value="false"/>
-    </bean>
+ 	 
+ 	<import resource="spring-processor.xml"/>  
 	
 	<bean id="mqServer" class="io.zbus.mq.MqServer">
 		<constructor-arg value="rpc/zbus.xml"/>
@@ -19,7 +12,6 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	
 	<bean class="io.zbus.rpc.RpcServer"> 
 		<property name="mqServer" ref="mqServer"/>  <!-- embed RpcServer in MqServer --> 
-	</bean>  
-	
+	</bean>   
 	
 </beans>

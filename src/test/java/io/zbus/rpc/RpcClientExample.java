@@ -5,7 +5,7 @@ public class RpcClientExample {
 	public static void main(String[] args) throws Exception {  
 		RpcClient rpc = new RpcClient("localhost:15555");   
 		
-		TestCases.doTest(rpc, "");
+		TestCases.doTest(rpc, "/example");
 		
 		rpc.close();
 	}

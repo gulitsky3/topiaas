@@ -76,6 +76,7 @@ public class RpcServer implements Closeable {
 		if(runner == null) {
 			runner = Executors.newFixedThreadPool(poolSize);
 		} 
+		rpcProcessor.mount(); //make sure internal moduleTable mounted if no mount(module, object) called
 		if(this.mq != null) {
 			this.rpcProcessor.setRootUrl(HttpKit.joinPath("/", this.mq));
 			this.rpcProcessor.mountDoc();

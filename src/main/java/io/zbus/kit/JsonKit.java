@@ -119,6 +119,7 @@ public class JsonKit {
 	
 	private static final byte[] toJSONBytes(Object object, String charsetName,
 			SerializerFeature... features) {
+		object = JsKit.convert(object); //may work for javscript ScriptObjectMirror
 		
 		if(charsetName == null){
 			charsetName = DEFAULT_ENCODING;

@@ -19,13 +19,13 @@ public class CryptoKit {
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to sign message.", e);
 		}
-	} 
+	}   
 	
-	static char[] encodeHex(final byte[] data, final boolean toLowerCase) {
+	public static char[] encodeHex(final byte[] data, final boolean toLowerCase) {
         return encodeHex(data, toLowerCase ? DIGITS_LOWER : DIGITS_UPPER);
     } 
 	
-	static char[] encodeHex(final byte[] data, final char[] toDigits) {
+	public static char[] encodeHex(final byte[] data, final char[] toDigits) {
         final int l = data.length;
         final char[] out = new char[l << 1];
         // two characters form the hex value.

@@ -24,6 +24,10 @@ public interface Protocol {
 	public static final String QUERY  = "query";    //Query MQ/Channel 
 	public static final String PING   = "ping";     //Heartbeat ping
 	
+	//DMZ proxy
+	public static final String ON_NOTIFY  = "onNotify";     
+	public static final String BIND   = "bind";     
+	
 	//Parameter keys(for commands)
 	public static final String MQ             = "mq";  
 	public static final String CHANNEL        = "channel";  

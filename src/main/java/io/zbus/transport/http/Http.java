@@ -77,6 +77,14 @@ public class Http {
 		public Map<String, Object> attributes = new HashMap<String, Object>();
 		public Map<String, List<FileUpload>> files = new HashMap<String, List<FileUpload>>();
 		
+		public Map<String, Object> getAttributes() {
+			return attributes;
+		}
+		
+		public Map<String, List<FileUpload>> getFiles() {
+			return files;
+		}
+		
 		@SuppressWarnings("unchecked")
 		public void addAttribute(String key, Object value) {
 			Object exists = attributes.get(key); 

@@ -65,6 +65,7 @@ public class StrKit {
 	public static List<String> getArrayValue(String value, String key){
 		String delim = "[&]";  
 		List<String> valueArray = new ArrayList<>(); 
+		if(value == null) return valueArray;
 		
 		String[] kvs = value.split(delim);
 		for(String kv : kvs){

@@ -1,4 +1,4 @@
-package io.zbus.rpc.filer;
+package io.zbus.rpc.filter;
 
 import java.util.HashMap;
 import java.util.Map;
