@@ -10,6 +10,7 @@ public class RpcMethod {
 	public List<String> paramNames = new ArrayList<>();
 	public String returnType; 
 	public boolean authRequired;
+	public boolean docEnabled = true;
 	
 	public RpcMethod() {
 		

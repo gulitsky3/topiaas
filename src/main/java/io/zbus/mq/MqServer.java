@@ -4,27 +4,19 @@ package io.zbus.mq;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpServerCodec;
 import io.zbus.kit.ConfigKit;
-import io.zbus.transport.Server;
 import io.zbus.transport.Ssl;
-import io.zbus.transport.http.HttpWsServerCodec; 
+import io.zbus.transport.http.HttpWsServer; 
 
-public class MqServer extends Server {
+public class MqServer extends HttpWsServer {
 	private static final Logger logger = LoggerFactory.getLogger(MqServer.class); 
 	private MqServerAdaptor serverAdaptor; 
 	private final MqServerConfig config; 
 	
 	public MqServer(MqServerConfig config) { 
-		this.config = config;
-		this.maxSocketCount = config.maxSocketCount;
-		codec(p -> {
-			p.add(new HttpServerCodec());
-			p.add(new HttpObjectAggregator(config.packageSizeLimit));  
-			p.add(new HttpWsServerCodec());
-		});  
 		
+		this.config = config;
+		this.maxSocketCount = config.maxSocketCount; 
 		serverAdaptor = new MqServerAdaptor(this.config);
 		if(config.requestAuth != null) {
 			serverAdaptor.setRequestAuth(config.requestAuth);

@@ -81,7 +81,7 @@ public class RpcClient extends Client {
 			Message request = new Message();
 			request.addHeader(Protocol.MODULE, module);
 			request.addHeader(Protocol.METHOD, method.getName());  
-			request.addHeader(Protocol.ARGS, args);
+			request.addHeader(Protocol.PARAMS, args);
 			
 			Message resp = rpc.invoke(request);
 			return parseResult(resp, method.getReturnType());

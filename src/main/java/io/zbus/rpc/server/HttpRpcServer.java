@@ -11,8 +11,8 @@ import io.zbus.transport.http.HttpWsServer;
 public class HttpRpcServer extends HttpWsServer {
 	private HttpRpcServerAdaptor httpRpcAdaptor;
 
-	public HttpRpcServer(RpcProcessor processor) {
-		this.httpRpcAdaptor = new HttpRpcServerAdaptor(processor);
+	public HttpRpcServer(RpcProcessor processor) { 
+		this.httpRpcAdaptor = new HttpRpcServerAdaptor(processor); 
 	} 
 	
 	public HttpRpcServerAdaptor getHttpRpcAdaptor() {

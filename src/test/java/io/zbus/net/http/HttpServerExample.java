@@ -1,30 +1,35 @@
 package io.zbus.net.http;
 
+import java.io.IOException;
+
 import io.zbus.transport.Message;
 import io.zbus.transport.Server;
-import io.zbus.transport.http.Http;
+import io.zbus.transport.ServerAdaptor;
+import io.zbus.transport.Session;
 import io.zbus.transport.http.HttpWsServer;
-import io.zbus.transport.http.HttpWsServerAdaptor;
 
 public class HttpServerExample {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) { 
 		
-		HttpWsServerAdaptor adaptor = new HttpWsServerAdaptor();
+		ServerAdaptor adaptor = new ServerAdaptor() { 
+			@Override
+			public void onMessage(Object msg, Session sess) throws IOException { 
+				Message res = new Message();
+				res.setStatus(200);
+				
+				res.addHeader("id", res.getHeader("id")); 
+				res.addHeader("content-type", "text/plain; charset=utf8");
+				
+				res.setBody("中文"+System.currentTimeMillis());
+				
+				sess.write(res);  
+			}
+		};  
 		
-		adaptor.url("/", (msg, sess) -> {   
-			//System.out.println(JsonKit.toJSONString(msg));
-			Message res = new Message();
-			res.setStatus(200);
-			
-			res.addHeader(Message.ID, res.getHeader(Message.ID)); 
-			res.addHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
-			res.setBody("中文"+System.currentTimeMillis());
-			sess.write(res); 
-		});   
-		 
 		Server server = new HttpWsServer();   
 		server.start(80, adaptor);  
+		//server.start(8080, adaptor); //You may start 80 and 8080 together!
 	} 
 }

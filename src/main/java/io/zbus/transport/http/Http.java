@@ -23,13 +23,13 @@ import io.zbus.transport.Message;
 
 public class Http {
 	private static final Logger logger = LoggerFactory.getLogger(Http.class);   
-	public static final String URL   = "url";
-	public static final String STATUS   = "status";
-	public static final String BODY   = "body";
-	public static final String HEADERS   = "headers";
+	public static final String URL     = "url";
+	public static final String STATUS  = "status";
+	public static final String BODY    = "body";
+	public static final String HEADERS = "headers";
 	
-	public static final String CONTENT_LENGTH   = "content-length";
-	public static final String CONTENT_TYPE     = "content-type";     
+	public static final String CONTENT_LENGTH        = "content-length";
+	public static final String CONTENT_TYPE          = "content-type";     
 	public static final String CONTENT_TYPE_JSON     = "application/json; charset=utf8"; 
 	public static final String CONTENT_TYPE_UPLOAD   = "multipart/form-data";
 	
@@ -39,7 +39,7 @@ public class Http {
 	private static final byte[] PREFIX = "HTTP/1.1 ".getBytes();
 	private static final byte[] SUFFIX = " HTTP/1.1".getBytes();  
 	
-	public static byte[] toHttpBytes(Message msg){
+	public static byte[] toBytes(Message msg){
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
 			writeTo(msg, out);
@@ -49,23 +49,11 @@ public class Http {
 		return out.toByteArray(); 
 	}  
 	
-	public static String toHttpString(Message msg){
-		return new String(toHttpBytes(msg)); //TODO encoding
-	} 
+	public static String toString(Message msg){
+		return new String(toBytes(msg)); //TODO encoding
+	}  
 	
-	private static String charset(String value) {
-		String charset="utf-8";
-		String[] bb = value.split(";"); 
-		if(bb.length>1){
-			String[] bb2 = bb[1].trim().split("=");
-			if(bb2[0].trim().equalsIgnoreCase("charset")){
-				charset = bb2[1].trim();
-			} 
-		} 
-		return charset;
-	}
-	
-	public static byte[] httpBody(Message msg) {
+	public static byte[] body(Message msg) {
 		String contentType = msg.getHeader(CONTENT_TYPE);
 		byte[] body = new byte[0];
 		Object bodyObj = msg.getBody();
@@ -92,45 +80,7 @@ public class Http {
 		return body;
 	}
 	
-	private static void writeTo(Message msg, OutputStream out) throws IOException{
-		writeHttpLine(msg,out);
-		out.write(CLCR);
-		Map<String, String> headers = new HashMap<>(msg.getHeaders()); 
-		String contentType = headers.get(CONTENT_TYPE);
-		if(contentType == null) { 
-			contentType = "application/json; charset=utf8";
-			headers.put(CONTENT_TYPE, contentType); 
-		}
-		byte[] body = httpBody(msg); 
-		headers.put(CONTENT_LENGTH, body.length+"");
-		for(Entry<String, String> e : headers.entrySet()) { 
-			out.write(e.getKey().getBytes());
-			out.write(KV_SPLIT);
-			out.write(e.getValue().getBytes());
-			out.write(CLCR);
-		} 
-		out.write(CLCR);
-		if(body != null){
-			out.write(body);
-		}
-	}   
-	
-	@SuppressWarnings("unchecked")
-	public static Message fromMap(Map<String, Object> map) {
-		Message msg = new Message();
-		msg.setUrl((String)map.get(URL));
-		if(map.containsKey(STATUS)) {
-			msg.setStatus(Integer.valueOf(map.get(STATUS).toString()));
-		}
-		msg.setBody(map.get(BODY));
-		Map<String, String> headers = (Map<String, String>)map.get("headers");
-		for(Entry<String, String> e : headers.entrySet()) {
-			msg.addHeader(e.getKey(), e.getValue());
-		}
-		return msg;
-	}
-	
-	public static Message fromHttp(byte[] data){
+	public static Message parse(byte[] data){
 		int idx = findHeaderEnd(data);
 		if(idx == -1){
 			throw new IllegalArgumentException("Invalid input byte array");
@@ -154,7 +104,43 @@ public class Http {
 		return msg; 
 	}
 	
-	public static void decodeHeaders(Message msg, byte[] data, int offset, int size){
+	private static String charset(String value) {
+		String charset="utf-8";
+		String[] bb = value.split(";"); 
+		if(bb.length>1){
+			String[] bb2 = bb[1].trim().split("=");
+			if(bb2[0].trim().equalsIgnoreCase("charset")){
+				charset = bb2[1].trim();
+			} 
+		} 
+		return charset;
+	}
+	
+	private static void writeTo(Message msg, OutputStream out) throws IOException{
+		writeHttpLine(msg,out);
+		out.write(CLCR);
+		Map<String, String> headers = new HashMap<>(msg.getHeaders()); 
+		String contentType = headers.get(CONTENT_TYPE);
+		if(contentType == null) { 
+			contentType = "application/json; charset=utf8";
+			headers.put(CONTENT_TYPE, contentType); 
+		}
+		byte[] body = body(msg); 
+		headers.put(CONTENT_LENGTH, body.length+"");
+		for(Entry<String, String> e : headers.entrySet()) { 
+			out.write(e.getKey().getBytes());
+			out.write(KV_SPLIT);
+			out.write(e.getValue().getBytes());
+			out.write(CLCR);
+		} 
+		out.write(CLCR);
+		if(body != null){
+			out.write(body);
+		}
+	}     
+	
+	
+	private static void decodeHeaders(Message msg, byte[] data, int offset, int size){
 		ByteArrayInputStream in = new ByteArrayInputStream(data, offset, size);
 		decodeHeaders(msg, in);
 		if(in != null){

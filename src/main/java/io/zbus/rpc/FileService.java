@@ -40,7 +40,7 @@ public class FileService {
 	public Message file(Map<String, Object> request) {
 		Message res = new Message(); 
 		
-		Object[] params = (Object[])request.get(Protocol.ARGS);  
+		Object[] params = (Object[])request.get(Protocol.PARAMS);  
 		try {
 			String resource = "";
 			for(Object param : params) { 

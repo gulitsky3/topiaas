@@ -1,10 +1,14 @@
 package io.zbus.net.ssl;
 
+import java.io.IOException;
+
 import io.netty.handler.ssl.SslContext;
+import io.zbus.transport.Message;
 import io.zbus.transport.Server;
+import io.zbus.transport.ServerAdaptor;
+import io.zbus.transport.Session;
 import io.zbus.transport.Ssl;
-import io.zbus.transport.http.HttpWsServer;
-import io.zbus.transport.http.HttpWsServerAdaptor; 
+import io.zbus.transport.http.HttpWsServer; 
 
 public class SslServerExample {
 
@@ -16,11 +20,15 @@ public class SslServerExample {
 		Server server = new HttpWsServer(); 
 		server.setSslContext(context);
 		
-		HttpWsServerAdaptor adaptor = new HttpWsServerAdaptor();
-		adaptor.url("/", (msg, sess)->{
-			System.out.println(msg);
-		}); 
-		
+		ServerAdaptor adaptor = new ServerAdaptor() { 
+			@Override
+			public void onMessage(Object msg, Session sess) throws IOException { 
+				Message res = new Message();
+				res.setBody("<h1>hello world</h1>");  
+				
+				sess.write(res);
+			}
+		}; 
 		server.start(80, adaptor);  
 	} 
 }

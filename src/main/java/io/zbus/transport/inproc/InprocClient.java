@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 import io.zbus.transport.AbastractClient;
 import io.zbus.transport.IoAdaptor;
@@ -77,16 +76,11 @@ public class InprocClient extends AbastractClient implements Session {
 	@Override
 	public void write(Object msg) {  //Session received message  
 		try {
-			Message data = null;
-			if(msg instanceof Message) {
-				data = (Message)msg; 
-			} else if(msg instanceof byte[]) {
-				data = JsonKit.parseObject((byte[])msg, Message.class);
-			} else if(msg instanceof String) {
-				data = JsonKit.parseObject((String)msg, Message.class);
-			} else {
-				throw new IllegalArgumentException("type of msg not support: " + msg.getClass());
+			if(!(msg instanceof Message)) {
+				logger.error("Message type required");
+				return;
 			}
+			Message data = (Message)msg;  
 			if(onMessage != null) {
 				onMessage.handle(data);
 			} 
