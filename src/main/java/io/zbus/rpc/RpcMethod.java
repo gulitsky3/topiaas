@@ -36,4 +36,8 @@ public class RpcMethod {
 	public void setUrlPath(String urlPath) {
 		this.urlPath = HttpKit.joinPath(urlPath);
 	}
+	
+	public void setUrlPath(String module, String method) {
+		this.urlPath = HttpKit.joinPath(module, method);
+	}
 }
