@@ -32,7 +32,7 @@ public class HttpKit {
 	
 	public static class UrlInfo { 
 		public List<String> pathList = new ArrayList<String>();
-		public Map<String, String> queryParamMap = new HashMap<String, String>(); 
+		public Map<String, Object> queryParamMap = new HashMap<String, Object>(); 
 		
 		public String urlPath;
 		public String queryParamString; 
@@ -99,7 +99,7 @@ public class HttpKit {
     	}
     	
     	if(params != null){
-    		info.queryParamMap = StrKit.kvp(params, "&");
+    		info.queryParamMap = StrKit.keyValueWithArray(params, "&");
     	} 
 		return info;
 	}

@@ -7,7 +7,7 @@ import io.zbus.transport.Message;
 import io.zbus.transport.Session;
 
 public class BindHandler implements CommandHandler {  
-	private final NotifyManager notifyManager; 
+	protected final NotifyManager notifyManager; 
 	
 	public BindHandler(NotifyManager notifyManager) { 
 		this.notifyManager = notifyManager;

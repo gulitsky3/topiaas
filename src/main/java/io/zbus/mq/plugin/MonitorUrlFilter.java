@@ -28,9 +28,9 @@ public class MonitorUrlFilter implements Filter {
 		if(url.startsWith("/?") || url.startsWith("?")) { //special case for headers injection
 			UrlInfo info = HttpKit.parseUrl(url);
 			if(info.queryParamMap.size() > 0) {
-				for(Entry<String, String> e : info.queryParamMap.entrySet()) {
+				for(Entry<String, Object> e : info.queryParamMap.entrySet()) {
 					String key = e.getKey();
-					String value = e.getValue();
+					Object value = e.getValue();
 					if(key.equals("body")) {
 						req.setBody(value);
 					} else {

@@ -10,6 +10,7 @@ import io.zbus.transport.http.WebsocketClient;
 
 public class DmzProxy {
 
+	@SuppressWarnings("resource")
 	public static void main(String[] args) {
 		WebsocketClient notifyClient = new WebsocketClient("ws://localhost:15555");
 		

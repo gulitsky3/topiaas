@@ -24,9 +24,7 @@ package io.zbus.transport;
  
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -181,22 +179,18 @@ public class Message {
 	 * @param key
 	 * @return
 	 */
-	public String getParam(String key) {
+	public Object getParam(String key) {
 		if(url == null) return null;
 		if(urlInfo == null) {
 			urlInfo = HttpKit.parseUrl(url);
 		}
-		String value = urlInfo.queryParamMap.get(key);
+		Object value = urlInfo.queryParamMap.get(key);
 		return value;
 	}
 	
-	public String param(String key) {
+	public Object param(String key) {
 		return getParam(key);
-	}
-	
-	public List<String> paramArray(String key) {
-		return getParamArray(key);
-	}
+	}  
 	
 	public String queryString() {
 		if(url == null) return null;
@@ -204,6 +198,14 @@ public class Message {
 			urlInfo = HttpKit.parseUrl(url);
 		}
 		return urlInfo.queryParamString;
+	}
+	
+	public Map<String, Object> params() {
+		if(url == null) return new HashMap<>();
+		if(urlInfo == null) {
+			urlInfo = HttpKit.parseUrl(url);
+		}
+		return urlInfo.queryParamMap;
 	}
 	
 	public Map<String, Object> cookies() {
@@ -226,22 +228,15 @@ public class Message {
         } 
         return ret;
     }
-	
-	public List<String> getParamArray(String key) {
-		if(url == null) return new ArrayList<>();
-		if(urlInfo == null) {
-			urlInfo = HttpKit.parseUrl(url);
-		}
-		return StrKit.getArrayValue(urlInfo.queryParamString, key); 
-	}
+	 
 	
 	public <T> T getParam(String key, Class<T> clazz){ 
-		String value = getParam(key);
+		Object value = getParam(key);
 		if(value == null) return null;
 		return JsonKit.convert(value, clazz);
 	}
 	
-	@SuppressWarnings("unchecked") 
+	@SuppressWarnings("unchecked")  
 	public <T> T getContext() {
 		return (T)context;
 	}

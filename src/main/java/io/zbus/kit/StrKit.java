@@ -61,6 +61,47 @@ public class StrKit {
 		return res;
 	}
 	
+	@SuppressWarnings("unchecked")
+	public static Map<String, Object> keyValueWithArray(String value, String delim){
+		if(isEmpty(delim)) {
+			delim = "[&]";
+		} 
+		
+		Map<String, Object> res = new HashMap<String, Object>();
+		if(isEmpty(value)) return res;
+		
+		
+		String[] kvs = value.split(delim);
+		for(String kv : kvs){
+			kv = kv.trim();
+			if(kv.equals("")) continue;
+			String[] bb = kv.split("=");
+			String k = "";
+			Object v = null;
+			if(bb.length > 0){
+				k = bb[0].trim();
+			}
+			if(bb.length > 1){
+				v = bb[1].trim();
+			}
+			Object exitsValue = res.get(k);
+			if(exitsValue != null) {
+				if(exitsValue instanceof List) {
+					List<Object> list = (List<Object>)exitsValue;
+					list.add(v);
+					v = list;
+				} else {
+					List<Object> list = new ArrayList<>();
+					list.add(exitsValue);
+					list.add(v);
+					v = list;
+				}
+			}
+			res.put(k, v);
+		}
+		return res;
+	}
+	
 	
 	public static List<String> getArrayValue(String value, String key){
 		String delim = "[&]";  

@@ -52,6 +52,7 @@ public interface Protocol {
 	
 	public static final int MASK_DELETE_ON_EXIT  = 1 << 0;  
 	public static final int MASK_EXCLUSIVE       = 1 << 1;  
+	public static final int MASK_TAKEOVER        = 1 << 2;   //NOT support yet
 	
 	public static class MqInfo {   
 		public String name; 
