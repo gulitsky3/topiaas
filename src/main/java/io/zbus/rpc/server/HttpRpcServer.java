@@ -39,8 +39,9 @@ public class HttpRpcServer extends HttpWsServer {
 			if (!(msg instanceof Message)) { 
 				throw new IllegalStateException("Not support message type");
 			}
-			request = (Message) msg;     
-			Message response = processor.process(request);
+			request = (Message) msg;  
+			Message response = new Message();
+			processor.process(request, response);
 			if(response.getStatus() == null) {
 				response.setStatus(200);
 			}

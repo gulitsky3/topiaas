@@ -68,7 +68,7 @@ public class MqRpcServer implements Closeable {
 			String id = (String)request.getHeader(Protocol.ID); 
 			
 			String url = request.getUrl();
-			if(request.getUrl() != null) {
+			if(url != null) {
 				String prefix = "/"+mq;
 				if(url.startsWith(prefix)) {
 					url = url.substring(prefix.length());
@@ -76,9 +76,8 @@ public class MqRpcServer implements Closeable {
 					request.setUrl(url);
 				}
 			}
-			
-			Message response = processor.process(request);
-			
+			Message response = new Message(); 
+			processor.process(request, response);   
 			if(response.getStatus() == null) {
 				response.setStatus(200);
 			}
@@ -87,7 +86,7 @@ public class MqRpcServer implements Closeable {
 			response.addHeader(Protocol.TARGET, source);
 			response.addHeader(Protocol.ID, id);
 
-			mqClient.sendMessage(response);
+			mqClient.sendMessage(response); 
 		});
 
 		mqClient.onOpen(() -> {

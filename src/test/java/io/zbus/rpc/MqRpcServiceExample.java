@@ -10,7 +10,7 @@ public class MqRpcServiceExample {
 		RpcServer server = new RpcServer();  
 		
 		InterfaceExample example = new InterfaceExampleImpl(); 
-		server.addModule("/", example);  
+		server.addModule("example", example);  
 		
 		//connect to zbus
 		server.setAddress("localhost:15555");

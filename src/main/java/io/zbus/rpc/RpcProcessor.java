@@ -35,7 +35,7 @@ public class RpcProcessor {
 	protected boolean methodPageEnabled = true; 
 	protected boolean methodPageAuthEnabled = false;
 	protected boolean overrideMethod = true;
-	protected String methodPageModule = "/";
+	protected String methodPageModule = "index";
 	
 	protected RpcFilter beforeFilter;
 	protected RpcFilter afterFilter;
@@ -49,8 +49,7 @@ public class RpcProcessor {
 		addModule(module, service, enableDoc, true);
 	} 
 	
-	public void addModule(String module, Object service, boolean defaultAuth, boolean enableDoc) {  
-		if(module.startsWith("/")) module = module.substring(1);
+	public void addModule(String module, Object service, boolean defaultAuth, boolean enableDoc) {   
 		try {
 			Method[] methods = service.getClass().getMethods();
 			boolean classAuthEnabled = defaultAuth;
@@ -231,8 +230,7 @@ public class RpcProcessor {
 		return module + method;
 	}
 	
-	public Message process(Message req) {  
-		Message response = new Message();   
+	public void process(Message req, Message response) {   
 		try {  
 			if (req == null) {
 				req = new Message();  
@@ -240,7 +238,7 @@ public class RpcProcessor {
 			
 			if(beforeFilter != null) {
 				boolean next = beforeFilter.doFilter(req, response);
-				if(!next) return response;
+				if(!next) return;
 			} 
 			
 			invoke(req, response);
@@ -250,16 +248,16 @@ public class RpcProcessor {
 			}
 			 
 		} catch (Throwable e) {
-			logger.info(e.getMessage(), e);
-			response.setBody(new RpcException(e.getMessage(), e.getCause(), false, stackTraceEnabled)); 
+			logger.info(e.getMessage(), e);  
+			response.setBody(e.getMessage()); 
+			response.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
 			response.setStatus(500);
 		} finally {
 			bindRequestResponse(req, response); 
 			if(response.getStatus() == null) {
 				response.setStatus(200);
 			}
-		} 
-		return response;
+		}  
 	}
 	
 	private void bindRequestResponse(Message request, Message response) {
@@ -272,125 +270,138 @@ public class RpcProcessor {
 		response.setBody(message);
 	}  
 	
+	
 	@SuppressWarnings("unchecked")
-	private void invoke(Message req, Message response) throws IllegalAccessException, IllegalArgumentException {   
-		try {    
-			String url = req.getUrl(); 
-			String pathMatched = null;
-			MethodInstance target = null;
-			Object[] params = null; 
-			String resource = url;
-			
-			if(url == null) { //match by Message body
-				Object body = req.getBody();
-				if(body == null || !(body instanceof Map)) {
-					reply(response, 400, "Message body should be RPC request map"); 
-					return;
-				}
-				Map<String, Object> reqBody = (Map<String, Object>)body;
-				String module = (String)reqBody.get(Protocol.MODULE);  
-				String method = (String)reqBody.get(Protocol.METHOD);
-				if(module == null) module = "/";
-				
-				params = JsonKit.getArray(reqBody, Protocol.PARAMS);
-				if(params == null) {
-					params = new Object[0];
-				}
-				
-				resource = String.format("module=%s, method=%s", module, method); 
-				target = matchMethod(module, method);
-			} else { //match by URL
-				Entry<String, MethodInstance> e = matchMethodByUrl(url);  
-				if(e != null) {
-					target = e.getValue();
-					pathMatched = e.getKey();
-				}
-			}
-			
-			if(target == null) {
-				reply(response, 404, String.format("%s Not Found", resource)); 
+	private void invoke0(Message req, Message response) throws Exception {    
+		String url = req.getUrl(); 
+		String pathMatched = null;
+		MethodInstance target = null;
+		Object[] params = null; 
+		String resource = url;
+		
+		if(url == null) { //match by Message body
+			Object body = req.getBody();
+			if(body == null || !(body instanceof Map)) {
+				reply(response, 400, "Message body should be RPC request map"); 
 				return;
 			}
+			Map<String, Object> reqBody = (Map<String, Object>)body;
+			String module = (String)reqBody.get(Protocol.MODULE);  
+			String method = (String)reqBody.get(Protocol.METHOD);
+			if(module == null) module = "index";
+			if(method == null) method = "index";
 			
-			if(url != null) {
-				Object body = req.getBody(); //assumed to be params 
-				if(body != null && body instanceof Object[]) {
-					params = (Object[])body;
-				}  
-				
-				if(params == null) { 
-					String subUrl = url.substring(pathMatched.length());
-					UrlInfo info = HttpKit.parseUrl(subUrl);
-					List<Object> paramList = new ArrayList<>(info.path); 
-					if(!info.params.isEmpty()) {
-						paramList.add(info.params);
-					}
-					params = paramList.toArray();
-				}
-			} 
-			//////////////////////////////location of method completed/////////////////////////////////
+			params = JsonKit.getArray(reqBody, Protocol.PARAMS);
+			if(params == null) {
+				params = new Object[0];
+			}
 			
-			
-			if(authFilter != null && target.info.authRequired) { 
-				boolean next = authFilter.doFilter(req, response);
-				if(!next) return;
+			resource = String.format("module=%s, method=%s", module, method); 
+			target = matchMethod(module, method);
+		} else { //match by URL
+			Entry<String, MethodInstance> e = matchMethodByUrl(url);  
+			if(e != null) {
+				target = e.getValue();
+				pathMatched = e.getKey();
+			}
+		}
+		
+		if(target == null) {
+			reply(response, 404, String.format("%s Not Found", resource)); 
+			return;
+		}
+		
+		if(url != null) {
+			Object body = req.getBody(); //assumed to be params 
+			if(body != null && body instanceof Object[]) {
+				params = (Object[])body;
 			}  
 			
-			Object data = null;
-			if(target.reflectedMethod != null) {
-				Class<?>[] targetParamTypes = target.reflectedMethod.getParameterTypes();
-				Object[] invokeParams = new Object[targetParamTypes.length]; 
-				for (int i = 0; i < targetParamTypes.length; i++) { 
-					Class<?> paramType = targetParamTypes[i];
-					if(Message.class.isAssignableFrom(paramType)) {
-						invokeParams[i] = req;
-						continue;
-					}
-					if(i>=params.length) {
-						invokeParams[i] = null;
-					} else {
-						invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
-					}
+			if(params == null) { 
+				String subUrl = url.substring(pathMatched.length());
+				UrlInfo info = HttpKit.parseUrl(subUrl);
+				List<Object> paramList = new ArrayList<>(info.path); 
+				if(!info.params.isEmpty()) {
+					paramList.add(info.params);
 				}
-				data = target.reflectedMethod.invoke(target.instance, invokeParams);
-				
-			} else if(target.target != null) {
-				Map<String, Object> mapParams = new HashMap<>();  
-				if(params != null) {
-					if(params.length == 1 && params[0] instanceof Map) {
-						mapParams = (Map<String, Object>)params[0]; 
-					} else {
-						for(int i=0;i <params.length; i++) {
-							if(target.info.paramNames == null) break;
-							if(i<target.info.paramNames.size()) {
-								mapParams.put(target.info.paramNames.get(i), params[i]);
-							}
+				params = paramList.toArray();
+			}
+		} 
+		//////////////////////////////location of method completed/////////////////////////////////
+		
+		
+		if(authFilter != null && target.info.authRequired) { 
+			boolean next = authFilter.doFilter(req, response);
+			if(!next) return;
+		}  
+		
+		Object data = null;
+		if(target.reflectedMethod != null) {
+			Class<?>[] targetParamTypes = target.reflectedMethod.getParameterTypes();
+			Object[] invokeParams = new Object[targetParamTypes.length]; 
+			for (int i = 0; i < targetParamTypes.length; i++) { 
+				Class<?> paramType = targetParamTypes[i];
+				if(Message.class.isAssignableFrom(paramType)) {
+					invokeParams[i] = req;
+					continue;
+				}
+				if(i>=params.length) {
+					invokeParams[i] = null;
+				} else {
+					invokeParams[i] = JsonKit.convert(params[i], targetParamTypes[i]);  
+				}
+			}
+			data = target.reflectedMethod.invoke(target.instance, invokeParams);
+			
+		} else if(target.target != null) {
+			Map<String, Object> mapParams = new HashMap<>();  
+			if(params != null) {
+				if(params.length == 1 && params[0] instanceof Map) {
+					mapParams = (Map<String, Object>)params[0]; 
+				} else {
+					for(int i=0;i <params.length; i++) {
+						if(target.info.paramNames == null) break;
+						if(i<target.info.paramNames.size()) {
+							mapParams.put(target.info.paramNames.get(i), params[i]);
 						}
 					}
 				}
-				data = target.target.invoke(target.info.method, mapParams);
 			}
-			if(data instanceof Message) {
-				response.replace((Message)data);
-			} else {
-				response.setStatus(200); 
-				response.setBody(data); 
-			}
-		} catch (InvocationTargetException e) {  
-			Throwable t = e.getTargetException();
-			if(t != null) {
-				if(!stackTraceEnabled) {
-					t.setStackTrace(new StackTraceElement[0]);
-				}
-			}
-			response.setBody(t);
-			response.setStatus(500); 
+			data = target.target.invoke(target.info.method, mapParams);
+		}
+		if(data instanceof Message) {
+			response.replace((Message)data);
+		} else {
+			response.setStatus(200); 
+			response.setBody(data); 
 		} 
+	}
+	 
+	private void invoke(Message req, Message response) {   
+		try {     
+			invoke0(req, response);
+		} catch (Throwable e) {  
+			logger.error(e.getMessage(), e);
+			Throwable t = e;
+			if(t instanceof InvocationTargetException) {
+				t  = ((InvocationTargetException)e).getTargetException();
+				if(t == null) {
+					t = e;
+				}
+			}  
+			if(!stackTraceEnabled) {
+				t.setStackTrace(new StackTraceElement[0]);
+			}
+			response.setBody(t.getMessage());
+			response.addHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+			response.setStatus(500); 
+		}  
 	}
 	
 	public void enableMethodPage() { 
 		DocRender render = new DocRender(this, docUrlRoot);
 		addModule(methodPageModule, render, false, false);
+		addModule("", render, false, false);
 	}   
 
 	public void setBeforeFilter(RpcFilter beforeFilter) {

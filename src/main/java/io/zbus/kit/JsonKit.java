@@ -85,16 +85,7 @@ public class JsonKit {
 		} catch (UnsupportedEncodingException e) {
 			return new String(data);
 		}
-	}
-	
-	public static String toJSONStringWithType(Object value, String encoding) {
-		byte[] data = toJSONBytesWithType(value, encoding);
-		try {
-			return new String(data, encoding);
-		} catch (UnsupportedEncodingException e) {
-			return new String(data);
-		}
-	}
+	}  
 	
 	public static byte[] toJSONBytes(Object value) { 
 		return toJSONBytes(value, "utf8");
@@ -102,16 +93,9 @@ public class JsonKit {
 	
 	
 	public static byte[] toJSONBytes(Object value, String encoding) {
-		return toJSONBytes(value, encoding, 
-				//SerializerFeature.WriteMapNullValue, 
+		return toJSONBytes(value, encoding,   
 				SerializerFeature.DisableCircularReferenceDetect); 
-	} 
-	
-	public static byte[] toJSONBytesWithType(Object value, String encoding) {
-		return toJSONBytes(value, encoding, 
-				SerializerFeature.DisableCircularReferenceDetect,
-				SerializerFeature.WriteClassName); 
-	} 
+	}  
 	
 	
 	private static final byte[] toJSONBytes(Object object, String charsetName,

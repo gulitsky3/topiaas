@@ -46,8 +46,11 @@ public class MqClient extends Client{
 		if(mqHandlers == null) return;
 		DataHandler<Message> handler = mqHandlers.get(channel);
 		if(handler == null) return;
-		
-		handler.handle(response); 
+		try {
+			handler.handle(response); 
+		}catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
 	}
 	 
 	public synchronized void heartbeat(long interval, TimeUnit timeUnit) {
