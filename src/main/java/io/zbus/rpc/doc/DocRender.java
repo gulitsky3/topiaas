@@ -23,6 +23,7 @@ public class DocRender {
 		this.rpcProcessor = rpcProcessor;  
 	}   
 	
+	@RequestMapping(exclude=true)
 	public void setRootUrl(String rootUrl) {
 		this.rootUrl = rootUrl;
 	}

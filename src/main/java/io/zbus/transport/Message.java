@@ -75,7 +75,7 @@ public class Message {
 		this.statusText = msg.statusText;
 		this.headers = msg.headers;
 		this.body = msg.body;
-	}
+	}  
 	
 	public String getUrl(){
 		return this.url;

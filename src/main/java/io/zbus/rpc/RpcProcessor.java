@@ -157,7 +157,7 @@ public class RpcProcessor {
 		boolean exists = this.urlPath2MethodTable.containsKey(urlPath);
 		if (exists) {
 			if(overrideMethod) {
-				logger.warn(urlPath + " overridden"); 
+				logger.warn(urlPath + " overridden: " + mi.reflectedMethod); 
 				this.urlPath2MethodTable.put(urlPath, mi); 
 			} else {
 				logger.warn(urlPath + " exists, new ignored"); 
