@@ -52,10 +52,20 @@ public class StaticResource {
 			urlFile = "index.html";
 		}
 		//String file = HttpKit.joinPath(basePath ,urlFile); //TODO security issue
-		File fullPath = new File(absoluteBasePath, urlFile);
-		String file = fullPath.getPath();
+		String file;
+		// gz first
+		boolean isGzip = false;
+		File gzip = new File(absoluteBasePath, urlFile+".gz");
+		if (gzip.exists()) {
+			file = gzip.getAbsolutePath();
+			res.setHeader("Content-Encoding", "gzip");
+			isGzip = true;
+		} else {
+			File fullPath = new File(absoluteBasePath, urlFile);
+			file = fullPath.getAbsolutePath();
+		}
 		 
-		String contentType = HttpKit.contentType(file);
+		String contentType = HttpKit.contentType(urlFile);
 		if(contentType == null) {
 			contentType = "application/octet-stream";
 		}
@@ -64,7 +74,7 @@ public class StaticResource {
 		res.setStatus(200); 
 		try {
 			byte[] data = fileKit.loadFileBytes(file);
-			if(HttpKit.isText(contentType)) {
+			if(!isGzip && HttpKit.isText(contentType)) {
 				res.setBody(new String(data, "utf8")); //TODO
 			} else {
 				res.setBody(data);
