@@ -35,7 +35,7 @@ public class DocRender {
 			doc += rowDoc(m, rowIdx++);
 		}
 		doc += "</div>";
-		String js = fileKit.loadFile("static/zbus.js");
+		String js = fileKit.loadFile("static/zbus.min.js");
 		model.put("content", doc); 
 		model.put("zbusjs", js); 
 		String urlPrefix = docRootPath;
