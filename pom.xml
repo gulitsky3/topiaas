@@ -6,7 +6,7 @@
 	<packaging>jar</packaging>
 	<groupId>io.zbus</groupId>
 	<artifactId>zbus</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0-b1</version>
 	<name>zbus</name>
 	<description>a lightweight yet powerful RPC and messaging framework to build service bus</description>
 	<url>https://zbus.io</url>
