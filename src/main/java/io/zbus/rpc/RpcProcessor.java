@@ -529,9 +529,6 @@ public class RpcProcessor {
 		if (routeKey == null || (routeKey = routeKey.trim()).length() == 0) {
 			return false;
 		}
-		if (!routeKey.contains("{") || !routeKey.contains("}")) {
-			return false;
-		}
 		routeKey = routeKey.replace("?", "~");
 		String reqMethod = req.getMethod();
 		String[] split1 = routeKey.split(",");
@@ -545,6 +542,19 @@ public class RpcProcessor {
 		if (routeMethod != null && !reqMethod.equalsIgnoreCase(routeMethod)) {
 			return false;
 		}
+		if (!routeKey.contains("{") || !routeKey.contains("}")) {
+			if (routeMethod != null) {
+				// match <method,path>
+				UrlInfo reqUrlInfo = HttpKit.parseUrl(req.getUrl());
+				UrlInfo routeUrlInfo = HttpKit.parseUrl(routePath);
+				if (routeUrlInfo.urlPath.equals(reqUrlInfo.urlPath)) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		
 		UrlInfo reqUrlInfo = HttpKit.parseUrl(req.getUrl());
 		UrlInfo routeUrlInfo = HttpKit.parseUrl(routePath);
 		// 通配符 /{key:**} (支持路径) 一定是放到最末尾的
