@@ -47,6 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.zbus.kit.JsonKit;
+import io.zbus.mq.Protocol;
 
 public class HttpMessage {  
 	private static final Logger log = LoggerFactory.getLogger(HttpMessage.class); 
@@ -468,6 +470,45 @@ public class HttpMessage {
 			out.write(SUFFIX); 
 		}
 	} 
+	
+	public static HttpMessage fromMap(Map<String, Object> map) {
+		HttpMessage msg = new HttpMessage();
+		Map<String, Object> table = new HashMap<>();
+		for(Entry<String, Object> e : map.entrySet()) {
+			table.put(e.getKey().toLowerCase(), e.getValue());
+		}
+		Object url = table.remove("url");
+		if(url != null && url instanceof String) {
+			msg.setUrl((String)url); 
+		}
+		Object statusObj = table.remove(Protocol.STATUS);
+		Integer status = null;
+		if(statusObj != null) {
+			status = Integer.valueOf(statusObj.toString());
+		}
+		if(status != null) {  
+			msg.setStatus(status);
+		}
+		Object body = table.remove(Protocol.BODY);
+		int bodyLen = 0;
+		if(body != null) {
+			String contentType = (String)table.get("content-type"); 
+			String bodyStr = null;
+			
+			if(contentType != null && !contentType.startsWith("application/json") || (status != null && status != 200)) {
+				bodyStr = body.toString();
+			} else { //default to JSON
+				bodyStr = JsonKit.toJSONString(body);
+			}
+			bodyLen = bodyStr.length();
+			msg.setJsonBody(bodyStr);
+		}
+		msg.setHeader(CONTENT_LENGTH, bodyLen);
+		for(Entry<String, Object> e : table.entrySet()) {
+			msg.setHeader(e.getKey().toLowerCase(), e.getValue());
+		} 
+		return msg;
+	}
 	
 	public void writeTo(OutputStream out) throws IOException{
 		writeHttpLine(out);

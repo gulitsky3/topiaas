@@ -82,13 +82,11 @@ public class HttpRpcServer extends HttpWsServer {
 			}
 
 			if (sessionType == SessionType.HTTP) {
-				HttpMessage resMsg = new HttpMessage();
-				byte[] data = JsonKit.toJSONBytes(response, "utf8");
-				resMsg.setStatus(200);
-				resMsg.setEncoding("utf8");
-				resMsg.setHeader(HttpMessage.CONTENT_TYPE, "application/json");
-				resMsg.setBody(data);
-				sess.write(resMsg);
+				HttpMessage res = HttpMessage.fromMap(response);   
+				if(res.getStatus() == null) {
+					res.setStatus(200);
+				} 
+				sess.write(res);
 				return;
 			}
 

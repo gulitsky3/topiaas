@@ -11,7 +11,7 @@ public class RpcServerExample {
 		RpcServer b = new RpcServer(); 
 		
 		FileService resource = new FileService();
-		//resource.setBasePath("");
+		//re"module=example, method=getUsers2 Not Found"source.setBasePath("");
 		//resource.setCacheEnabled(false);
 		
 		

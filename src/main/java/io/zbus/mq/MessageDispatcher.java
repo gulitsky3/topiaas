@@ -122,7 +122,7 @@ public class MessageDispatcher {
 		
 		if (clientType == SessionType.HTTP) {
 			HttpMessage res = new HttpMessage();
-			Boolean bodyHttp = (Boolean)data.get(Protocol.BODY_HTTP);
+			Boolean bodyHttp = (Boolean)data.remove(Protocol.BODY_HTTP);
 			Object body = data.get(Protocol.BODY);  
 			if(bodyHttp != null && bodyHttp && body != null) { 
 				byte[] bytes = null;
@@ -135,13 +135,12 @@ public class MessageDispatcher {
 					return;
 				}
 				res = HttpMessage.parse(bytes);
-			} else { 
-				Integer status = (Integer) data.get(Protocol.STATUS);
-				if (status == null) status = 200;
-				res.setStatus(status);
-				res.setJsonBody(JSON.toJSONBytes(data));
-			} 
-			
+			} else {  
+				res = HttpMessage.fromMap(data);
+				if(res.getStatus() == null) {
+					res.setStatus(200);
+				} 
+			}   
 			sess.write(res);
 			
 			return;
