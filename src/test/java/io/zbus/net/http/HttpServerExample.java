@@ -29,7 +29,7 @@ public class HttpServerExample {
 		};  
 		
 		Server server = new HttpWsServer();   
-		server.start(80, adaptor);  
+		server.start(8080, adaptor);
 		//server.start(8080, adaptor); //You may start 80 and 8080 together!
 	} 
 }

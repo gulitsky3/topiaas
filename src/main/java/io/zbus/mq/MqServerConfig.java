@@ -115,13 +115,18 @@ public class MqServerConfig extends XmlConfig {
 		String allowedRequestMethods = valueOf(xpath.evaluate("/zbus/cors/allowedRequestMethods", doc), null);
 		String allowedRequestHeaders = valueOf(xpath.evaluate("/zbus/cors/allowedRequestHeaders", doc), null);
 		String exposeHeaders = valueOf(xpath.evaluate("/zbus/cors/exposeHeaders", doc), null);
-		
-		if(!(origin==null && allowedRequestHeaders == null && allowedRequestMethods == null && exposeHeaders == null)) { 
+		Boolean allowCredentials = valueOf(xpath.evaluate("/zbus/cors/allowCredentials", doc), (Boolean)null);
+		Boolean allowNullOrigin = valueOf(xpath.evaluate("/zbus/cors/allowNullOrigin", doc), (Boolean)null);
+
+		if(!(origin==null && allowedRequestHeaders == null && allowedRequestMethods == null &&
+				exposeHeaders == null && allowCredentials == null && allowNullOrigin == null)) {
 			cors = new CorsConfig();
 			cors.setOrigin(origin);
 			cors.setAllowedRequestHeaders(allowedRequestHeaders);
 			cors.setAllowedRequestMethods(allowedRequestMethods);
-			cors.setExposeHeaders(exposeHeaders); 
+			cors.setExposeHeaders(exposeHeaders);
+			cors.setAllowCredentials(allowCredentials);
+			cors.setAllowNullOrigin(allowNullOrigin);
 		}
 		 
 		if (valueOf(xpath.evaluate(HttpProxyConfig.HttpProxyXPath, doc), null) != null) {
@@ -250,6 +255,8 @@ public class MqServerConfig extends XmlConfig {
 		public String origin;
 		public String allowedRequestMethods;
 		public String allowedRequestHeaders;
+		public Boolean allowCredentials;
+		public Boolean allowNullOrigin;
 		public String exposeHeaders; 
 
 		public String getOrigin() {
@@ -282,8 +289,21 @@ public class MqServerConfig extends XmlConfig {
 
 		public void setExposeHeaders(String exposeHeaders) {
 			this.exposeHeaders = exposeHeaders;
-		} 
-	} 
+		}
+
+		public void setAllowCredentials(Boolean allowCredentials) {
+			this.allowCredentials = allowCredentials;
+		}
+		public Boolean getAllowCredentials() {
+			return allowCredentials;
+		}
+		public void setAllowNullOrigin(Boolean allowNullOrigin) {
+			this.allowNullOrigin = allowNullOrigin;
+		}
+		public Boolean getAllowNullOrigin() {
+			return this.allowNullOrigin;
+		}
+	}
 
 	public static class ServerConfig{
 		public String address;
