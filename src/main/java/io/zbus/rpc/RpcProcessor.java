@@ -382,7 +382,7 @@ public class RpcProcessor {
 		Entry<String, List<MethodInstance>> matched = null;
 		for(Entry<String, List<MethodInstance>> e : urlPath2MethodTable.entrySet()) {
 			String key = e.getKey();
-			if(url.startsWith(key)) {
+			if(url.startsWith(key+"/") || url.equals(key) || url.startsWith(key+"?")) {
 				if(key.length() > length) {
 					length = key.length();
 					matched = e; 
@@ -464,6 +464,10 @@ public class RpcProcessor {
 		if(mi.reflectedMethod != null) {
 			Class<?>[] targetParamTypes = mi.reflectedMethod.getParameterTypes();
 			Object[] invokeParams = new Object[targetParamTypes.length];  
+			if(target.params.length > targetParamTypes.length) {
+				reply(response, 400, String.format("URL=%s, Too many paramteter received", url));
+				return;   
+			}
 			
 			applyParams(req, response, target, invokeParams); 
 			
