@@ -32,6 +32,7 @@ import java.util.TreeMap;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.annotation.JSONField;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
@@ -59,9 +60,11 @@ public class Message {
 	protected TreeMap<String, Object> headers = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
 	protected Object body;  
 	
+	@JSONField(serialize=false)
 	private Object context;
 	
 	//URL parser helper
+	@JSONField(serialize=false)
 	private UrlInfo urlInfo;
 	
 	public Message() {
@@ -237,7 +240,7 @@ public class Message {
 		return JsonKit.convert(value, clazz);
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked") 
 	public <T> T getContext() {
 		return (T)context;
 	}
