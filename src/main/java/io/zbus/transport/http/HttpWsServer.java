@@ -51,7 +51,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 import io.zbus.transport.Server;
-import io.zbus.transport.http.Http.FileForm; 
+import io.zbus.transport.http.Http.FormData; 
 
 /**
  * 
@@ -171,10 +171,13 @@ public class HttpWsServer extends Server {
 			//Special case for file uploads
 			if(httpMsg instanceof HttpRequest 
 					&& contentType != null 
-					&& contentType.startsWith(Http.CONTENT_TYPE_UPLOAD) ){  
+					&& (
+					   contentType.startsWith("application/x-www-form-urlencoded") 
+					   || contentType.startsWith("multipart/form-data"))
+					){  
 				HttpRequest req = (HttpRequest) httpMsg;
 				decoder = new HttpPostRequestDecoder(factory, req);   
-				handleUploadMessage(httpMsg, msg); 
+				handleFormMessage(httpMsg, msg); 
 			}  else { 
 				if (body != null) { 
 					int size = body.readableBytes();
@@ -225,7 +228,7 @@ public class HttpWsServer extends Server {
 			return msg;
 		}
 		
-		private void handleUploadMessage(io.netty.handler.codec.http.HttpMessage httpMsg, Message uploadMessage) throws IOException{
+		private void handleFormMessage(io.netty.handler.codec.http.HttpMessage httpMsg, Message uploadMessage) throws IOException{
 			if (httpMsg instanceof HttpContent) { 
 	            HttpContent chunk = (HttpContent) httpMsg;
 	            decoder.offer(chunk); 
@@ -234,7 +237,7 @@ public class HttpWsServer extends Server {
 	                    InterfaceHttpData data = decoder.next();
 	                    if (data != null) {
 	                        try { 
-	                        	handleUploadFile(data, uploadMessage);
+	                        	handleFormData(data, uploadMessage);
 	                        } finally {
 	                            data.release();
 	                        }
@@ -250,16 +253,16 @@ public class HttpWsServer extends Server {
 	        }
 		}
 		
-		private void handleUploadFile(InterfaceHttpData data, Message uploadMessage) throws IOException{
-			FileForm fileForm = (FileForm)uploadMessage.getBody();
-	        if(fileForm == null){
-	        	fileForm = new FileForm();
-	        	uploadMessage.setBody(fileForm);
+		private void handleFormData(InterfaceHttpData data, Message uploadMessage) throws IOException{
+			FormData formData = (FormData)uploadMessage.getBody();
+	        if(formData == null){
+	        	formData = new FormData();
+	        	uploadMessage.setBody(formData);
 	        }
 	        
 			if (data.getHttpDataType() == HttpDataType.Attribute) {
 	            Attribute attribute = (Attribute) data;
-	            fileForm.attributes.put(attribute.getName(), attribute.getValue());
+	            formData.attributes.put(attribute.getName(), attribute.getValue());
 	            return;
 			}
 			
@@ -270,10 +273,10 @@ public class HttpWsServer extends Server {
 	            file.contentType = fileUpload.getContentType();
 	            file.data = fileUpload.get(); 
 	            
-	            List<Http.FileUpload> uploads = fileForm.files.get(data.getName());
+	            List<Http.FileUpload> uploads = formData.files.get(data.getName());
 	            if(uploads == null){
 	            	uploads = new ArrayList<Http.FileUpload>();
-	            	fileForm.files.put(data.getName(), uploads);
+	            	formData.files.put(data.getName(), uploads);
 	            }
 	            uploads.add(file);
 			}

@@ -37,7 +37,7 @@ public class Http {
 	public static final String CONTENT_LENGTH        = "content-length";
 	public static final String CONTENT_TYPE          = "content-type";     
 	public static final String CONTENT_TYPE_JSON     = "application/json; charset=utf8"; 
-	public static final String CONTENT_TYPE_UPLOAD   = "multipart/form-data";
+	public static final String CONTENT_TYPE_FORM     = "multipart/form-data";
 	
 	private static final byte[] CLCR = "\r\n".getBytes();
 	private static final byte[] KV_SPLIT = ": ".getBytes();
@@ -254,7 +254,7 @@ public class Http {
 		public byte[] data;
 	}
 	
-	public static class FileForm {
+	public static class FormData {
 		public Map<String, String> attributes = new HashMap<String, String>();
 		public Map<String, List<FileUpload>> files = new HashMap<String, List<FileUpload>>();
 	}

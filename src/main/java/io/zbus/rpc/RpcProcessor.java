@@ -25,7 +25,7 @@ import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.doc.DocRender;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
-import io.zbus.transport.http.Http.FileForm;
+import io.zbus.transport.http.Http.FormData;
 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
@@ -324,7 +324,7 @@ public class RpcProcessor {
 		
 		Object body = req.getBody(); //assumed to be params 
 		if(body != null) {
-			if(!(body instanceof FileForm)) { //may be upload files
+			if(!(body instanceof FormData)) { //may be upload files
 				params = JsonKit.convert(body, Object[].class); 
 			} 
 		}   

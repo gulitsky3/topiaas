@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
-import io.zbus.transport.http.Http.FileForm;
+import io.zbus.transport.http.Http.FormData;
 import io.zbus.transport.http.Http.FileUpload;
 
 public class FileKit {
@@ -228,7 +228,7 @@ public class FileKit {
 	
 	
 	public static void saveUploadedFile(Message req, String basePath) {
-		FileForm fileForm = (FileForm)req.getBody();
+		FormData fileForm = (FormData)req.getBody();
 		if (fileForm == null) {
 			throw new IllegalArgumentException("upload body is null");
 		} 
