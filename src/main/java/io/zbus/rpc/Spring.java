@@ -47,7 +47,7 @@ public class Spring {
 			} 
 			
 			if(!StrKit.isEmpty(name)) {
-				rpcProcessor.getFilterTable().put(name, filter);
+				rpcProcessor.getAnnotationFilterTable().put(name, filter);
 			}
 		}  
 		

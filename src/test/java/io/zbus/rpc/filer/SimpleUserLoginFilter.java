@@ -4,7 +4,7 @@ import io.zbus.rpc.RpcFilter;
 import io.zbus.rpc.annotation.FilterDef;
 import io.zbus.transport.Message;
 
-@FilterDef("user")
+@FilterDef("user") 
 public class SimpleUserLoginFilter implements RpcFilter {
 
 	@Override

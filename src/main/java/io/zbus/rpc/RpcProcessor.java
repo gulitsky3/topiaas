@@ -7,10 +7,12 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.slf4j.Logger;
@@ -36,8 +38,7 @@ import io.zbus.transport.http.Http;
 import io.zbus.transport.http.Http.FormData;
 
 
-@SuppressWarnings("deprecation")
-@Route(exclude=true)
+@SuppressWarnings("deprecation") 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
 	private Map<String, List<MethodInstance>> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance   
@@ -56,7 +57,26 @@ public class RpcProcessor {
 	private RpcFilter afterFilter; 
 	private RpcFilter exceptionFilter;
 	
-	private Map<String, RpcFilter> filterTable = new HashMap<>(); //RpcFilter table referred by key
+	private Map<String, RpcFilter> annotationFilterTable = new HashMap<>(); //RpcFilter table referred by key
+	
+	private Map<String, List<RpcFilter>> urlFilterTable = new HashMap<>();
+	private Map<String, List<RpcFilter>> urlExcludedFilterTable = new HashMap<>();
+	
+	private Set<String> urlExcludedSet = new HashSet<>();
+	private Map<String, Object> moduleTable = null;//{module => List<service object> }
+	
+	/**
+	 * Mount internal moduleTable
+	 * @return
+	 */
+	public RpcProcessor mount() {
+		if(moduleTable == null) return this;
+		for(Entry<String, Object> e : moduleTable.entrySet()){ 
+			mount(e.getKey(), e.getValue());
+		}
+		moduleTable = null; //mount just only once
+		return this;
+	}
 	
 	public RpcProcessor mount(String urlPrefix, Object service) { 
 		return mount(urlPrefix, service, true, true, true);
@@ -84,7 +104,7 @@ public class RpcProcessor {
 			Filter filter = service.getClass().getAnnotation(Filter.class); 
 			if(filter != null) {
 				for(String name : filter.value()) {
-					RpcFilter rpcFilter = filterTable.get(name);
+					RpcFilter rpcFilter = annotationFilterTable.get(name);
 					if(rpcFilter != null) {
 						classFiltersIncluded.add(rpcFilter);
 					}
@@ -125,15 +145,18 @@ public class RpcProcessor {
 					info.docEnabled = enableDoc && p.docEnabled();
 					info.urlAnnotation = p;
 					urlPath = annoPath(p);    
+					
 					if(urlPath != null) {
 						info.urlPath = HttpKit.joinPath(urlPrefix, urlPath);
-					}
+					} 
 				}     
+				if(matchUrlExcluded(info.urlPath)) continue; // excluded 
+				
 				info.filters.addAll(classFiltersIncluded);
 				filter = m.getAnnotation(Filter.class);
 				if(filter != null) {
 					for(String name : filter.value()) {
-						RpcFilter rpcFilter = filterTable.get(name);
+						RpcFilter rpcFilter = annotationFilterTable.get(name);
 						if(rpcFilter != null) {
 							if(!info.filters.contains(rpcFilter)) {
 								info.filters.add(rpcFilter);
@@ -141,11 +164,26 @@ public class RpcProcessor {
 						}
 					}
 					for(String name : filter.exclude()) {
-						RpcFilter rpcFilter = filterTable.get(name);
+						RpcFilter rpcFilter = annotationFilterTable.get(name);
 						if(rpcFilter != null) {
 							info.filters.remove(rpcFilter);
 						}
 					}
+				}
+				
+				List<RpcFilter> filters = matchFilter(info.urlPath, this.urlFilterTable);
+				if(filters != null) {
+					for(RpcFilter f : filters) {
+						if(info.filters.contains(f)) continue;
+						info.filters.add(f);
+					} 
+				}
+				
+				filters = matchFilter(info.urlPath, this.urlExcludedFilterTable);
+				if(filters != null) {
+					for(RpcFilter f : filters) { 
+						info.filters.remove(f);
+					} 
 				}
 				
 				m.setAccessible(true);  
@@ -242,6 +280,23 @@ public class RpcProcessor {
 		String urlPath = HttpKit.joinPath(module, method);
 		unmount(urlPath); 
 	}   
+	
+	private List<RpcFilter> matchFilter(String url, Map<String, List<RpcFilter>> table){
+		for(Entry<String, List<RpcFilter>> e : table.entrySet()) {
+			String filterUrl = e.getKey();
+			if(HttpKit.urlMatched(url, filterUrl)) {
+				return e.getValue();
+			}
+		} 
+		return null;
+	}
+	
+	private boolean matchUrlExcluded(String url){
+		for(String pattern : urlExcludedSet) {
+			if(HttpKit.urlMatched(url, pattern)) return true;
+		}
+		return false;
+	}
 	 
 	public int enableUrl(String urlPath, boolean status) { 
 		List<MethodInstance> methods = urlPath2MethodTable.get(urlPath);
@@ -673,32 +728,53 @@ public class RpcProcessor {
 
 	public boolean isDocEnabled() {
 		return docEnabled;
-	}
-
+	} 
+	
 	public RpcProcessor setDocEnabled(boolean docEnabled) {
 		this.docEnabled = docEnabled;
 		return this;
 	}  
-	
-	@SuppressWarnings("unchecked")
-	public void setModuleTable(Map<String, Object> instances){
-		if(instances == null) return;
-		for(Entry<String, Object> e : instances.entrySet()){
-			Object svc = e.getValue();
-			if(svc instanceof List) {
-				mount(e.getKey(), (List<Object>)svc); 
-			} else {
-				mount(e.getKey(), svc);
-			}
-		}
-	}  
-	
-	public Map<String, RpcFilter> getFilterTable() {
-		return filterTable;
+	 
+	public Set<String> getUrlExcludedSet() {
+		return urlExcludedSet;
 	}
 	
-	public void setFilterTable(Map<String, RpcFilter> filterTable) {
-		this.filterTable = filterTable;
+	public void setUrlExcludedSet(Set<String> urlExcludedSet) {
+		this.urlExcludedSet = urlExcludedSet;
+	}
+	 
+	public void setModuleTable(Map<String, Object> instances){
+		this.moduleTable = instances; 
+	}   
+	
+	public Map<String, RpcFilter> getAnnotationFilterTable() {
+		return annotationFilterTable;
+	}
+	
+	/** 
+	 * 
+	 * Used by  @Filter(filterName) 
+	 * 
+	 * @param filterTable FilterName => Filter
+	 */
+	public void setAnnotationFilterTable(Map<String, RpcFilter> filterTable) {
+		this.annotationFilterTable = filterTable;
+	}
+	
+	public Map<String, List<RpcFilter>> getUrlFilterTable() {
+		return urlFilterTable;
+	}
+	
+	public void setUrlFilterTable(Map<String, List<RpcFilter>> urlFilterTable) {
+		this.urlFilterTable = urlFilterTable;
+	}
+	
+	public void setUrlExcludedFilterTable(Map<String, List<RpcFilter>> urlExcludedFilterTable) {
+		this.urlExcludedFilterTable = urlExcludedFilterTable;
+	}
+	
+	public Map<String, List<RpcFilter>> getUrlExcludedFilterTable() {
+		return urlExcludedFilterTable;
 	}
 	
 	public String getDocUrl() {
