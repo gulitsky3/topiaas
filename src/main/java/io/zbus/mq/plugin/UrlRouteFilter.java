@@ -76,7 +76,7 @@ public class UrlRouteFilter implements Filter {
 		} 
 		 
 		if("/".equals(url)) {  
-			fileKit.loadResource(res, "static/index.html");   
+			fileKit.render(res, "static/index.html");   
 		} else { 
 			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");

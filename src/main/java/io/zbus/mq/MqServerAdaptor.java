@@ -148,7 +148,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		
 		if(cmd == null) { //Special case for favicon
 			if(req.getBody() == null && "/favicon.ico".equals(req.getUrl())) {
-				FileKit.INSTANCE.loadResource(res, "static/favicon.ico");
+				FileKit.INSTANCE.render(res, "static/favicon.ico");
 				sess.write(res);
 				return;
 			} 

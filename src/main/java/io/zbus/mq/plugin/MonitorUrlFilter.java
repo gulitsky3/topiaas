@@ -23,7 +23,7 @@ public class MonitorUrlFilter implements Filter {
 	@Override
 	public boolean doFilter(Message req, Message res) { 
 		String url = req.getUrl();
-		if(url == null) return false;     
+		if(url == null) return true;     
 		
 		if(url.startsWith("/?") || url.startsWith("?")) { //special case for headers injection
 			UrlInfo info = HttpKit.parseUrl(url);
@@ -37,18 +37,18 @@ public class MonitorUrlFilter implements Filter {
 						req.setHeader(key, value);
 					}
 				} 
-				return false;
+				return true;
 			}
 		}
 		
 		if(rpcProcessor != null) {
 			if(rpcProcessor.matchUrl(url)) { 
 				rpcProcessor.process(req, res); 
-				return true;
+				return false;
 			} 
 		} 
 		
-		return false;
+		return true;
 	} 
 	
 	public void setRpcProcessor(RpcProcessor rpcProcessor) {

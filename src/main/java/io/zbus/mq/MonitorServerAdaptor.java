@@ -18,6 +18,8 @@ public class MonitorServerAdaptor extends MqServerAdaptor {
 	private SubscriptionManager subscriptionManager;
 	public MonitorServerAdaptor(MqServerAdaptor mqServerAdaptor) {
 		super(mqServerAdaptor);
+		
+		requestAuth = null;
 		if (config.monitorServer != null && config.monitorServer.auth != null) {
 			requestAuth = config.monitorServer.auth; 
 		}  
@@ -42,7 +44,7 @@ public class MonitorServerAdaptor extends MqServerAdaptor {
 		
 		@Route(path = "/favicon.ico", docEnabled = false)
 		public Message favicon() {
-			return fileKit.loadResource("static/favicon.ico");
+			return fileKit.render("static/favicon.ico");
 		}
 		
 		@Route("/")

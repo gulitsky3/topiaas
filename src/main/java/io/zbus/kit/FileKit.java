@@ -98,14 +98,14 @@ public class FileKit {
 		return null;
 	}
 
-	public String loadFile(String resource) throws IOException {
-		if (cacheEnabled && cache.containsKey(resource)) {
-			return new String(cache.get(resource));
+	public String loadFile(String file) throws IOException {
+		if (cacheEnabled && cache.containsKey(file)) {
+			return new String(cache.get(file));
 		}
 
-		InputStream in = FileKit.class.getClassLoader().getResourceAsStream(resource);
+		InputStream in = FileKit.class.getClassLoader().getResourceAsStream(file);
 		if (in == null) {
-			throw new IOException(resource + " not found");
+			throw new IOException(file + " not found");
 		}
 
 		Writer writer = new StringWriter();
@@ -126,12 +126,12 @@ public class FileKit {
 			}
 		}
 		String content = writer.toString();
-		cache.put(resource, content.getBytes());
+		cache.put(file, content.getBytes());
 		return content;
 	}
 
-	public String loadFile(String resource, Map<String, Object> model) throws IOException {
-		String template = loadFile(resource);
+	public String loadFile(String file, Map<String, Object> model) throws IOException {
+		String template = loadFile(file);
 		if (model == null)
 			return template;
 
@@ -177,11 +177,11 @@ public class FileKit {
 		return res;
 	} 
 	
-	public Message loadResource(String resource) {
-		return loadResource(resource, new HashMap<>());
+	public Message render(String resource) {
+		return render(resource, new HashMap<>());
 	}
 	
-	public Message loadResource(String resource, Map<String, Object> model) {
+	public Message render(String resource, Map<String, Object> model) {
 		Message res = new Message();
 		
 		UrlInfo info = HttpKit.parseUrl(resource); 
@@ -205,11 +205,11 @@ public class FileKit {
 		}  
 		return res;
 	}
-	public void loadResource(Message res, String resource) {
-		loadResource(res, resource, new HashMap<>());
+	public void render(Message res, String resource) {
+		render(res, resource, new HashMap<>());
 	}
 	
-	public void loadResource(Message res, String resource, Map<String, Object> model) { 
+	public void render(Message res, String resource, Map<String, Object> model) { 
 		UrlInfo info = HttpKit.parseUrl(resource); 
 		String contentType = HttpKit.contentType(resource);
 		if(contentType == null) {

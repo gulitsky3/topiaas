@@ -55,7 +55,7 @@ public class RpcServerFullExamples {
 	
 	@Route("/showUpload")
 	public Message showUpload() { 
-		return fileKit.loadResource("page/upload.html"); 
+		return fileKit.render("page/upload.html"); 
 	}
 	
 	@Route("/upload")
@@ -72,7 +72,7 @@ public class RpcServerFullExamples {
 	
 	@Route(path="/favicon.ico", docEnabled=false)
 	public Message favicon() { 
-		return fileKit.loadResource("static/favicon.ico"); 
+		return fileKit.render("static/favicon.ico"); 
 	}
 	 
 	@SuppressWarnings("resource")
