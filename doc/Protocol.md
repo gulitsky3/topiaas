@@ -173,6 +173,13 @@ Response
 		apiKey:    <apid_key>,
 		signature: <signature>
 	}
+    ----------------------------------------------------------
+	MQ based RPC, add 3 more key-value pairs(Required)
+	{
+		cmd:      'pub',     
+		mq:       <mq_name>,   //which MQ is the RPC based
+		ack:      false        //No ACK from zbus for RPC
+	}
 
 ### Response
 
