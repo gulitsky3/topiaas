@@ -61,7 +61,9 @@ public class Spring {
 			if(anno == null) continue;
 			String urlPrefix = anno.path();
 			if(StrKit.isEmpty(urlPrefix)) urlPrefix = anno.value();
-			rpcProcessor.mount(urlPrefix, service); 
+			if(!StrKit.isEmpty(urlPrefix)) {
+				rpcProcessor.mount(urlPrefix, service); 
+			}
 		} 
 		
 		RpcServer rpcServer = null;

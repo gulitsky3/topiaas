@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -51,6 +52,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
+import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 import io.zbus.transport.Server;
@@ -66,6 +68,7 @@ import io.zbus.transport.http.Http.FormData;
  *
  */
 public class HttpWsServer extends Server { 
+	private DecodeFilter decodeFilter;
 	public HttpWsServer() {
 		CorsConfig corsConfig = CorsConfigBuilder
 				.forAnyOrigin()
@@ -90,12 +93,20 @@ public class HttpWsServer extends Server {
 				//p.add(new ChunkedWriteHandler());
 				p.add(new CorsHandler(corsConfig));
 			} 
-			p.add(new HttpWsServerCodec());  
+			HttpWsServerCodec handler = new HttpWsServerCodec();
+			handler.setDecodeFilter(decodeFilter);
+			p.add(handler);  
 		}); 
+	}
+	
+	public void setDecodeFilter(DecodeFilter decodeFilter) {
+		this.decodeFilter = decodeFilter;
 	}
 	
 	public static class HttpWsServerCodec extends MessageToMessageCodec<Object, Object> {
 		private static final Logger logger = LoggerFactory.getLogger(HttpWsServerCodec.class); 
+		private DecodeFilter decodeFilter;
+		
 		private WebSocketServerHandshaker handshaker;
 	
 		//File upload
@@ -156,7 +167,7 @@ public class HttpWsServer extends Server {
 				httpMessage.headers().set(e.getKey().toLowerCase(), e.getValue());
 			}
 			byte[] body = Http.body(msg);
-			httpMessage.headers().add(Http.CONTENT_LENGTH, body.length+"");
+			httpMessage.headers().set(Http.CONTENT_LENGTH, body.length+"");
 			httpMessage.content().writeBytes(Http.body(msg)); 
 			out.add(httpMessage);
 		}
@@ -168,6 +179,16 @@ public class HttpWsServer extends Server {
 				byte[] bytes = decodeWebSocketFrame(ctx, (WebSocketFrame)obj);
 				if(bytes != null) {//ws close may be null
 					Message msg = JsonKit.parseObject(bytes, Message.class);
+					if(!HttpKit.isText(msg.getHeader("content-type"))) {
+						if(msg.getBody() instanceof String) { //NOT TEXT data, but body String typed
+							try {
+								byte[] body = Base64.getDecoder().decode((String)msg.getBody());
+								msg.setBody(body);
+							}catch (Exception e) { 
+								//ignore
+							} 
+						}
+					}
 					if(msg != null){
 						out.add(msg);
 					}
@@ -179,8 +200,12 @@ public class HttpWsServer extends Server {
 			if(!(obj instanceof io.netty.handler.codec.http.HttpMessage)){
 				throw new IllegalArgumentException("HttpMessage object required: " + obj);
 			}
+			
+			if(decodeFilter != null) {
+				if(decodeFilter.decode(ctx, obj, out)) return; //filter out some http message
+			}
 			 
-			io.netty.handler.codec.http.HttpMessage httpMsg = (io.netty.handler.codec.http.HttpMessage) obj; 
+			io.netty.handler.codec.http.HttpMessage httpMsg = (io.netty.handler.codec.http.HttpMessage) obj;   
 			Message msg = decodeHeaders(httpMsg); 
 			String contentType = msg.getHeader(Http.CONTENT_TYPE);
 			
@@ -308,8 +333,7 @@ public class HttpWsServer extends Server {
 		private void resetUpload() {  
 	        //decoder.destroy(); //TODO
 	        decoder = null;
-	    }  
-		
+	    }    
 		
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -373,6 +397,9 @@ public class HttpWsServer extends Server {
 			} else {
 				return "ws://" + location;
 			}
+		} 
+		public void setDecodeFilter(DecodeFilter decodeFilter) {
+			this.decodeFilter = decodeFilter;
 		}
 	}
 }

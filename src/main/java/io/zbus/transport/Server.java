@@ -294,6 +294,11 @@ class NettySession extends AttributeMap implements Session {
 	} 
 	
 	@Override
+	public Object channelContext() { 
+		return ctx;
+	}
+	
+	@Override
 	public String toString() { 
 		return "Session ["
 				+ "remote=" + remoteAddress()

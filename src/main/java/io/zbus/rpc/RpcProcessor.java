@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -34,10 +35,11 @@ import io.zbus.transport.http.Http.FormData;
 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
-	private Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance   
+	private Map<String, List<MethodInstance>> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance   
 	
 	private boolean docEnabled = true;  
 	private String docUrl = "/doc"; 
+	private String docFile = "static/rpc.html";
 	private String rootUrl = "/"; 
 	 
 	private boolean stackTraceEnabled = true;   
@@ -83,6 +85,9 @@ public class RpcProcessor {
 			}
 			
 			Method[] methods = service.getClass().getMethods(); 
+			Route r = service.getClass().getAnnotation(Route.class);
+			boolean defaultExcluded = false;
+			if(r != null) defaultExcluded = r.exclude();
 			
 			for (Method m : methods) {
 				if (m.getDeclaringClass() == Object.class) continue;  
@@ -102,6 +107,7 @@ public class RpcProcessor {
 				info.setReturnType(m.getReturnType());
 				
 				Route p = m.getAnnotation(Route.class);
+				if(p == null && defaultExcluded) continue;
 				if (p != null) { 
 					if (p.exclude()) continue; 
 					info.docEnabled = enableDoc && p.docEnabled();
@@ -179,17 +185,20 @@ public class RpcProcessor {
 		if(urlPath == null) {
 			throw new IllegalArgumentException("urlPath can not be null");
 		}   
-		
-		boolean exists = this.urlPath2MethodTable.containsKey(urlPath);
-		if (exists) {
-			if(overrideMethod) {
-				logger.warn(urlPath + " overridden: " + mi.reflectedMethod); 
-				this.urlPath2MethodTable.put(urlPath, mi); 
+		 
+		List<MethodInstance> methodList = urlPath2MethodTable.get(urlPath);
+		if (methodList != null && !methodList.isEmpty()) { 
+			boolean exists = methodList.contains(mi);
+			if(!exists) {
+				methodList.add(mi);
 			} else {
-				logger.warn(urlPath + " exists, new ignored"); 
+				logger.warn(urlPath + "[" + mi.reflectedMethod + "] Ignored");   
 			}
-		} else {
-			this.urlPath2MethodTable.put(urlPath, mi); 
+			
+		} else { 
+			methodList = new ArrayList<>();
+			methodList.add(mi);
+			this.urlPath2MethodTable.put(urlPath, methodList); 
 		} 
 		return this;
 	} 
@@ -296,8 +305,8 @@ public class RpcProcessor {
 	
 	public boolean matchUrl(String url) {
 		int length = 0;
-		Entry<String, MethodInstance> matched = null;
-		for(Entry<String, MethodInstance> e : urlPath2MethodTable.entrySet()) {
+		Entry<String, List<MethodInstance>> matched = null;
+		for(Entry<String, List<MethodInstance>> e : urlPath2MethodTable.entrySet()) {
 			String key = e.getKey();
 			if(url.equals(key)||  url.startsWith(key+"/") || url.startsWith(key+"?")) {
 				if(key.length() > length) {
@@ -316,13 +325,64 @@ public class RpcProcessor {
 		return true;
 	}
 	
+	private boolean isSimpleType(Class<?> c) {  
+		return c.isPrimitive() ||
+				Number.class.isAssignableFrom(c) ||
+				c == String.class ||
+				c == Date.class;
+	}
+	private boolean classMatch(Class<?> target, Class<?> c) {
+		if(target == c) return true;  
+		if(target.isAssignableFrom(c)) return true; 
+		
+		if(isSimpleType(target) && isSimpleType(c)) return true;   
+		
+		if(!isSimpleType(target) && !isSimpleType(c)) return true; //possible to convert through json
+
+		return false;
+	}
+	
+	private void matchMethod(MethodTarget target, List<MethodInstance> instances) {
+		if(instances.size() == 0) {
+			target.methodInstance =instances.get(0);
+			return;
+		}
+		List<Object> params = new ArrayList<>(); 
+		for(Object p : target.params) params.add(p);
+		int paramCount = target.params.length;
+		if(target.queryMap != null) {
+			paramCount++;
+			params.add(target.queryMap);
+		}
+		
+		for(MethodInstance mi : instances) {
+			if(mi.target != null) continue; 
+			if(mi.info.params.size() != paramCount) continue;
+			
+			boolean matched = true;
+			for(int i=0;i<paramCount;i++) {
+				Class<?> paramType = mi.info.params.get(i).type;
+				if(!classMatch(paramType, params.get(i).getClass())) {
+					matched = false;
+					break;
+				}
+			}
+			if(matched) {
+				target.methodInstance = mi;
+				return;
+			}
+		}
+		//default to first
+		target.methodInstance = instances.get(0);
+	}
+	
 	private MethodTarget findMethodByUrl(Message req, Message response) {  
 		String url = req.getUrl();  
 		int length = 0;
-		Entry<String, MethodInstance> matched = null;
-		for(Entry<String, MethodInstance> e : urlPath2MethodTable.entrySet()) {
+		Entry<String, List<MethodInstance>> matched = null;
+		for(Entry<String, List<MethodInstance>> e : urlPath2MethodTable.entrySet()) {
 			String key = e.getKey();
-			if(url.startsWith(key)) {
+			if(url.startsWith(key+"/") || url.equals(key) || url.startsWith(key+"?")) {
 				if(key.length() > length) {
 					length = key.length();
 					matched = e; 
@@ -332,31 +392,11 @@ public class RpcProcessor {
 		if(matched == null) {
 			reply(response, 404, String.format("URL=%s Not Found", url)); 
 			return null;
-		}
+		}  
 		
-		if(length == 1) { //root
-			UrlInfo info = HttpKit.parseUrl(url);
-			if(info.pathList.size()>0) {
-				reply(response, 404, String.format("URL=%s Not Found", url)); 
-				return null; // root / should not with parameters
-			}
-		}
-		
-		String urlPathMatched = matched.getKey();
-		
-		MethodTarget target = new MethodTarget(); 
-		target.methodInstance = matched.getValue();
-		Object[] params = null; 
-		 
-		Route anno = target.methodInstance.info.urlAnnotation;
-		if(anno != null) {
-			boolean httpMethodMatched = httpMethodMatched(req, anno);
-			if(!httpMethodMatched) {
-				reply(response, 405, String.format("Method(%s) Not Allowd", req.getMethod())); 
-				return null;
-			}
-		}
-		
+		String urlPathMatched = matched.getKey();  
+		MethodTarget target = new MethodTarget();  
+		Object[] params = null;  
 		Object body = req.getBody(); //assumed to be params 
 		if(body != null) {
 			if(body instanceof JSONObject || body instanceof FormData) { 
@@ -383,7 +423,19 @@ public class RpcProcessor {
 			}
 			params = paramList.toArray();
 		} 
-		target.params = params; 
+		target.params = params;  
+		
+		matchMethod(target, matched.getValue());
+		
+		Route anno = target.methodInstance.info.urlAnnotation;
+		if(anno != null) {
+			boolean httpMethodMatched = httpMethodMatched(req, anno);
+			if(!httpMethodMatched) {
+				reply(response, 405, String.format("Method(%s) Not Allowd", req.getMethod())); 
+				return null;
+			}
+		}
+		
 		return target;
 	}
 	
@@ -412,6 +464,10 @@ public class RpcProcessor {
 		if(mi.reflectedMethod != null) {
 			Class<?>[] targetParamTypes = mi.reflectedMethod.getParameterTypes();
 			Object[] invokeParams = new Object[targetParamTypes.length];  
+			if(target.params.length > targetParamTypes.length) {
+				reply(response, 400, String.format("URL=%s, Too many paramteter received", url));
+				return;   
+			}
 			
 			applyParams(req, response, target, invokeParams); 
 			
@@ -451,11 +507,12 @@ public class RpcProcessor {
 		} 
 	}
 	
-	private Object convert(Object value, Class<?> paramType) {
+	private Object convert(MethodParam mp, Object value, Class<?> paramType) {
 		try {
 			return JsonKit.convert(value, paramType);  
 		} catch (Exception e) {
-			throw new RpcException(400, String.format("Required parameter type(%s) bad format", paramType.getName())); 
+			String error = String.format("Bad format: Required parameter type=%s, but value(%s) received", mp.type, value);
+			throw new RpcException(400, error); 
 		}
 	}
 	
@@ -479,7 +536,7 @@ public class RpcProcessor {
 			MethodParam mp = declaredParams.get(i);
 			if(mp.fromContext) {
 				try {
-					invokeParams[i] = convert(req.getContext(), paramType);  
+					invokeParams[i] = convert(mp, req.getContext(), paramType);  
 				} catch (Exception e) {
 					logger.warn(e.getMessage(), e); //ignore context conversion error, set to null
 				}
@@ -490,20 +547,25 @@ public class RpcProcessor {
 				if(target.queryMap != null) {
 					Object value = target.queryMap.get(mp.name);
 					if(value != null) { 
-						invokeParams[i] = convert(value, paramType);    
+						invokeParams[i] = convert(mp, value, paramType);    
 						continue;
 					} 
 				}
 			}
 			
 			if(j >= params.length) { 
-				if(Map.class.isAssignableFrom(paramType) && target.queryMap != null) {
-					invokeParams[i] = convert(target.queryMap, paramType);   
+				if(target.queryMap != null) {
+					try {
+						invokeParams[i] = convert(mp, target.queryMap, paramType); 
+					} catch (Exception e) {
+						//ignore
+					}
 				} else {
 					invokeParams[i] = null;
 				}
+				return;
 			} else { 
-				invokeParams[i] = convert(params[j++], paramType);   
+				invokeParams[i] = convert(mp, params[j++], paramType);   
 			}
 		}  
 	}
@@ -548,6 +610,7 @@ public class RpcProcessor {
 		if(!this.docEnabled) return this;
 		DocRender render = new DocRender(this); 
 		render.setRootUrl(rootUrl);
+		render.setDocFile(docFile);
 		mount(docUrl, render, false, false, false);
 		return this;
 	}   
@@ -615,8 +678,17 @@ public class RpcProcessor {
 
 	public void setRootUrl(String rootUrl) {
 		this.rootUrl = rootUrl;
-	}
+	} 
 	
+	
+	public String getDocFile() {
+		return docFile;
+	}
+
+	public void setDocFile(String docFile) {
+		this.docFile = docFile;
+	}
+
 	public void setExceptionFilter(RpcFilter exceptionFilter) {
 		this.exceptionFilter = exceptionFilter;
 	}
@@ -627,11 +699,13 @@ public class RpcProcessor {
 	
 	public List<RpcMethod> rpcMethodList() { 
 		List<RpcMethod> res = new ArrayList<>();
-		TreeMap<String, MethodInstance> methods = new TreeMap<>(this.urlPath2MethodTable);
-		Iterator<Entry<String, MethodInstance>> iter = methods.entrySet().iterator();
+		TreeMap<String, List<MethodInstance>> methods = new TreeMap<>(this.urlPath2MethodTable);
+		Iterator<Entry<String, List<MethodInstance>>> iter = methods.entrySet().iterator();
 		while(iter.hasNext()) {
-			MethodInstance mi = iter.next().getValue();
-			res.add(mi.info); 
+			List<MethodInstance> methodList = iter.next().getValue();
+			for(MethodInstance mi : methodList) {
+				res.add(mi.info);
+			} 
 		} 
 		return res;
 	} 
@@ -661,6 +735,51 @@ public class RpcProcessor {
 			if(info.method == null) {
 				this.info.method = reflectedMethod.getName(); 
 			}  
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((info == null) ? 0 : info.hashCode());
+			result = prime * result + ((instance == null) ? 0 : instance.hashCode());
+			result = prime * result + ((reflectedMethod == null) ? 0 : reflectedMethod.hashCode());
+			result = prime * result + ((target == null) ? 0 : target.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			MethodInstance other = (MethodInstance) obj;
+			if (info == null) {
+				if (other.info != null)
+					return false;
+			} else if (!info.equals(other.info))
+				return false;
+			if (instance == null) {
+				if (other.instance != null)
+					return false;
+			} else if (!instance.equals(other.instance))
+				return false;
+			if (reflectedMethod == null) {
+				if (other.reflectedMethod != null)
+					return false;
+			} else if (!reflectedMethod.equals(other.reflectedMethod))
+				return false;
+			if (target == null) {
+				if (other.target != null)
+					return false;
+			} else if (!target.equals(other.target))
+				return false;
+			return true;
 		} 
+		
+		
 	}
 }

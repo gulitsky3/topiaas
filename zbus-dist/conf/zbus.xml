@@ -49,12 +49,24 @@
 		<allowedRequestHeaders>Origin, X-Request-With, X-Requested-With, Content-Type, Accept, Token</allowedRequestHeaders>
 		<exposeHeaders></exposeHeaders>
 	</cors>
+	
+	
+	<!-- HTTP 代理--> 
+	<httpProxy>
+		<proxy>
+			<urlPrefix>/f5</urlPrefix>
+			<urlRewrite></urlRewrite>
+			<backend>http://mw.cmft.com</backend>
+		</proxy>
+	</httpProxy>
+ 	
+	 
  	
  	<staticFileDir cached="false">../static</staticFileDir>     
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   
 	<mqDbUrl></mqDbUrl>   
 	<maxSocketCount>102400</maxSocketCount>   
 	<packageSizeLimit>128M</packageSizeLimit>    
-	<verbose>true</verbose> 
+	<verbose>false</verbose> 
 </zbus>
 

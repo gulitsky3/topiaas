@@ -14,9 +14,13 @@ import io.zbus.kit.ConfigKit;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.MqServerConfig.CorsConfig;
 import io.zbus.mq.MqServerConfig.ServerConfig;
+import io.zbus.proxy.http.HttpDecodeFilter;
+import io.zbus.proxy.http.HttpProxyHandler;
+import io.zbus.proxy.http.ProxyUrlMatcher;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
 import io.zbus.transport.Ssl;
+import io.zbus.transport.http.DecodeFilter;
 import io.zbus.transport.http.HttpWsServer; 
 
 public class MqServer extends HttpWsServer {
@@ -33,7 +37,7 @@ public class MqServer extends HttpWsServer {
 	private final MqServerConfig config; 
 	
 	private StaticResource staticResource = new StaticResource();
-	private RpcProcessor rpcProcessor;
+	private RpcProcessor rpcProcessor; 
 	
 	public MqServer(MqServerConfig config) {  
 		super(corsConfig(config.getCors()));
@@ -80,6 +84,16 @@ public class MqServer extends HttpWsServer {
 		}
 		staticResource.setBasePath(config.getStaticFileDir());
 		staticResource.setCacheEnabled(config.isStaticFileCacheEnabled());
+		
+		//Setup HTTP proxy
+		if(config.httpProxyConfig != null) {  
+			ProxyUrlMatcher urlMatcher = new ProxyUrlMatcher(config.httpProxyConfig.buildProxyTable());
+			DecodeFilter decodeFilter = new HttpDecodeFilter(urlMatcher);
+			setDecodeFilter(decodeFilter);
+			
+			HttpProxyHandler httpProxyHandler = new HttpProxyHandler(urlMatcher);
+			adaptor.setHttpProxyHandler(httpProxyHandler);
+		}
 	}  
 	
 	public MqServer(String configFile){
@@ -181,7 +195,7 @@ public class MqServer extends HttpWsServer {
 			}
 			logger.info("Starting mointor server @" + monitorServerConfig.address);
 			this.start(monitorServerConfig.address, monitorServerAdaptor, sslContext); 
-		}  
+		}   
 	}
 	 
 	

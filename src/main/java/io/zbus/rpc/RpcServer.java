@@ -40,6 +40,8 @@ public class RpcServer implements Closeable {
 	private RpcProcessor rpcProcessor;
 	
 	private ExecutorService runner;
+	
+	private boolean routeDisabled = false;
 
 	public RpcServer(RpcProcessor processor) {
 		this.rpcProcessor = processor;
@@ -132,11 +134,13 @@ public class RpcServer implements Closeable {
 					response.setStatus(200);
 				}
 				
-				response.setHeader(Protocol.CMD, Protocol.ROUTE);
-				response.setHeader(Protocol.TARGET, source);
-				response.setHeader(Protocol.ID, id);
-
-				mqClient.sendMessage(response); 
+				if(!routeDisabled) {
+					response.setHeader(Protocol.CMD, Protocol.ROUTE);
+					response.setHeader(Protocol.TARGET, source);
+					response.setHeader(Protocol.ID, id);
+	
+					mqClient.sendMessage(response); 
+				}
 			}); 
 		});
 
@@ -224,6 +228,14 @@ public class RpcServer implements Closeable {
 
 	public void setAuthEnabled(boolean authEnabled) {
 		this.authEnabled = authEnabled;
+	}
+	
+	public boolean isRouteDisabled() {
+		return routeDisabled;
+	}
+	
+	public void setRouteDisabled(boolean routeDisabled) {
+		this.routeDisabled = routeDisabled;
 	}
 
 	public void setApiKey(String apiKey) {

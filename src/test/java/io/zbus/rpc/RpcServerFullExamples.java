@@ -17,6 +17,22 @@ public class RpcServerFullExamples {
 		return a+b;
 	} 
 	
+	public Object testOverride(String data) {
+		return "testOverride(String data)" + data;
+	}
+	
+	public Object testOverride(Map<String, Object> data) {
+		return data;
+	}
+	
+	public Object testOverride(int i, Map<String, Object> data) {
+		return "testOverride(int i, Map<String, Object> data)" + data;
+	}
+	
+	public Object testOverride() {
+		return "testOverride()";
+	}
+	
 	@Route("/abc") //default path could be changed
 	public Object json() {
 		Map<String, Object> value = new HashMap<>();
@@ -99,8 +115,9 @@ public class RpcServerFullExamples {
 		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
+		p.setDocFile("rpc.html");
 		
-		rpcServer.setMqServerAddress("localhost:15555");
+		rpcServer.setMqServerAddress("zbus.io");
 		rpcServer.setMq("/");  
 		rpcServer.start();  
 	}  

@@ -38,6 +38,9 @@ public interface Session extends Closeable {
 	 */
 	boolean active(); 
 	
+	
+	Object channelContext();
+	
 	/**
 	 * Get attached attribute value
 	 * @param key attribute key

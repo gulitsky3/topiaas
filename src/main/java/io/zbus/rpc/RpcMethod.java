@@ -16,16 +16,20 @@ public class RpcMethod {
 	public List<RpcFilter> filters = new ArrayList<>();
 	
 	public static class MethodParam {
-		public String type;
-		public String name; 
+		public Class<?> type;
+		public String name;  
 		public boolean fromContext;
 	} 
 	
-	public void addParam(String type, String name) {
+	public void addParam(Class<?> type, String name) {
 		MethodParam p = new MethodParam();
 		p.name = name;
 		p.type = type;
 		params.add(p);
+	}
+	
+	public void addParam(Class<?> type) {
+		addParam(type, null);
 	}
 	
 	public void setReturnType(String returnType) {
@@ -35,18 +39,8 @@ public class RpcMethod {
 	public void setReturnType(Class<?> returnType) {
 		this.returnType = returnType.getName();
 	} 
+	  
 	
-	public void addParam(Class<?> type, String name) {
-		addParam(type.getName(), name);
-	}
-	
-	public void addParam(String type) {
-		addParam(type, null);
-	}
-	
-	public void addParam(Class<?> type) {
-		addParam(type, null);
-	}
 	
 	public RpcMethod() {
 		

@@ -36,6 +36,9 @@ tr { display: table-row;  vertical-align: inherit; border-color: inherit; }
 {{zbusjs}}
 
 const rpc = new RpcClient(null, '{{urlPrefix}}'); 
+const admin = rpc.admin;
+const db = rpc.db;
+const help = rpc.admin.help;
 
 </script> 
 

@@ -10,22 +10,31 @@ import io.zbus.rpc.annotation.Route;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
+@Route(exclude=true) //default exclude all methods
 public class StaticResource {
-	private String basePath = "";
+	private String basePath = ".";
 	private String urlPrefix = "";
 	private FileKit fileKit = new FileKit();
 	
-	@Route(exclude=true)
+	private File absoluteBasePath = new File(basePath).getAbsoluteFile();
+	 
 	public void setBasePath(String basePath) {
-		this.basePath = basePath;
+		if(basePath == null) {
+			basePath = ".";
+		}
+		this.basePath = basePath; 
+		File file = new File(this.basePath);
+		if(file.isAbsolute()) {
+			absoluteBasePath = file;
+		} else {
+			absoluteBasePath = new File(System.getProperty("user.dir"), basePath);
+		}
 	}
-	
-	@Route(exclude=true)
+	 
 	public void setUrlPrefix(String urlPrefix) {
 		this.urlPrefix = urlPrefix;
 	}
-	
-	@Route(exclude=true)
+	 
 	public void setCacheEnabled(boolean cacheEnabled) {
 		this.fileKit.setCacheEnabled(cacheEnabled);
 	}
@@ -43,7 +52,7 @@ public class StaticResource {
 			urlFile = "index.html";
 		}
 		//String file = HttpKit.joinPath(basePath ,urlFile); //TODO security issue
-		File fullPath = new File(basePath, urlFile);
+		File fullPath = new File(absoluteBasePath, urlFile);
 		String file = fullPath.getPath();
 		 
 		String contentType = HttpKit.contentType(file);
