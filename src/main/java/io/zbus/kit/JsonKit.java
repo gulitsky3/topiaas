@@ -107,7 +107,9 @@ public class JsonKit {
 	public static byte[] toJSONBytes(Object value, String encoding) {
 		return toJSONBytes(value, encoding,   
 				SerializerFeature.DisableCircularReferenceDetect,
-				SerializerFeature.WriteMapNullValue); 
+				SerializerFeature.WriteMapNullValue,
+				SerializerFeature.SortField,
+				SerializerFeature.MapSortField); 
 	}  
 	
 	

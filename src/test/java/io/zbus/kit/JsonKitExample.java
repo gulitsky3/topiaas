@@ -3,9 +3,6 @@ package io.zbus.kit;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.fastjson.JSON; 
-import com.alibaba.fastjson.serializer.SerializerFeature;
-
 public class JsonKitExample {
 	public static void main(String[] args) {
 		String json = "select:[display_name,id],where:{id:1}";
@@ -14,10 +11,10 @@ public class JsonKitExample {
 		
 		Map<String, Object> data = new HashMap<>();
 		data.put("a", null);
+		data.put("c", "ddd");
 		data.put("b", "balue");
 		
-		json = JsonKit.toJSONString(data);
-		json = JSON.toJSONString(data, SerializerFeature.WriteMapNullValue);
+		json = JsonKit.toJSONString(data); 
 		System.out.println(json);
 	}
 }
