@@ -14,4 +14,5 @@ public @interface RequestMapping {
 	String path() default "";
 	String[] method() default { };
 	boolean exclude() default false; 
+	boolean docEnabled() default true;
 }

@@ -1,6 +1,5 @@
 package io.zbus.rpc;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +8,7 @@ import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.transport.Message;
 
 public class RpcServerExample {   
+	private FileKit fileKit = new FileKit(false); 
 	
 	@RequestMapping("/")
 	public Message home() { 
@@ -20,19 +20,27 @@ public class RpcServerExample {
 		return res;
 	}
 	
-	@RequestMapping("/favicon.ico")
-	public Message favicon() { 
+	@RequestMapping("/showUpload")
+	public Message showUpload() { 
+		return fileKit.loadResource("page/upload.html"); 
+	}
+	
+	@RequestMapping("/upload")
+	public Message doUpload(Message req) {  
+		FileKit.saveUploadedFile(req, "/tmp/upload");
 		Message res = new Message();
+		
 		res.setStatus(200);
-		res.setHeader("content-type", "image/x-icon"); 
-		byte[] data = new byte[0];
-		try {
-			data = FileKit.INSTANCE.loadFileBytes("favicon.ico");
-		} catch (IOException e) {  
-			res.setStatus(500);
-		}
-		res.setBody(data); 
+		res.setHeader("content-type", "text/html; charset=utf8"); 
+		res.setBody("<h1>Uploaded Success</h1>");
+		
 		return res;
+	}
+	
+	
+	@RequestMapping(path="/favicon.ico", docEnabled=false)
+	public Message favicon() { 
+		return fileKit.loadResource("favicon.ico"); 
 	}
 	 
 	@RequestMapping(path="/abc")

@@ -242,8 +242,8 @@ public class Http {
 			out.write(requestString.getBytes());
 			out.write(SUFFIX); 
 		}
-	}  
-	
+	}   
+
 	public static class FileUpload { 
 		public String fileName;
 		public String contentType;

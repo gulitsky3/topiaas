@@ -20,17 +20,9 @@ public class DocRender {
 	public DocRender(RpcProcessor rpcProcessor, String docRootPath) {
 		this.rpcProcessor = rpcProcessor; 
 		this.docRootPath = docRootPath;
-	}
-	
-	@RequestMapping("/favicon.ico")
-	public Message favicon() throws IOException { 
-		Message res = new Message();
-		res.setStatus(200); 
-		
-		return res;
-	}
+	} 
  
-	@RequestMapping("/")
+	@RequestMapping(path="/", docEnabled=false)
 	public Message index() throws IOException { 
 		Message result = new Message(); 
 		Map<String, Object> model = new HashMap<String, Object>(); 

@@ -13,12 +13,15 @@ public class StaticResource {
 	private String basePath = ".";
 	private FileKit fileKit = new FileKit();
 	
+	@RequestMapping(exclude=true)
 	public void setBasePath(String basePath) {
 		this.basePath = basePath;
 	}
+	@RequestMapping(exclude=true)
 	public void setCacheEnabled(boolean cacheEnabled) {
 		this.fileKit.setCache(cacheEnabled);
 	}
+	
 	@RequestMapping("/")
 	public Message file(Message req) {
 		Message res = new Message();
@@ -37,6 +40,7 @@ public class StaticResource {
 			res.setBody(data);
 		} catch (IOException e) {
 			res.setStatus(404);
+			res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 			res.setBody(info.urlPath + " Not Found");
 		}  
 		return res;

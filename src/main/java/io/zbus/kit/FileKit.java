@@ -22,11 +22,13 @@
  */
 package io.zbus.kit;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,9 +37,17 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+
+import io.zbus.kit.HttpKit.UrlInfo;
+import io.zbus.transport.Message;
+import io.zbus.transport.http.Http;
+import io.zbus.transport.http.Http.FileForm;
+import io.zbus.transport.http.Http.FileUpload;
 
 public class FileKit {
 	private final Map<String, String> cache = new ConcurrentHashMap<String, String>();
@@ -159,6 +169,31 @@ public class FileKit {
 			}
 		}
 		return buffer.toByteArray();
+	} 
+	
+	public Message loadResource(String resource) {
+		return loadResource(resource, new HashMap<>());
+	}
+	
+	public Message loadResource(String resource, Map<String, Object> model) {
+		Message res = new Message();
+		
+		UrlInfo info = HttpKit.parseUrl(resource); 
+		String contentType = HttpKit.contentType(resource);
+		if(contentType == null) {
+			contentType = "application/octet-stream";
+		}
+		
+		res.setHeader(Http.CONTENT_TYPE, contentType);   
+		res.setStatus(200); 
+		try {
+			byte[] data = loadFileBytes(resource);
+			res.setBody(data);
+		} catch (IOException e) {
+			res.setStatus(404);
+			res.setBody(info.urlPath + " Not Found");
+		}  
+		return res;
 	}
 
 	public static void deleteFile(File file) {
@@ -185,4 +220,48 @@ public class FileKit {
 		}
 		return new File(clazz.getProtectionDomain().getCodeSource().getLocation().getPath());
 	}
+	
+	
+	public static void saveUploadedFile(Message req, String basePath) {
+		FileForm fileForm = (FileForm)req.getBody();
+		if (fileForm == null) {
+			throw new IllegalArgumentException("upload body is null");
+		} 
+
+		BufferedOutputStream bos = null;
+		FileOutputStream fos = null;
+		
+		File base = new File(basePath);
+		if(!base.exists()) {
+			base.mkdirs();
+		}
+
+		for (String key : fileForm.files.keySet()) {
+			List<FileUpload> fileUploads = fileForm.files.get(key);
+			for (FileUpload fileUpload : fileUploads) {
+				try {
+					File file = new File(basePath, fileUpload.fileName); 
+					
+					fos = new FileOutputStream(file);
+					bos = new BufferedOutputStream(fos);
+					bos.write(fileUpload.data); 
+					
+				} catch (Exception e) {
+					throw new RuntimeException(e.getMessage(), e.getCause()); 
+				} finally {
+					try {
+						if (bos != null) {
+							bos.close();
+						}
+						if (fos != null) {
+							fos.close();
+						}
+					} catch (Exception e) {
+						throw new RuntimeException(e.getMessage(), e.getCause()); 
+					}
+				}
+			}
+		} 
+	}
+
 }

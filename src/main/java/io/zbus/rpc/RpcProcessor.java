@@ -24,6 +24,7 @@ import io.zbus.rpc.annotation.RequestMapping;
 import io.zbus.rpc.doc.DocRender;
 import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
+import io.zbus.transport.http.Http.FileForm;
 
 public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
@@ -90,13 +91,20 @@ public class RpcProcessor {
 				//default path
 				String urlPath = HttpKit.joinPath(module, methodName);
 				
+				info.urlPath = urlPath;
+				info.method = methodName; 
+				info.docEnabled = enableDoc;
+				info.returnType = m.getReturnType().getCanonicalName();
+				
 				RequestMapping p = m.getAnnotation(RequestMapping.class);
 				if (p != null) { 
 					if (p.exclude()) continue; 
-					
+					info.docEnabled = enableDoc && p.docEnabled();
 					info.urlAnnotation = p;
-					urlPath = annoPath(p);   
-					urlPath = HttpKit.joinPath(module, urlPath); 
+					urlPath = annoPath(p);    
+					if(urlPath != null) {
+						info.urlPath = HttpKit.joinPath(module, urlPath);
+					}
 				} 
 				
 				Auth auth = m.getAnnotation(Auth.class);
@@ -104,16 +112,9 @@ public class RpcProcessor {
 				if(auth != null) {
 					authRequired = !auth.exclude();
 				}
-
-				m.setAccessible(true);
-				
-				
-				info.setUrlPath(urlPath); 
-				info.method = methodName;
 				info.authRequired = authRequired;
-				info.docEnabled = enableDoc;
-				info.returnType = m.getReturnType().getCanonicalName();
-				
+
+				m.setAccessible(true);  
 				
 				List<String> paramTypes = new ArrayList<String>();
 				for (Class<?> t : m.getParameterTypes()) {
@@ -329,7 +330,9 @@ public class RpcProcessor {
 		
 		Object body = req.getBody(); //assumed to be params 
 		if(body != null) {
-			params = JsonKit.convert(body, Object[].class); 
+			if(!(body instanceof FileForm)) { //may be upload files
+				params = JsonKit.convert(body, Object[].class); 
+			} 
 		}   
 		if(params == null) { 
 			String subUrl = url.substring(urlPathMatched.length());

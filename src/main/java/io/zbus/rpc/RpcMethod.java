@@ -7,7 +7,7 @@ import io.zbus.kit.HttpKit;
 import io.zbus.rpc.annotation.RequestMapping;
 
 public class RpcMethod {
-	private String urlPath; // java method's url path 
+	public String urlPath; // java method's url path 
 	public String method;   // java method
 	public List<String> paramTypes = new ArrayList<>();
 	public List<String> paramNames = new ArrayList<>();
@@ -31,13 +31,9 @@ public class RpcMethod {
 	public String getUrlPath() {
 		if(urlPath == null) return HttpKit.joinPath(method);
 		return urlPath;
-	}
-	
-	public void setUrlPath(String urlPath) {
-		this.urlPath = HttpKit.joinPath(urlPath);
-	}
+	} 
 	
 	public void setUrlPath(String module, String method) {
 		this.urlPath = HttpKit.joinPath(module, method);
-	}
+	} 
 }

@@ -162,23 +162,18 @@ public class HttpWsServer extends Server {
 			//Special case for file uploads
 			if(httpMsg instanceof HttpRequest 
 					&& contentType != null 
-					&& contentType.startsWith(Http.CONTENT_TYPE_UPLOAD) ){
-				if(body != null){
-					body = body.duplicate(); //read form will change the body
-				}
-				
+					&& contentType.startsWith(Http.CONTENT_TYPE_UPLOAD) ){  
 				HttpRequest req = (HttpRequest) httpMsg;
 				decoder = new HttpPostRequestDecoder(factory, req);   
-				handleUploadMessage(httpMsg, msg);
-				out.add(msg); 
-			}  
-			
-			if (body != null) { 
-				int size = body.readableBytes();
-				if (size > 0) {
-					byte[] data = new byte[size];
-					body.readBytes(data);
-					msg.setBody(data);
+				handleUploadMessage(httpMsg, msg); 
+			}  else { 
+				if (body != null) { 
+					int size = body.readableBytes();
+					if (size > 0) {
+						byte[] data = new byte[size];
+						body.readBytes(data);
+						msg.setBody(data);
+					}
 				}
 			}
 	
@@ -266,7 +261,7 @@ public class HttpWsServer extends Server {
 		}
 		
 		private void resetUpload() {  
-	        decoder.destroy();
+	        //decoder.destroy(); //TODO
 	        decoder = null;
 	    }  
 		
