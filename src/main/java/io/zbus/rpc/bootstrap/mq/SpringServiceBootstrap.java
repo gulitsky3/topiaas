@@ -1,4 +1,4 @@
-package io.zbus.rpc.bootstrap;
+package io.zbus.rpc.bootstrap.mq;
 
 import java.util.List;
 import java.util.Map;
@@ -96,5 +96,9 @@ public class SpringServiceBootstrap extends ServiceBootstrap implements Applicat
 	 
 	public void setAutoDiscover(boolean autoDiscover) {
 		autoDiscover(autoDiscover);
+	}
+	
+	public void setVerbose(boolean verbose){
+		verbose(verbose);
 	}
 }

@@ -3,43 +3,35 @@ package io.zbus.mq;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.zbus.kit.ThreadKit.ManualResetEvent;
 import io.zbus.kit.logging.Logger;
 import io.zbus.kit.logging.LoggerFactory;
+import io.zbus.mq.Protocol.ConsumeGroupInfo;
 
 public class ConsumeThread implements Closeable{
 	private static final Logger log = LoggerFactory.getLogger(ConsumeThread.class);  
-	protected final MqClient client;
+	protected final MqClient client; 
 	
-	protected String topic;  
-	protected String token;
-	protected ConsumeGroup consumeGroup;
-	protected int consumeTimeout = 10000;
-	protected Integer consumeWindow;
+	protected Topic topic;
+	protected ConsumeGroup consumeGroup; 
+	protected ConsumeCtrl consumeCtrl; 
 	
-	protected ExecutorService consumeRunner;
+	protected String token; 
 	protected MessageHandler messageHandler;
 	
 	protected ManualResetEvent active = new ManualResetEvent(true); 
 	
 	protected RunningThread consumeThread;
 	 
-	public ConsumeThread(MqClient client, String topic, ConsumeGroup group){
+	public ConsumeThread(MqClient client, Topic topic, ConsumeGroup group, ConsumeCtrl consumeCtrl){
 		this.client = client;
 		this.topic = topic;
 		this.consumeGroup = group;
+		this.consumeCtrl = consumeCtrl;
 	}
-	
-	public ConsumeThread(MqClient client, String topic){
-		this(client, topic, null);
-	}
-	
-	public ConsumeThread(MqClient client){
-		this(client, null);
-	}
+	 
 	 
 	public synchronized void start() {
 		start(false);
@@ -54,16 +46,12 @@ public class ConsumeThread implements Closeable{
 		}
 		if(pauseOnStart){
 			active.reset();
-		}
-		
-		if(this.consumeGroup == null){
-			this.consumeGroup = new ConsumeGroup();
-			consumeGroup.setGroupName(this.topic);
-		}  
+		} 
 		this.client.setToken(token);
-		this.client.setInvokeTimeout(consumeTimeout);
-		try {
-			this.client.declareGroup(topic, consumeGroup);
+		this.client.setInvokeTimeout(consumeCtrl.getConsumeTimeout());
+		try { 
+			ConsumeGroupInfo info = this.client.declareGroup(topic, consumeGroup); 
+			consumeCtrl.setConsumeGroup(info.groupName); //update groupName
 		} catch (IOException e) { 
 			log.error(e.getMessage(), e);
 		} catch (InterruptedException e) { 
@@ -77,7 +65,7 @@ public class ConsumeThread implements Closeable{
 	
 	public void pause(){
 		try {
-			client.unconsume(topic, this.consumeGroup.getGroupName()); //stop consuming in serverside
+			client.unconsume(topic.getName(), consumeCtrl.getConsumeGroup()); //stop consuming in server side
 			consumeThread.running = false;
 			consumeThread.interrupt();
 			
@@ -99,25 +87,29 @@ public class ConsumeThread implements Closeable{
 	public Message take() throws IOException, InterruptedException {  
 		Message res = null;
 		try {  
-			res = client.consume(topic, this.consumeGroup.getGroupName(), this.getConsumeWindow()); 
+			res = client.consume(consumeCtrl); 
 			if (res == null) return res; 
 			Integer status = res.getStatus();
-			if (status == 404) {
-				client.declareGroup(topic, consumeGroup); 
+			if (status == 404) { 
+				ConsumeGroupInfo info = client.declareGroup(topic, consumeGroup);
+				consumeCtrl.setConsumeGroup(info.groupName); //update groupName
 				return take();
 			}
 			
 			if (status == 200) { 
+				
+				String method = res.getOriginMethod();
+				if(method != null){
+					res.setMethod(method);
+					res.removeHeader(Protocol.ORIGIN_METHOD);
+				}
+				
 				String originUrl = res.getOriginUrl();
 				if(originUrl != null){ 
 					res.removeHeader(Protocol.ORIGIN_URL);
 					res.setUrl(originUrl);   
 					res.setStatus(null);
-					String method = res.getOriginMethod();
-					if(method != null){
-						res.setMethod(method);
-						res.removeHeader(Protocol.ORIGIN_METHOD);
-					}
+					
 					return res;
 				}
 				
@@ -153,31 +145,18 @@ public class ConsumeThread implements Closeable{
 						}
 						if(!running) break; 
 						msg = take();
-						if(msg == null) continue;
+						if(msg == null) continue; 
 						if(!running) break;
 						
 						if(messageHandler == null){
 							throw new IllegalStateException("Missing ConsumeHandler");
 						}
 						
-						if(consumeRunner == null){
-							try{
-								messageHandler.handle(msg, client);
-							} catch (Exception e) {
-								log.error(e.getMessage(), e);
-							}
-						} else {
-							consumeRunner.submit(new Runnable() { 
-								@Override
-								public void run() {
-									try{
-										messageHandler.handle(msg, client);
-									} catch (Exception e) {
-										log.error(e.getMessage(), e);
-									}
-								}
-							});
-						}
+						try{
+							messageHandler.handle(msg, client);
+						} catch (Exception e) {
+							log.error(e.getMessage(), e);
+						} 
 						
 					} catch (InterruptedException e) {
 						client.close(); 
@@ -195,67 +174,25 @@ public class ConsumeThread implements Closeable{
 	@Override
 	public void close() throws IOException {
 		consumeThread.interrupt();  
-	} 
-
-	public ExecutorService getConsumeRunner() {
-		return consumeRunner;
-	}
-
-	public void setConsumeRunner(ExecutorService consumeRunner) {
-		this.consumeRunner = consumeRunner;
-	}
-
-	public void setConsumeTimeout(int consumeTimeout) {
-		this.consumeTimeout = consumeTimeout;
-	}
-
+	}  
+	
 	public void setMessageHandler(MessageHandler messageHandler) {
 		this.messageHandler = messageHandler;
 	} 
-	
-	public String getTopic() {
-		return topic;
-	}
-
-	public void setTopic(String topic) {
-		this.topic = topic;
-	}  
-	
+	 
 	public String getToken() {
 		return token;
 	}
 
 	public void setToken(String token) {
 		this.token = token;
-	}
-
-	public ConsumeGroup getConsumeGroup() {
-		return consumeGroup;
-	}
-
-	public void setConsumeGroup(ConsumeGroup consumeGroup) {
-		this.consumeGroup = consumeGroup;
-	}
-
-	public int getConsumeTimeout() {
-		return consumeTimeout;
-	}
+	}  
 
 	public MessageHandler getMessageHandler() {
 		return messageHandler;
-	}
-
-	public Integer getConsumeWindow() {
-		return consumeWindow;
-	}
-
-	public void setConsumeWindow(Integer consumeWindow) {
-		this.consumeWindow = consumeWindow;
-	}
-
+	} 
+	
 	public MqClient getClient() {
 		return client;
 	} 
-	
-	
 }

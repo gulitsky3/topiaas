@@ -24,22 +24,31 @@ package io.zbus.rpc;
  
 
 import io.zbus.kit.JsonKit;
-import io.zbus.mq.Message;
-import io.zbus.mq.server.Fix;
+import io.zbus.transport.http.Message; 
  
 
 public class JsonRpcCodec implements RpcCodec {  
 	private static final String DEFAULT_ENCODING = "UTF-8"; 
+	private boolean requestTypeInfo = true;   
+	private boolean responseTypeInfo = false; //Browser friendly 
+
+	public void setRequestTypeInfo(boolean requestTypeInfo) {
+		this.requestTypeInfo = requestTypeInfo;
+	} 
 	
+	public void setResponseTypeInfo(boolean responseTypeInfo) {
+		this.responseTypeInfo = responseTypeInfo;
+	} 
+
 	public Message encodeRequest(Request request, String encoding) {
 		Message msg = new Message();  
 		if(encoding == null) encoding = DEFAULT_ENCODING;  
 		msg.setEncoding(encoding);
-		if(Fix.Enabled){ //zbus7 package name conflicts if type enabled
-			msg.setBody(JsonKit.toJSONBytes(request, encoding));
+		if(requestTypeInfo) {
+			msg.setBody(JsonKit.toJSONBytesWithType(request, encoding)); 
 		} else {
-			msg.setBody(JsonKit.toJSONBytesWithType(request, encoding));
-		} 
+			msg.setBody(JsonKit.toJSONBytes(request, encoding));
+		}
 		return msg;
 	}
 	
@@ -60,7 +69,11 @@ public class JsonRpcCodec implements RpcCodec {
 		Message msg = new Message();   
 		if(encoding == null) encoding = DEFAULT_ENCODING;  
 		msg.setEncoding(encoding);  
-		msg.setJsonBody(JsonKit.toJSONBytes(response, encoding));
+		if(responseTypeInfo) {
+			msg.setBody(JsonKit.toJSONBytesWithType(response, encoding)); 
+		} else {
+			msg.setBody(JsonKit.toJSONBytes(response, encoding));
+		} 
 		return msg; 
 	}
 	

@@ -39,4 +39,34 @@
 - RPC增加原生HTTP消息返回，方便直接提供浏览器友好的HTTP服务
 - RPC参数列表可以任意顺序插入Message请求参数的申明，获取RPC请求上下文
 - 浏览器请求URL格式中module改为必填选，格式为 /{Topic}/{Module}/{Method}/{Param1}/{Param2}.....
-- RPC
+- RPC结果返回状态改为由底层HTTP协议状态码控制：200正常，600业务逻辑错误
+- 清理zbus7老版本协议适配代码 
+- 服务器接受消息认证后删除Token敏感信息
+- 增加支持排他消费分组
+- 增加支持不指定消费分组创建动态新分组
+- RPC设计独立于MQ，少量更改增加支持不经过MQ的HTTP RPC
+- HTTP proxy在高压下偶尔堵塞的bug修复,保持长连接
+- RPC方法列表支持URL访问
+
+## 0.10.1 notes
+- 增加zbus.js支持HTTP直接RPC调用
+- FileKit增加Cache开关
+- 默认RPC方法元信息页面修复module不准确的bug
+
+## 0.10.2 notes
+
+- MessageLogger增强，覆盖消费者所有消息，可选择过滤
+- 增加支持RPC返回结果是否带有类型信息，以良好支持JAVA泛型。默认不返回JSON类型信息（浏览器友好）
+
+## 0.11.0 notes
+
+- RpcInvoker修复module指定错误
+- TcpProxy，HttpProxy可随zbus带起来，在同一个进程中运行
+- RPC增加Verbose选项，方便开发状态console查看消息
+- MQ消费者端增加ACK确认,以及可配置的超时重发机制
+- MQ数据格式增加checksum完整性验证
+- 监控端口与主接入端口可分离，方便监控隔离
+
+## 0.11.1 notes
+
+- TcpProxy支持多目标配置

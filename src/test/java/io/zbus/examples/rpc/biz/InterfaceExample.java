@@ -3,7 +3,7 @@ package io.zbus.examples.rpc.biz;
 import java.util.List;
 import java.util.Map;
 
-import io.zbus.mq.Message;
+import io.zbus.transport.http.Message;
 
 public interface InterfaceExample{
   
@@ -28,6 +28,8 @@ public interface InterfaceExample{
 	Order getOrder();
 	
 	User[] getUsers();
+	
+	List<User> listUsers();
 	
 	Object[] objectArray(String id);
 
@@ -65,4 +67,6 @@ public interface InterfaceExample{
 	Message raw1(int i, Message req);
 	
 	Message redirect();
+	
+	Message file(Message request);
 }

@@ -19,7 +19,7 @@ import io.zbus.kit.ClassKit;
 import io.zbus.kit.ConfigKit.XmlConfig;
 import io.zbus.mq.Broker;
 
-public class ProxyConfig extends XmlConfig { 
+public class HttpProxyConfig extends XmlConfig { 
 	private Broker broker; 
 	private String brokerAddress;
 	private int consumerCount = 4; //Number of connections to zbus broker per consumer 
@@ -35,6 +35,7 @@ public class ProxyConfig extends XmlConfig {
 		public List<String> targetList = new ArrayList<String>();
 		public int heartbeatInterval;
 		public int targetClientCount;
+		public boolean targetMessageIdentifiable = false;
 	} 
 	
 	public void loadFromXml(Document doc) throws Exception{
@@ -63,6 +64,7 @@ public class ProxyConfig extends XmlConfig {
 			    }
 			    entry.targetClientCount = valueOf(xpath.evaluate("@clientCount", node), 4);
 			    entry.heartbeatInterval = valueOf(xpath.evaluate("@heartbeat", node), 1)*1000;  //default to 1 seconds
+			    entry.targetMessageIdentifiable = valueOf(xpath.evaluate("@messageIdentifiable", node), false);
 			    entry.topic = entryName;
 			    
 			    NodeList targetList = (NodeList) xpath.compile("./*").evaluate(node, XPathConstants.NODESET);
