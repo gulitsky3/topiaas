@@ -43,12 +43,14 @@ public class Spring {
 				rpcProcessor.setBeforeFilter(filter);
 			} else if(type == FilterType.GlobalAfter) {
 				rpcProcessor.setAfterFilter(filter);
-			}
+			} else if(type == FilterType.Exception) {
+				rpcProcessor.setExceptionFilter(filter);
+			} 
 			
 			if(!StrKit.isEmpty(name)) {
 				rpcProcessor.getFilterTable().put(name, filter);
 			}
-		} 
+		}  
 		
 		//mount service with Route annotation
 		table = ctx.getBeansWithAnnotation(Route.class); 

@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 public @interface FilterDef {  
 	String value() default "";
 	String name() default "";
-	FilterType type() default FilterType.Simple;  
+	FilterType type() default FilterType.Local;  
 }

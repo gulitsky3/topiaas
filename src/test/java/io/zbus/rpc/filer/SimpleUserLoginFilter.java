@@ -8,7 +8,7 @@ import io.zbus.transport.Message;
 public class SimpleUserLoginFilter implements RpcFilter {
 
 	@Override
-	public boolean doFilter(Message request, Message response) { 
+	public boolean doFilter(Message request, Message response, Throwable exception) { 
 		System.out.println("[Filter=user]: " + request);
 		return true;
 	} 
