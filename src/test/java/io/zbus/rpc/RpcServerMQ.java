@@ -8,14 +8,14 @@ public class RpcServerMQ {
 	public static void main(String[] args) throws Exception {  
 		  
 		RpcProcessor p = new RpcProcessor();
-		p.setUrlPrefix("/MyRpc");
-		p.addModule("example", InterfaceExampleImpl.class);  
+		p.setUrlPrefix("/kom");
+		p.addModule("", InterfaceExampleImpl.class);  
 		
 		
 		RpcServer server = new RpcServer(p); 
 		//connect to zbus
-		server.setAddress("localhost:15555");
-		server.setMq("MyRpc"); 
+		server.setMqServerAddress("localhost:15555");
+		server.setMq("kom"); 
 		//MQ authentication, no need to configure if use HTTP direct RPC
 		//server.setAuthEnabled(true);
 		//server.setApiKey("2ba912a8-4a8d-49d2-1a22-198fd285cb06");

@@ -161,8 +161,8 @@ public class InterfaceExampleImpl implements InterfaceExample{
 	public Message html() {
 		Message res = new Message();
 		res.setStatus(200);
-		res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
-		res.setBody("html" + System.currentTimeMillis());
+		res.setHeader(Http.CONTENT_TYPE, "text/html; charset=utf8");
+		res.setBody("<h1>html" + System.currentTimeMillis()+"</h1>");
 		return res;
 	} 
 	

@@ -1,7 +1,5 @@
 package io.zbus.rpc;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -53,9 +51,23 @@ public class RpcServer implements Closeable {
 	private String secretKey;
 	 
 	public RpcServer(RpcProcessor processor) {
-		this.processor = processor;
-		this.httpRpcServerAdaptor = new HttpRpcServerAdaptor(processor);
+		this.processor = processor; 
 	} 
+	
+	public RpcProcessor getProcessor() {
+		return processor;
+	}
+	
+	public void setProcessor(RpcProcessor processor) {
+		this.processor = processor;
+		
+		if(this.httpRpcServerAdaptor != null) {
+			this.httpRpcServerAdaptor.setProcessor(processor);
+		} 
+		if(mqRpcServer != null) {
+			mqRpcServer.setProcessor(processor);
+		}
+	}
 	
 	public RpcServer setPort(Integer port){ 
 		this.port = port;
@@ -91,19 +103,13 @@ public class RpcServer implements Closeable {
 	public RpcServer setChannel(String channel) {
 		this.channel = channel;
 		return this;
-	}
-	
-	public RpcServer setAddress(String address){ 
-		this.mqServerAddress = address;
-		return this;
 	} 
-	
 	/**
 	 * Set InProc server instance as address
 	 * @param mqServer
 	 * @return
 	 */
-	public RpcServer setAddress(MqServer mqServer){  
+	public RpcServer setMqServer(MqServer mqServer){  
 		this.mqServer = mqServer;
 		return this;
 	}  
@@ -137,6 +143,9 @@ public class RpcServer implements Closeable {
 				throw new IllegalStateException("MqServer not started as inproce mode");
 			}
 		}
+		if(httpRpcServerAdaptor == null) {
+			this.httpRpcServerAdaptor = new HttpRpcServerAdaptor(processor);
+		}
 		return httpRpcServerAdaptor;
 	}
 
@@ -148,16 +157,14 @@ public class RpcServer implements Closeable {
 		this.onStart = onStart;
 	} 
 	 
-	public RpcServer start() throws Exception{ 
-		if(this.processor == null) {
-			this.processor = new RpcProcessor();
-		}
+	public RpcServer start() throws Exception{  
 		if(onStart != null) {
 			onStart.onStart(processor);
 		} 
 		
 		if(port != null) {
 			this.httpWsServer = new HttpWsServer();  
+			this.httpRpcServerAdaptor = new HttpRpcServerAdaptor(processor);
 			SslContext context = null;
 			if(keyFile != null && certFile != null) {
 				context = Ssl.buildServerSsl(certFile, keyFile); 

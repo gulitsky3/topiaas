@@ -9,9 +9,13 @@ import io.zbus.transport.ServerAdaptor;
 import io.zbus.transport.Session;
 
 public class HttpRpcServerAdaptor extends ServerAdaptor {
-	protected final RpcProcessor processor;
+	protected RpcProcessor processor;
 
 	public HttpRpcServerAdaptor(RpcProcessor processor) {
+		this.processor = processor;
+	} 
+	
+	public void setProcessor(RpcProcessor processor) {
 		this.processor = processor;
 	}
 

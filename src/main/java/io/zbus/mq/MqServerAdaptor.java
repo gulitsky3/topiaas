@@ -2,8 +2,8 @@ package io.zbus.mq;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,12 +11,14 @@ import org.slf4j.LoggerFactory;
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
 import io.zbus.kit.FileKit;
-import io.zbus.kit.HttpKit;
-import io.zbus.kit.HttpKit.UrlInfo;
+import io.zbus.kit.JsonKit;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.Protocol.ChannelInfo;
 import io.zbus.mq.model.MessageQueue;
 import io.zbus.mq.model.Subscription;
+import io.zbus.mq.plugin.DefaultUrlFilter;
+import io.zbus.mq.plugin.UrlEntry;
+import io.zbus.mq.plugin.UrlFilter;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
 import io.zbus.transport.Session;
@@ -29,7 +31,9 @@ public class MqServerAdaptor extends ServerAdaptor {
 	private MessageQueueManager mqManager; 
 	private RequestAuth requestAuth; 
 	private Map<String, CommandHandler> commandTable; 
-	private boolean verbose = true;
+	private boolean verbose = true; 
+	
+	private UrlFilter urlFilter;
 	
 	public MqServerAdaptor(MqServerConfig config) {
 		subscriptionManager = new SubscriptionManager();  
@@ -41,6 +45,11 @@ public class MqServerAdaptor extends ServerAdaptor {
 		
 		mqManager.loadQueueTable();
 		
+		urlFilter = config.getUrlFilter();
+		if(urlFilter == null) {
+			urlFilter = new DefaultUrlFilter();
+		}
+		
 		commandTable = new HashMap<>();
 		commandTable.put(Protocol.PUB, pubHandler);
 		commandTable.put(Protocol.SUB, subHandler);
@@ -49,6 +58,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		commandTable.put(Protocol.CREATE, createHandler); 
 		commandTable.put(Protocol.REMOVE, removeHandler); 
 		commandTable.put(Protocol.QUERY, queryHandler); 
+		commandTable.put(Protocol.BIND, bindHandler); 
 		commandTable.put(Protocol.PING, pingHandler); 
 	} 
 	
@@ -60,6 +70,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		copy.requestAuth = requestAuth;
 		copy.commandTable = commandTable;
 		copy.verbose = verbose;
+		copy.urlFilter = urlFilter;
 		return copy;
 	}
 	
@@ -83,11 +94,14 @@ public class MqServerAdaptor extends ServerAdaptor {
 		} 
 		
 		String cmd = req.getHeader(Protocol.CMD); 
-		if(verbose) { 
-			if(!Protocol.PING.equals(cmd)) {
-				logger.info(sess.remoteAddress() + ":" + req);
-			} 
+		if(Protocol.PING.equals(cmd)) {
+			return;
 		}
+		
+		if(verbose) { 
+			logger.info(sess.remoteAddress() + ":" + req); 
+		}
+		
 		if(cmd == null) { //Special case for favicon
 			if(req.getBody() == null && "/favicon.ico".equals(req.getUrl())) {
 				Message res = FileKit.INSTANCE.loadResource("static/favicon.ico");
@@ -106,7 +120,13 @@ public class MqServerAdaptor extends ServerAdaptor {
 		} 
 		
 		attachInfo(req, sess); 
-		handleUrlControl(req); 
+		
+		//Filter on URL of request
+		Message res = urlFilter.doFilter(req);
+		if(res != null) {
+			reply(req, res, sess); 
+			return; 
+		}  
 		
 		cmd = req.removeHeader(Protocol.CMD); 
 		if (cmd == null) {
@@ -128,49 +148,12 @@ public class MqServerAdaptor extends ServerAdaptor {
 			return; 
 		}
 	}   
-	
-
-	private void handleUrlControl(Message msg) { 
-		String url = msg.getUrl();
-		if(url == null) return; 
-		if(msg.getBody() != null) return;
-		//CMD and MQ populated in header, use header control, no need parse URL
-		if(msg.getHeader(Protocol.CMD) != null && msg.getHeader(Protocol.MQ) != null) {
-			return;
-		}
-		 
-		UrlInfo info = HttpKit.parseUrl(url);
-		if(info.pathList.size()==0) { 
-			for(Entry<String, String> e : info.queryParamMap.entrySet()) {
-				String key = e.getKey();
-				Object value = e.getValue();
-				if(key.equals("body")) {
-					msg.setBody(value);
-					continue;
-				}
-				msg.setHeader(key.toLowerCase(), value);
-			}
-			return;
-		}
-		
-		//Assumed to be RPC
-		if(msg.getHeader(Protocol.CMD) == null) { // RPC assumed
-			msg.setHeader(Protocol.CMD, Protocol.PUB);
-			msg.setHeader(Protocol.ACK, false); //ACK should be disabled
-		}   
-		String mq = msg.getHeader(Protocol.MQ);
-		if(mq == null) {
-			if(info.pathList.size() > 0) {
-				msg.setHeader(Protocol.MQ, info.pathList.get(0));
-			}
-		} 
-	} 
-	
+	 
 	
 	private CommandHandler createHandler = (req, sess) -> { 
 		String mqName = (String)req.getHeader(Protocol.MQ);
 		if(mqName == null) {
-			reply(req, 400, "Missing mq field", sess);
+			reply(req, 400, "create command, missing mq field", sess);
 			return;
 		}
 		String mqType = (String)req.getHeader(Protocol.MQ_TYPE);
@@ -198,7 +181,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 	private CommandHandler removeHandler = (req, sess) -> { 
 		String mqName = (String)req.getHeader(Protocol.MQ);
 		if(mqName == null) {
-			reply(req, 400, "Missing mq field", sess);
+			reply(req, 400, "remove command, missing mq field", sess);
 			return;
 		}
 		String channel = (String)req.getHeader(Protocol.CHANNEL);
@@ -216,6 +199,28 @@ public class MqServerAdaptor extends ServerAdaptor {
 		reply(req, 200, msg, sess);
 	}; 
 	
+	private CommandHandler bindHandler = (req, sess) -> { 
+		String mqName = (String)req.getHeader(Protocol.MQ);
+		if(mqName == null) {
+			reply(req, 400, "bind command, missing mq field", sess);
+			return;
+		}
+		
+		Object body = req.getBody();
+		if(body == null) {
+			reply(req, 400, "bind command, missing url entry list data in body", sess);
+			return;
+		}
+		
+		Boolean clearBind = req.getHeaderBool(Protocol.CLEAR_BIND); 
+		boolean clear = clearBind == null? false : clearBind;
+		List<UrlEntry> entries = JsonKit.convertList(body, UrlEntry.class);
+		urlFilter.updateUrlEntry(mqName, entries, clear); 
+		
+		String msg = String.format("OK, BIND URL (mq=%s)", mqName);
+		reply(req, 200, msg, sess);
+	}; 
+	
 	private CommandHandler pingHandler = (req, sess) -> { 
 		//ignore
 	};  
@@ -223,7 +228,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 	private CommandHandler pubHandler = (req, sess) -> {
 		String mqName = (String)req.getHeader(Protocol.MQ);  
 		if(mqName == null) {
-			reply(req, 400, "Missing mq field", sess);
+			reply(req, 400, "pub command, missing mq field", sess);
 			return;
 		}
 		
@@ -337,7 +342,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		String mqName = (String)req.getHeader(Protocol.MQ);
 		String channelName = (String)req.getHeader(Protocol.CHANNEL);
 		if(mqName == null) {
-			reply(req, 400, "Missing mq field", sess);
+			reply(req, 400, "query command, missing mq field", sess);
 			return;
 		} 
 		MessageQueue mq = mqManager.get(mqName); 

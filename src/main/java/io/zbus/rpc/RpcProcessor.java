@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
+import io.zbus.mq.plugin.UrlEntry;
 import io.zbus.kit.JsonKit;
 import io.zbus.rpc.annotation.Auth;
 import io.zbus.rpc.annotation.Param;
@@ -519,6 +520,19 @@ public class RpcProcessor {
 			res.add(mi.info); 
 		} 
 		return res;
+	}
+	
+	public List<UrlEntry> urlEntryList(String mq){
+		List<RpcMethod> methods = rpcMethodList();
+		
+		List<UrlEntry> entries = new ArrayList<>();
+		for(RpcMethod method : methods) {
+			UrlEntry e = new UrlEntry(); 
+			e.url = HttpKit.joinPath(urlPrefix, method.urlPath);
+			e.mq = mq;
+			entries.add(e);
+		} 
+		return entries;
 	}
 	
 	public static class MethodInstance {

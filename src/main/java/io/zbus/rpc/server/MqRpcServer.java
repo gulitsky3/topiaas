@@ -44,6 +44,10 @@ public class MqRpcServer implements Closeable {
 	public MqRpcServer(RpcProcessor processor) {
 		this.processor = processor;
 	}
+	
+	public void setProcessor(RpcProcessor processor) {
+		this.processor = processor;
+	}
 
 	@Override
 	public void close() throws IOException {
@@ -116,18 +120,25 @@ public class MqRpcServer implements Closeable {
 			req.setHeader(Protocol.CMD, Protocol.CREATE); // create MQ/Channel
 			req.setHeader(Protocol.MQ, mq);
 			req.setHeader(Protocol.MQ_TYPE, mqType);
-			req.setHeader(Protocol.CHANNEL, channel);
-
+			req.setHeader(Protocol.CHANNEL, channel); 
 			Message res = mqClient.invoke(req);
 			logger.info(JsonKit.toJSONString(res));
 
-			Message sub = new Message();
-			sub.setHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
-			sub.setHeader(Protocol.MQ, mq);
-			sub.setHeader(Protocol.CHANNEL, channel); 
-			mqClient.invoke(sub, data -> {
-				logger.info(JsonKit.toJSONString(data));
-			});
+			req = new Message();
+			req.setHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
+			req.setHeader(Protocol.MQ, mq);
+			req.setHeader(Protocol.CHANNEL, channel); 
+			res = mqClient.invoke(req); 
+			logger.info(JsonKit.toJSONString(res));
+			
+			req = new Message();
+			req.setHeader(Protocol.CMD, Protocol.BIND); // Bind URL
+			req.setHeader(Protocol.MQ, mq);
+			req.setHeader(Protocol.CLEAR_BIND, true); 
+			req.setBody(processor.urlEntryList(mq));
+			res = mqClient.invoke(req); 
+			
+			logger.info(JsonKit.toJSONString(res));
 		});
 
 		mqClient.connect();

@@ -36,6 +36,7 @@ public interface Protocol {
 	public static final String CHANNEL_MASK   = "channelMask"; 
 	public static final String WINDOW         = "window";
 	public static final String ACK            = "ack";  
+	public static final String CLEAR_BIND     = "clearBind";  
 	
 	//Parameter mqType values
 	public static final String MEMORY  = "memory";  
