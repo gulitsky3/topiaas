@@ -42,6 +42,9 @@ Maven
 		<version>1.0.0-SNAPSHOT</version>
 	</dependency>
 
+## High Level Diagram
+
+![Archit](./doc/zbus-archit.svg)
 
 ## Protocol
 
