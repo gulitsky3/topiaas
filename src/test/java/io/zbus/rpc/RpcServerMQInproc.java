@@ -10,17 +10,18 @@ public class RpcServerMQInproc {
 	public static void main(String[] args) throws Exception {  
 		  
 		RpcProcessor p = new RpcProcessor();
-		p.setUrlPrefix("");  
-		p.addModule("example", InterfaceExampleImpl.class);  
+		p.setUrlPrefix("/");  
+		p.mount("/example", InterfaceExampleImpl.class);  
 		
 		
+		//Serve RPC via MQ Server InProc
 		MqServerConfig config = new MqServerConfig("0.0.0.0", 15555);  
 		config.setVerbose(false);
 		MqServer mqServer = new MqServer(config);  
 		
 		RpcServer server = new RpcServer(p);   
 		server.setMqServer(mqServer); //InProc MqServer
-		server.setMq("MyRpc"); 
+		server.setMq("MyRpc");        //Choose MQ to group Service physically, RPC incognito
 		
 		//MQ authentication, no need to configure if use HTTP direct RPC
 		//server.setAuthEnabled(true);

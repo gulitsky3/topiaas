@@ -11,7 +11,7 @@ public class RpcClientInproc {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws Exception {
 		RpcProcessor p = new RpcProcessor();
-		p.addModule("example", InterfaceExampleImpl.class);
+		p.mount("example", InterfaceExampleImpl.class);
 		
 		RpcServer server = new RpcServer(p);    
 		server.start(); 

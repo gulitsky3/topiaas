@@ -9,7 +9,7 @@ public class RpcServerMQ {
 		  
 		RpcProcessor p = new RpcProcessor(); 
 		p.setUrlPrefix("/test");
-		p.addModule("example", InterfaceExampleImpl.class);  
+		p.mount("/example", InterfaceExampleImpl.class);  
 		
 		
 		RpcServer server = new RpcServer(); 

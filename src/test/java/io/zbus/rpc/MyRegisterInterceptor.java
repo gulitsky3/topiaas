@@ -17,6 +17,6 @@ public class MyRegisterInterceptor implements RpcStartInterceptor {
 		spec.paramNames = Arrays.asList("name", "age");
 		spec.returnType = Map.class.getName();
 		
-		processor.addMethod(spec, service);
+		processor.mount(spec, service);
 	} 
 }

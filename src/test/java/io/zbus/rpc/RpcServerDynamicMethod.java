@@ -18,7 +18,7 @@ public class RpcServerDynamicMethod {
 		spec.returnType = Map.class.getName();
 		
 		RpcProcessor p = new RpcProcessor();
-		p.addMethod(spec, service);  
+		p.mount(spec, service);  
 	
 		
 		RpcServer server = new RpcServer(p);   

@@ -57,8 +57,8 @@ public class RpcServerDirectHttp {
 		resource.setBasePath("\\tmp"); 
 		
 		p.setDocModule("m"); 
-		p.addModule("", RpcServerDirectHttp.class); 
-		p.addModule("static", resource);
+		p.mount("", RpcServerDirectHttp.class); 
+		p.mount("static", resource);
 		
 		RpcServer server = new RpcServer(p);       
 		server.setPort(8080);

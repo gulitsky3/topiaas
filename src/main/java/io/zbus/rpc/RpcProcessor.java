@@ -31,10 +31,10 @@ public class RpcProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(RpcProcessor.class);   
 	private Map<String, MethodInstance> urlPath2MethodTable = new HashMap<>();   //path => MethodInstance  
 	
-	private String urlPrefix="";
+	private String urlPrefix="";  //Global URL prefix
 	
 	private boolean docEnabled = true; 
-	private String docModule = "doc"; 
+	private String docUrlPrefix = "doc"; //Under global
 	
 	 
 	private boolean stackTraceEnabled = true;   
@@ -43,26 +43,23 @@ public class RpcProcessor {
 	private RpcFilter afterFilter;
 	private RpcFilter authFilter;   
 	
-	public RpcProcessor addModule(String module, Object service) { 
-		return addModule(module, service, true, true, true);
+	public RpcProcessor mount(String urlPrefix, Object service) { 
+		return mount(urlPrefix, service, true, true, true);
 	}
 	
-	public RpcProcessor addModule(String module, Object service, boolean defaultAuth) {
-		return addModule(module, service, defaultAuth, true, true);
+	public RpcProcessor mount(String urlPrefix, Object service, boolean defaultAuth) {
+		return mount(urlPrefix, service, defaultAuth, true, true);
 	} 
 	
 	@SuppressWarnings("unchecked")
-	public RpcProcessor addModule(String module, Object service, boolean defaultAuth, boolean enableDoc, boolean overrideMethod) {  
+	public RpcProcessor mount(String urlPrefix, Object service, boolean defaultAuth, boolean enableDoc, boolean overrideMethod) {  
 		if(service instanceof List) {
 			List<Object> svcList = (List<Object>)service;
 			for(Object svc : svcList) {
-				addModule(module, svc, defaultAuth, enableDoc, overrideMethod);
+				mount(urlPrefix, svc, defaultAuth, enableDoc, overrideMethod);
 			}
 			return this;
-		}
-		if(module.startsWith("/")) {
-			module = module.substring(1);
-		}
+		} 
 		try {
 			if(service instanceof Class<?>) {
 				service = ((Class<?>)service).newInstance();
@@ -85,7 +82,7 @@ public class RpcProcessor {
 				RpcMethod info = new RpcMethod();
 				String methodName =  m.getName();
 				//default path
-				String urlPath = HttpKit.joinPath(module, methodName);
+				String urlPath = HttpKit.joinPath(urlPrefix, methodName);
 				
 				info.urlPath = urlPath;
 				info.method = methodName; 
@@ -99,7 +96,7 @@ public class RpcProcessor {
 					info.urlAnnotation = p;
 					urlPath = annoPath(p);    
 					if(urlPath != null) {
-						info.urlPath = HttpKit.joinPath(module, urlPath);
+						info.urlPath = HttpKit.joinPath(urlPrefix, urlPath);
 					}
 				} 
 				
@@ -131,7 +128,7 @@ public class RpcProcessor {
 				}  
 				
 				//register in tables
-				addMethod(new MethodInstance(info, m, service), overrideMethod);  
+				mount(new MethodInstance(info, m, service), overrideMethod);  
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
@@ -139,20 +136,20 @@ public class RpcProcessor {
 		return this;
 	} 
 	
-	public RpcProcessor addMethod(RpcMethod spec, MethodInvoker service) {
-		return addMethod(spec, service, true);
+	public RpcProcessor mount(RpcMethod spec, MethodInvoker service) {
+		return mount(spec, service, true);
 	}
 	
-	public RpcProcessor addMethod(RpcMethod spec, MethodInvoker service, boolean overrideMethod) {
+	public RpcProcessor mount(RpcMethod spec, MethodInvoker service, boolean overrideMethod) {
 		MethodInstance mi = new MethodInstance(spec, service);  
-		return addMethod(mi, overrideMethod);
+		return mount(mi, overrideMethod);
 	}
 	
-	public RpcProcessor addMethod(MethodInstance mi) {
-		return addMethod(mi, true);
+	public RpcProcessor mount(MethodInstance mi) {
+		return mount(mi, true);
 	}
 	
-	public RpcProcessor addMethod(MethodInstance mi, boolean overrideMethod) { 
+	public RpcProcessor mount(MethodInstance mi, boolean overrideMethod) { 
 		RpcMethod spec = mi.info;
 		String urlPath = spec.getUrlPath();
 		if(urlPath == null) {
@@ -173,7 +170,7 @@ public class RpcProcessor {
 		return this;
 	} 
 	
-	public RpcProcessor removeModule(String module, Object service) {
+	public RpcProcessor unmount(String module, Object service) {
 		try {
 			Method[] methods = service.getClass().getMethods();
 			for (Method m : methods) {
@@ -183,8 +180,8 @@ public class RpcProcessor {
 					if (p.exclude()) continue; 
 					path = annoPath(p); 
 				} 
-				this.removeMethod(path); 
-				this.removeMethod(module, m.getName());
+				this.unmount(path); 
+				this.unmount(module, m.getName());
 			}
 		} catch (SecurityException e) {
 			logger.error(e.getMessage(), e);
@@ -192,14 +189,14 @@ public class RpcProcessor {
 		return this;
 	}  
 	
-	public RpcProcessor removeMethod(String urlPath) { 
+	public RpcProcessor unmount(String urlPath) { 
 		this.urlPath2MethodTable.remove(urlPath);  
 		return this;
 	} 
 	
-	public RpcProcessor removeMethod(String module, String method) {  
+	public RpcProcessor unmount(String module, String method) {  
 		String urlPath = HttpKit.joinPath(module, method);
-		removeMethod(urlPath);
+		unmount(urlPath);
 		return this;
 	}  
 	
@@ -434,7 +431,7 @@ public class RpcProcessor {
 	
 	public RpcProcessor enableDoc() { 
 		DocRender render = new DocRender(this); 
-		addModule(docModule, render, false, false, false);
+		mount(docUrlPrefix, render, false, false, false);
 		return this;
 	}   
 
@@ -472,11 +469,11 @@ public class RpcProcessor {
 	} 
 
 	public String getDocModule() {
-		return docModule;
+		return docUrlPrefix;
 	}
 
 	public RpcProcessor setDocModule(String docModule) {
-		this.docModule = docModule;
+		this.docUrlPrefix = docModule;
 		return this;
 	}  
 	
@@ -486,9 +483,9 @@ public class RpcProcessor {
 		for(Entry<String, Object> e : instances.entrySet()){
 			Object svc = e.getValue();
 			if(svc instanceof List) {
-				addModule(e.getKey(), (List<Object>)svc); 
+				mount(e.getKey(), (List<Object>)svc); 
 			} else {
-				addModule(e.getKey(), svc);
+				mount(e.getKey(), svc);
 			}
 		}
 	}
