@@ -3,6 +3,7 @@ package io.zbus.rpc;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSONObject;
 import io.zbus.kit.FileKit;
 import io.zbus.mq.MqServer;
 import io.zbus.mq.MqServerConfig;
@@ -62,8 +63,15 @@ public class RpcServerFullExamples {
 		value.put("key1", name);
 		value.put("key2", age);
 		return value;
-	} 
-	 
+	}
+
+	public JSONObject retJson() {
+		JSONObject j = new JSONObject();
+		j.put("code", "0");
+		j.put("body", "the body xx");
+		return j;
+	}
+
 	public Map<String, Object> nullValue() {
 		Map<String, Object> value = new HashMap<>();
 		value.put("key1", null);
