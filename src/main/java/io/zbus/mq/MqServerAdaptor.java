@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
+import io.zbus.kit.FileKit;
 import io.zbus.kit.HttpKit;
 import io.zbus.kit.HttpKit.UrlInfo;
 import io.zbus.kit.StrKit;
@@ -77,6 +78,16 @@ public class MqServerAdaptor extends ServerAdaptor {
 			reply(req, 400, "json format required", sess); 
 			return;
 		} 
+		
+		String cmd = req.getHeader(Protocol.CMD); 
+		if(cmd == null) { //Special case for favicon
+			if(req.getBody() == null && "/favicon.ico".equals(req.getUrl())) {
+				Message res = FileKit.INSTANCE.loadResource("static/favicon.ico");
+				sess.write(res);
+				return;
+			}
+		}
+		
 		//check integrity 
 		if(requestAuth != null) {
 			AuthResult authResult = requestAuth.auth(req);
@@ -84,14 +95,12 @@ public class MqServerAdaptor extends ServerAdaptor {
 				reply(req, 403, authResult.message, sess); 
 				return; 
 			}
-		}
+		} 
 		
-		attachInfo(req, sess);
+		attachInfo(req, sess); 
+		handleUrlControl(req); 
 		
-		handleUrlControl(req);
-		
-		String cmd = (String)req.removeHeader(Protocol.CMD); 
-		
+		cmd = req.removeHeader(Protocol.CMD); 
 		if (cmd == null) {
 			reply(req, 400, "cmd key required", sess); 
 			return;

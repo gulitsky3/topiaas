@@ -17,7 +17,7 @@ public class MonitorServerAdaptor extends HttpRpcServerAdaptor {
 		 }
 		 processor.addModule("", new MonitorService());
 		 StaticResource staticResource = new StaticResource();
-		 staticResource.setCacheEnabled(true); //TODO turn if off in production
+		 staticResource.setCacheEnabled(false); //TODO turn if off in production
 		 processor.addModule("static", staticResource, false);
 	} 
 }
