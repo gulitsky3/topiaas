@@ -57,26 +57,26 @@ public class Http {
 		String contentType = msg.getHeader(CONTENT_TYPE);
 		byte[] body = new byte[0];
 		Object bodyObj = msg.getBody();
-		if(contentType == null) { 
-			contentType = "application/json; charset=utf8"; 
-		}
-		String charset = charset(contentType);
-		if(contentType.startsWith("application/json")) {
+		String charset = "utf8";
+		if(contentType != null) { 
+			charset = charset(contentType);
+		}  
+		
+		if(contentType != null && contentType.startsWith("application/json")) {
 			body = JsonKit.toJSONBytes(msg.getBody(), charset);
-		} else if (contentType.startsWith("application/octet-stream")) {
-			
-			if(bodyObj != null && bodyObj instanceof byte[]) {
-				body = (byte[])bodyObj;
-			}
-		} else {
+		}  else {
 			if(bodyObj != null) {
-				try {
-					body = bodyObj.toString().getBytes(charset);
-				} catch (UnsupportedEncodingException e) {
-					body = bodyObj.toString().getBytes();
+				if(bodyObj instanceof byte[]) { 
+					body = (byte[])bodyObj;
+				} else {
+					try {
+						body = bodyObj.toString().getBytes(charset);
+					} catch (UnsupportedEncodingException e) {
+						body = bodyObj.toString().getBytes();
+					}
 				}
-			}
-		}
+			}   
+		} 
 		return body;
 	}
 	

@@ -105,8 +105,8 @@ public class MqServerAdaptor extends ServerAdaptor {
 		}
 		 
 		UrlInfo info = HttpKit.parseUrl(url);
-		if(info.path.size()==0) { 
-			for(Entry<String, String> e : info.params.entrySet()) {
+		if(info.pathList.size()==0) { 
+			for(Entry<String, String> e : info.queryParamMap.entrySet()) {
 				String key = e.getKey();
 				Object value = e.getValue();
 				if(key.equals("body")) {
@@ -125,8 +125,8 @@ public class MqServerAdaptor extends ServerAdaptor {
 		}   
 		String mq = msg.getHeader(Protocol.MQ);
 		if(mq == null) {
-			if(info.path.size() > 0) {
-				msg.setHeader(Protocol.MQ, info.path.get(0));
+			if(info.pathList.size() > 0) {
+				msg.setHeader(Protocol.MQ, info.pathList.get(0));
 			}
 		} 
 	} 

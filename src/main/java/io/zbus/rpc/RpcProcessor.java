@@ -244,20 +244,23 @@ public class RpcProcessor {
 	
 	private boolean checkParams(Message req, Message res, Method method, Object[] params, Object[] invokeParams) {
 		Class<?>[] targetParamTypes = method.getParameterTypes();
-		int count = 0;
+		
+		boolean reqInject = false;
+		int count = 0; 
 		for(Class<?> paramType : targetParamTypes) {
 			if(Message.class.isAssignableFrom(paramType)) {
+				reqInject = true;
 				continue;
 			}
 			count++;
 		}
 		
-		if(count != params.length) { 
+		if(!reqInject && count != params.length) { 
 			String msg = String.format("Request(Url=%s, Method=%s, Params=%s) Bad Format", req.getUrl(), method.getName(), JsonKit.toJSONString(params));
 			reply(res, 400, msg);
 			return false;
 		}
-		
+		  
 		for (int i = 0; i < targetParamTypes.length; i++) { 
 			Class<?> paramType = targetParamTypes[i];
 			if(Message.class.isAssignableFrom(paramType)) {
@@ -331,9 +334,9 @@ public class RpcProcessor {
 		if(params == null) { 
 			String subUrl = url.substring(urlPathMatched.length());
 			UrlInfo info = HttpKit.parseUrl(subUrl);
-			List<Object> paramList = new ArrayList<>(info.path); 
-			if(!info.params.isEmpty()) {
-				paramList.add(info.params);
+			List<Object> paramList = new ArrayList<>(info.pathList); 
+			if(!info.queryParamMap.isEmpty()) {
+				paramList.add(info.queryParamMap);
 			}
 			params = paramList.toArray();
 		} 
@@ -392,6 +395,7 @@ public class RpcProcessor {
 			response.replace((Message)data);
 		} else {
 			response.setStatus(200); 
+			response.setHeader(Http.CONTENT_TYPE, "application/json; charset=utf8"); 
 			response.setBody(data); 
 		} 
 	}

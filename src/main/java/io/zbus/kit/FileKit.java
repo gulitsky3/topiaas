@@ -39,16 +39,24 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class FileKit {  
+public class FileKit {
 	private final Map<String, String> cache = new ConcurrentHashMap<String, String>();
 	private boolean enableCache = true;
-	
+
 	public static FileKit INSTANCE = new FileKit();
-	
+
+	public FileKit() {
+
+	}
+
+	public FileKit(boolean cached) {
+		this.enableCache = cached;
+	}
+
 	public void setCache(boolean value) {
 		enableCache = value;
-	}  
-	
+	}
+
 	public static InputStream inputStream(String resource) {
 		ClassLoader classLoader = null;
 		try {
@@ -66,24 +74,24 @@ public class FileKit {
 				URL url = classLoader.getResource(resource);
 				if (url == null) {
 					return new FileInputStream(new File(resource));
-				} 
+				}
 				if (url.toString().startsWith("jar:file:")) {
 					return FileKit.class.getResourceAsStream(resource.startsWith("/") ? resource : "/" + resource);
 				} else {
 					return new FileInputStream(new File(url.toURI()));
 				}
-			} 
+			}
 		} catch (Exception e) {
-			//ignore
-		} 
+			// ignore
+		}
 		return null;
 	}
 
 	public String loadFile(String resource) throws IOException {
-		if(enableCache && cache.containsKey(resource)){
+		if (enableCache && cache.containsKey(resource)) {
 			return cache.get(resource);
 		}
-		
+
 		InputStream in = FileKit.class.getClassLoader().getResourceAsStream(resource);
 		if (in == null) {
 			throw new IOException(resource + " not found");
@@ -97,57 +105,57 @@ public class FileKit {
 			while ((n = reader.read(buffer)) != -1) {
 				writer.write(buffer, 0, n);
 			}
-		} catch (UnsupportedEncodingException e) { 
-			//ignore
+		} catch (UnsupportedEncodingException e) {
+			// ignore
 		} finally {
 			try {
 				in.close();
 			} catch (IOException e) {
-				//ignore
+				// ignore
 			}
 		}
 		String content = writer.toString();
 		cache.put(resource, content);
 		return content;
 	}
-	 
-	
+
 	public String loadFile(String resource, Map<String, Object> model) throws IOException {
 		String template = loadFile(resource);
-		if(model == null) return template; 
-		
-		for(Entry<String, Object> e : model.entrySet()){
+		if (model == null)
+			return template;
+
+		for (Entry<String, Object> e : model.entrySet()) {
 			String key = e.getKey();
 			Object val = e.getValue();
-			
-			key = "{{"+key+"}}"; 
-			if(val == null){
+
+			key = "{{" + key + "}}";
+			if (val == null) {
 				val = "";
 			}
-			template = template.replace(key, val.toString()); 
+			template = template.replace(key, val.toString());
 		}
-		
+
 		return template;
-	} 
-	
+	}
+
 	public byte[] loadFileBytes(String resource) throws IOException {
 		InputStream in = inputStream(resource);
 		if (in == null)
 			throw new FileNotFoundException("File(" + resource + ") Not Found");
 
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream(); 
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		byte[] data = new byte[1024];
 		try {
 			int nRead;
 			while ((nRead = in.read(data, 0, data.length)) != -1) {
 				buffer.write(data, 0, nRead);
-			} 
+			}
 		} finally {
 			try {
 				buffer.close();
 				in.close();
 			} catch (IOException e) {
-				//ignore
+				// ignore
 			}
 		}
 		return buffer.toByteArray();
@@ -157,21 +165,22 @@ public class FileKit {
 		if (file.exists()) {
 			if (file.isDirectory()) {
 				File[] files = file.listFiles();
-				if(files == null) return; 
+				if (files == null)
+					return;
 				for (int i = 0; i < files.length; i++) {
 					deleteFile(files[i]);
-				} 
-			} 
-			file.delete(); 
-		}  
+				}
+			}
+			file.delete();
+		}
 	}
-	
-	public static File classBaseDir(){
+
+	public static File classBaseDir() {
 		return classBaseDir(FileKit.class);
 	}
-	
-	public static File classBaseDir(Class<?> clazz){
-		if(clazz == null){
+
+	public static File classBaseDir(Class<?> clazz) {
+		if (clazz == null) {
 			clazz = FileKit.class;
 		}
 		return new File(clazz.getProtectionDomain().getCodeSource().getLocation().getPath());
