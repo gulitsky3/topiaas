@@ -1,6 +1,7 @@
 package io.zbus.mq.commands;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +14,10 @@ import io.zbus.transport.Session;
 public class CreateHandler implements CommandHandler { 
 	private static final Logger logger = LoggerFactory.getLogger(CreateHandler.class);  
 	private final MqManager mqManager; 
-	
-	public CreateHandler(MqManager mqManager) { 
+	private Map<String, Object> methodTable;
+	public CreateHandler(MqManager mqManager, Map<String, Object> methodTable) { 
 		this.mqManager = mqManager;
+		this.methodTable = methodTable;
 	}
 	
 	@Override
@@ -31,6 +33,10 @@ public class CreateHandler implements CommandHandler {
 		Integer channelMask = req.getHeaderInt(Protocol.CHANNEL_MASK);
 		Long offset = req.getHeaderLong(Protocol.OFFSET);
 		String creator = sess.remoteAddress();
+		if(req.getBody() != null) { 
+			methodTable.put(mqName, req.getBody());
+		}
+		
 		try {
 			mqManager.saveQueue(mqName, mqType, mqMask, channel, offset, channelMask, creator);
 		} catch (IOException e) { 

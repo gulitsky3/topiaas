@@ -2,7 +2,9 @@ package io.zbus.mq;
  
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +16,9 @@ import io.zbus.kit.ConfigKit;
 import io.zbus.kit.StrKit;
 import io.zbus.mq.MqServerConfig.CorsConfig;
 import io.zbus.mq.MqServerConfig.ServerConfig;
-import io.zbus.proxy.http.HttpDecodeFilter;
-import io.zbus.proxy.http.HttpProxyHandler;
-import io.zbus.proxy.http.ProxyUrlMatcher;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.rpc.StaticResource;
 import io.zbus.transport.Ssl;
-import io.zbus.transport.http.DecodeFilter;
 import io.zbus.transport.http.HttpWsServer; 
 
 public class MqServer extends HttpWsServer {
@@ -38,6 +36,7 @@ public class MqServer extends HttpWsServer {
 	
 	private StaticResource staticResource = new StaticResource();
 	private RpcProcessor rpcProcessor; 
+	private Map<String, Object> registeredMethodTable = new HashMap<String, Object>();
 	
 	public MqServer(MqServerConfig config) {  
 		super(corsConfig(config.getCors()));
@@ -47,7 +46,7 @@ public class MqServer extends HttpWsServer {
 		
 		publicServerConfig = config.publicServer;
 		if(publicServerConfig != null) {
-			publicServerAdaptor = new MqServerAdaptor(this.config);
+			publicServerAdaptor = new MqServerAdaptor(this.config, registeredMethodTable);
 			if(publicServerConfig.auth != null) {
 				publicServerAdaptor.setRequestAuth(publicServerConfig.auth);
 			}
@@ -60,7 +59,7 @@ public class MqServer extends HttpWsServer {
 			if(publicServerAdaptor != null) {
 				privateServerAdaptor = publicServerAdaptor.clone(); //share internal state
 			} else {
-				privateServerAdaptor = new MqServerAdaptor(this.config);
+				privateServerAdaptor = new MqServerAdaptor(this.config, registeredMethodTable);
 			} 
 			privateServerAdaptor.setRequestAuth(null);//clear auth by default
 			if(privateServerConfig.auth != null) {
@@ -75,7 +74,7 @@ public class MqServer extends HttpWsServer {
 			adaptor = this.privateServerAdaptor;
 		}
 		if(adaptor == null) {
-			adaptor = publicServerAdaptor = new MqServerAdaptor(this.config); 
+			adaptor = publicServerAdaptor = new MqServerAdaptor(this.config, registeredMethodTable); 
 		}
 		
 		monitorServerConfig = config.monitorServer;
@@ -85,15 +84,6 @@ public class MqServer extends HttpWsServer {
 		staticResource.setBasePath(config.getStaticFileDir());
 		staticResource.setCacheEnabled(config.isStaticFileCacheEnabled());
 		
-		//Setup HTTP proxy
-		if(config.httpProxyConfig != null) {  
-			ProxyUrlMatcher urlMatcher = new ProxyUrlMatcher(config.httpProxyConfig.buildProxyTable());
-			DecodeFilter decodeFilter = new HttpDecodeFilter(urlMatcher);
-			setDecodeFilter(decodeFilter);
-			
-			HttpProxyHandler httpProxyHandler = new HttpProxyHandler(urlMatcher);
-			adaptor.setHttpProxyHandler(httpProxyHandler);
-		}
 	}  
 	
 	public MqServer(String configFile){
@@ -196,6 +186,10 @@ public class MqServer extends HttpWsServer {
 			logger.info("Starting monitor server @" + monitorServerConfig.address);
 			this.start(monitorServerConfig.address, monitorServerAdaptor, sslContext); 
 		}   
+	}
+	
+	public Map<String, Object> getRegisteredMethodTable() {
+		return registeredMethodTable;
 	}
 	 
 	

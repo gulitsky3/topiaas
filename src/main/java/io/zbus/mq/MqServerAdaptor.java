@@ -9,8 +9,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpRequest;
 import io.zbus.auth.AuthResult;
 import io.zbus.auth.RequestAuth;
 import io.zbus.kit.FileKit;
@@ -29,7 +27,6 @@ import io.zbus.mq.commands.TakeHandler;
 import io.zbus.mq.plugin.Filter;
 import io.zbus.mq.plugin.IpFilter;
 import io.zbus.mq.plugin.UrlRouteFilter;
-import io.zbus.proxy.http.HttpProxyHandler;
 import io.zbus.rpc.RpcProcessor;
 import io.zbus.transport.Message;
 import io.zbus.transport.ServerAdaptor;
@@ -57,10 +54,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	protected IpFilter sessionFilter; 
 	
 	protected List<Filter> filterList = new ArrayList<>();
-	
-	protected HttpProxyHandler httpProxyHandler; 
-	
-	public MqServerAdaptor(MqServerConfig config) { 
+	public MqServerAdaptor(MqServerConfig config, Map<String, Object> registeredMethodTable) { 
 		this.config = config;
 		mqManager = new MqManager();
 		subscriptionManager = new SubscriptionManager(mqManager);  
@@ -76,7 +70,7 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		commandTable.put(Protocol.SUB, new SubHandler(messageDispatcher, mqManager, subscriptionManager));
 		commandTable.put(Protocol.TAKE, new TakeHandler(messageDispatcher, mqManager));
 		commandTable.put(Protocol.ROUTE, new RouteHandler(sessionTable));
-		commandTable.put(Protocol.CREATE, new CreateHandler(mqManager)); 
+		commandTable.put(Protocol.CREATE, new CreateHandler(mqManager, registeredMethodTable)); 
 		commandTable.put(Protocol.REMOVE, new RemoveHandler(mqManager)); 
 		commandTable.put(Protocol.QUERY, new QueryHandler(mqManager));  
 		commandTable.put(Protocol.ON_NOTIFY, new NotifyHandler(notifyManager));  
@@ -165,14 +159,8 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 	}
 	
 	@Override
-	public void onMessage(Object msg, Session sess) throws IOException { 
-		if(httpProxyHandler != null) {
-			if(msg instanceof HttpRequest) {
-				httpProxyHandler.onMessage(msg, sess);
-				return;
-			}
-		}
-		
+	public void onMessage(Object msg, Session sess) throws IOException {
+
 		Message req = (Message)msg;    
 		Message res = new Message(); 
 		if (req == null) {
@@ -246,16 +234,6 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		super.cleanSession(sess); 
 		
 		subscriptionManager.removeByClientId(sessId);
-		
-		//HTTP proxy: clean outbound channel
-		Channel outboundChannel = HttpProxyHandler.outboundChannel(sess);
-		if(outboundChannel != null) {
-			HttpProxyHandler.closeOnFlush(outboundChannel);
-		}
-	}
-	
-	public void setHttpProxyHandler(HttpProxyHandler httpProxyHandler) {
-		this.httpProxyHandler = httpProxyHandler;
 	}
 
 	public void setRequestAuth(RequestAuth requestAuth) {

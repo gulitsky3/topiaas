@@ -224,7 +224,7 @@ class NettyAdaptor extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		Session sess = getSession(ctx);
-		ioAdaptor.sessionToDestroy(sess);
+		ioAdaptor.sessionToDestroy(sess);  
 		sessionMap.remove(sess.id());
 	} 
 	

@@ -15,21 +15,21 @@ public class TestCases {
 		Message res = rpc.invoke(req); //同步调用
 		System.out.println(res);
 		
-		//2)纯异步API
-		rpc.invoke(req, resp -> { //异步调用
-			System.out.println(resp); 
-		}); 
-		
-		//3) 动态代理
-		InterfaceExample example = rpc.createProxy(urlPrefix, InterfaceExample.class);
-		int c = example.plus(1, 2);
-		System.out.println(c);
-		
-		
-		//4) 参数同时基于URL的调用格式 
-		req = new Message();
-		req.setUrl(HttpKit.joinPath(urlPrefix, "/plus/1/2"));
-		res = rpc.invoke(req); 
-		System.out.println("urlbased: " + res);
+//		//2)纯异步API
+//		rpc.invoke(req, resp -> { //异步调用
+//			System.out.println(resp); 
+//		}); 
+//		
+//		//3) 动态代理
+//		InterfaceExample example = rpc.createProxy(urlPrefix, InterfaceExample.class);
+//		int c = example.plus(1, 2);
+//		System.out.println(c);
+//		
+//		
+//		//4) 参数同时基于URL的调用格式 
+//		req = new Message();
+//		req.setUrl(HttpKit.joinPath(urlPrefix, "/plus/1/2"));
+//		res = rpc.invoke(req); 
+//		System.out.println("urlbased: " + res);
 	}
 }

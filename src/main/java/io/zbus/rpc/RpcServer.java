@@ -99,7 +99,7 @@ public class RpcServer implements Closeable {
 			clients.add(client);
 		}
 	} 
-
+	
 	protected MqClient startClient() {
 		MqClient client = null;
 		if (mqServer != null) {
@@ -158,6 +158,7 @@ public class RpcServer implements Closeable {
 			req.setHeader(Protocol.MQ_MASK, mqMask);
 			req.setHeader(Protocol.MQ_TYPE, mqType);
 			req.setHeader(Protocol.CHANNEL, channel); 
+			req.setBody(rpcProcessor.rpcMethodList());
 			mqClient.invoke(req, res -> { 
 				logger.info(JsonKit.toJSONString(res));
 				

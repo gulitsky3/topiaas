@@ -109,7 +109,7 @@ public class HttpWsServer extends Server {
 		private WebSocketServerHandshaker handshaker;
 	
 		//File upload
-		private static final HttpDataFactory factory = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE); // Disk if size exceed
+//		private static final HttpDataFactory factory = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE); // Disk if size exceed
 	    private HttpPostRequestDecoder decoder; 
 	
 	    static {
@@ -144,7 +144,7 @@ public class HttpWsServer extends Server {
 			} 
 						
 			//2) HTTP mode  
-			FullHttpMessage httpMessage = null;  
+			FullHttpMessage httpMessage = null;
 			
 			if (msg.getStatus() == null) {// as request
 				httpMessage = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(msg.getMethod()),
@@ -239,7 +239,7 @@ public class HttpWsServer extends Server {
 					   || contentType.startsWith("multipart/form-data"))
 					){  
 				HttpRequest req = (HttpRequest) httpMsg;
-				decoder = new HttpPostRequestDecoder(factory, req);   
+				decoder = new HttpPostRequestDecoder(req);
 				handleFormMessage(httpMsg, msg); 
 			}  else { 
 				if (body != null) { 
