@@ -31,6 +31,10 @@ public class NotifyManager {
 		notifyClients(port, null);
 	}
 	
+	public Map<NotifyTarget, Map<String, Session>> getTargetSessionTable() {
+		return this.targetSessionTable;
+	}
+	
 	public synchronized void notifyClients(String port, String urlPrefix) {
 		Iterator<Entry<NotifyTarget, Map<String, Session>>> iter = targetSessionTable.entrySet().iterator();
 		while(iter.hasNext()) {
@@ -78,7 +82,6 @@ public class NotifyManager {
 			}
 		}
 	}
-	
 	
 	public static class NotifyTarget {
 		public String port;

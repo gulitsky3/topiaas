@@ -32,19 +32,19 @@ public abstract class ServerAdaptor implements IoAdaptor{
      
 	@Override
 	public void sessionCreated(Session sess) throws IOException {
-		logger.info("Created: " + sess);
+		logger.debug("Created: " + sess);
 		sessionTable.put(sess.id(), sess);
 	}
 
 	@Override
 	public void sessionToDestroy(Session sess) throws IOException {
-		logger.info("Destroyed: " + sess);
+		logger.debug("Destroyed: " + sess);
 		cleanSession(sess);
 	}
  
 	@Override
 	public void onError(Throwable e, Session sess) { 
-		logger.info("Error: " + sess, e);
+		logger.error("Error: " + sess, e);
 		try {
 			cleanSession(sess);
 		} catch (IOException ex) {
@@ -54,7 +54,7 @@ public abstract class ServerAdaptor implements IoAdaptor{
 
 	@Override
 	public void onIdle(Session sess) throws IOException { 
-		logger.info("Idled: " + sess);
+		logger.debug("Idled: " + sess);
 		cleanSession(sess);
 	}
 	
