@@ -45,6 +45,13 @@ public class RpcServerFullExamples {
 		return value;
 	} 
 	
+	public Map<String, Object> nullValue() {
+		Map<String, Object> value = new HashMap<>();
+		value.put("key1", null);
+		value.put("key2", "hi");
+		return value;
+	} 
+	
 	
 	@RequestMapping("/showUpload")
 	public Message showUpload() { 
