@@ -1,9 +1,8 @@
-package io.zbus.transport.http;
+package io.zbus.proxy.http;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
@@ -20,7 +19,6 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObjectAggregator;
@@ -29,20 +27,9 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
-import io.netty.handler.codec.http.multipart.Attribute;
-import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
-import io.netty.handler.codec.http.multipart.DiskAttribute;
-import io.netty.handler.codec.http.multipart.DiskFileUpload;
-import io.netty.handler.codec.http.multipart.FileUpload;
-import io.netty.handler.codec.http.multipart.HttpDataFactory;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.EndOfDataDecoderException;
-import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -56,7 +43,9 @@ import io.zbus.kit.HttpKit;
 import io.zbus.kit.JsonKit;
 import io.zbus.transport.Message;
 import io.zbus.transport.Server;
-import io.zbus.transport.http.Http.FormData; 
+import io.zbus.transport.ServerAdaptor;
+import io.zbus.transport.Session;
+import io.zbus.transport.http.Http; 
 
 /**
  * 
@@ -96,21 +85,34 @@ public class HttpWsServer extends Server {
 		}); 
 	}
 	
+	@SuppressWarnings("resource")
+	public static void main(String[] args) {  
+		ServerAdaptor adaptor = new ServerAdaptor() { 
+			@Override
+			public void onMessage(Object msg, Session sess) throws IOException { 
+				Message res = new Message();
+				res.setStatus(200);
+				
+				res.setHeader("id", res.getHeader("id")); 
+				res.setHeader("content-type", "text/plain; charset=utf8");
+				
+				res.setBody("中文"+System.currentTimeMillis());
+				
+				sess.write(res);  
+			}
+		};  
+		
+		Server server = new HttpWsServer();   
+		server.start(80, adaptor);   
+	} 
+	
 	public static class HttpWsServerCodec extends MessageToMessageCodec<Object, Object> {
 		private static final Logger logger = LoggerFactory.getLogger(HttpWsServerCodec.class); 
-		private WebSocketServerHandshaker handshaker;
-	
-		//File upload
-		private static final HttpDataFactory factory = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE); // Disk if size exceed
-	    private HttpPostRequestDecoder decoder; 
-	
-	    static {
-	        DiskFileUpload.deleteOnExitTemporaryFile = true; // should delete file // on exit (in normal // exit)
-	        DiskFileUpload.baseDirectory = null; // system temp directory
-	        DiskAttribute.deleteOnExitTemporaryFile = true; // should delete file on  exit (in normal exit)
-	        DiskAttribute.baseDirectory = null; // system temp directory
-	    } 
+		private WebSocketServerHandshaker handshaker; 
 	    
+		public HttpWsServerCodec() {
+			System.out.println("?????init HttpWsServerCodec");
+		}
 	    
 	    @Override
 	    public boolean acceptOutboundMessage(Object msg) throws Exception {
@@ -193,6 +195,17 @@ public class HttpWsServer extends Server {
 			}
 			 
 			io.netty.handler.codec.http.HttpMessage httpMsg = (io.netty.handler.codec.http.HttpMessage) obj;   
+			
+			if(httpMsg instanceof FullHttpRequest) {
+				FullHttpRequest req = (FullHttpRequest)httpMsg;
+				
+				if(req.uri().startsWith("/test")) {
+					
+					
+					return;
+				}
+			}
+			
 			Message msg = decodeHeaders(httpMsg); 
 			String contentType = msg.getHeader(Http.CONTENT_TYPE);
 			
@@ -203,33 +216,21 @@ public class HttpWsServer extends Server {
 				body = fullReq.content();
 			}
 			
-			//Special case for file uploads
-			if(httpMsg instanceof HttpRequest 
-					&& contentType != null 
-					&& (
-					   contentType.startsWith("application/x-www-form-urlencoded") 
-					   || contentType.startsWith("multipart/form-data"))
-					){  
-				HttpRequest req = (HttpRequest) httpMsg;
-				decoder = new HttpPostRequestDecoder(factory, req);   
-				handleFormMessage(httpMsg, msg); 
-			}  else { 
-				if (body != null) { 
-					int size = body.readableBytes();
-					if (size > 0) {
-						byte[] data = new byte[size];
-						body.readBytes(data); 
-						if(contentType.startsWith("text") || contentType.startsWith("application/json")) {
-							try{
-								String charset = Http.charset(contentType);
-								msg.setBody(new String(data, charset));
-							} catch (Exception e) {
-								logger.error(e.getMessage(), e);
-								msg.setBody(new String(data));
-							}
-						} else {
-							msg.setBody(data);
+			if (body != null) { 
+				int size = body.readableBytes();
+				if (size > 0) {
+					byte[] data = new byte[size];
+					body.readBytes(data); 
+					if(contentType.startsWith("text") || contentType.startsWith("application/json")) {
+						try{
+							String charset = Http.charset(contentType);
+							msg.setBody(new String(data, charset));
+						} catch (Exception e) {
+							logger.error(e.getMessage(), e);
+							msg.setBody(new String(data));
 						}
+					} else {
+						msg.setBody(data);
 					}
 				}
 			}
@@ -261,66 +262,14 @@ public class HttpWsServer extends Server {
 				msg.setStatus(status);
 			}
 			return msg;
+		} 
+		
+		@Override
+		public void channelActive(ChannelHandlerContext ctx) throws Exception { 
+			System.out.println(ctx.name() + " active");
+			super.channelActive(ctx);
 		}
 		
-		private void handleFormMessage(io.netty.handler.codec.http.HttpMessage httpMsg, Message uploadMessage) throws IOException{
-			if (httpMsg instanceof HttpContent) { 
-	            HttpContent chunk = (HttpContent) httpMsg;
-	            decoder.offer(chunk); 
-	            try {
-	                while (decoder.hasNext()) {
-	                    InterfaceHttpData data = decoder.next();
-	                    if (data != null) {
-	                        try { 
-	                        	handleFormData(data, uploadMessage);
-	                        } finally {
-	                            data.release();
-	                        }
-	                    }
-	                }
-	            } catch (EndOfDataDecoderException e1) { 
-	            	//ignore
-	            }
-	            
-	            if (chunk instanceof LastHttpContent) {  
-	            	resetUpload();
-	            }
-	        }
-		}
-		
-		private void handleFormData(InterfaceHttpData data, Message uploadMessage) throws IOException{
-			FormData formData = (FormData)uploadMessage.getBody();
-	        if(formData == null){
-	        	formData = new FormData();
-	        	uploadMessage.setBody(formData);
-	        }
-	        
-			if (data.getHttpDataType() == HttpDataType.Attribute) {
-	            Attribute attribute = (Attribute) data;
-	            formData.addAttribute(attribute.getName(), attribute.getValue()); 
-	            return;
-			}
-			
-			if (data.getHttpDataType() == HttpDataType.FileUpload) {
-	            FileUpload fileUpload = (FileUpload) data;
-	            Http.FileUpload file = new Http.FileUpload();
-	            file.fileName = fileUpload.getFilename();
-	            file.contentType = fileUpload.getContentType();
-	            file.data = fileUpload.get(); 
-	            
-	            List<Http.FileUpload> uploads = formData.files.get(data.getName());
-	            if(uploads == null){
-	            	uploads = new ArrayList<Http.FileUpload>();
-	            	formData.files.put(data.getName(), uploads);
-	            }
-	            uploads.add(file);
-			}
-		}
-		
-		private void resetUpload() {  
-	        //decoder.destroy(); //TODO
-	        decoder = null;
-	    }    
 		
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

@@ -186,11 +186,12 @@ public class RpcProcessor {
 		
 		boolean exists = this.urlPath2MethodTable.containsKey(urlPath);
 		if (exists) {
+			MethodInstance existsMethod = urlPath2MethodTable.get(urlPath);
 			if(overrideMethod) {
-				logger.warn(urlPath + " overridden: " + mi.reflectedMethod); 
+				logger.warn(urlPath + "[" + mi.reflectedMethod + "] override " +  existsMethod.reflectedMethod); 
 				this.urlPath2MethodTable.put(urlPath, mi); 
 			} else {
-				logger.warn(urlPath + " exists, new ignored"); 
+				logger.warn(urlPath + "[" + mi.reflectedMethod + "] Ignored, Active= " +  existsMethod.reflectedMethod);  
 			}
 		} else {
 			this.urlPath2MethodTable.put(urlPath, mi); 

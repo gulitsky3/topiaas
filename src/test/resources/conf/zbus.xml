@@ -50,13 +50,14 @@
 		<exposeHeaders></exposeHeaders>
 	</cors>
 	
+	<!-- 
 	<httpProxy>
 		<proxy>
-			<location>/f5query</location>
-			<backend>http://mw.cmft.com:8080/f5query</backend>
+			<location>/test</location>
+			<backend>http://localhost:15555</backend>
 		</proxy>
 	</httpProxy>
- 	
+ 	 -->
 	<!-- MQ location configure -->
 	<staticFileDir cached="false">static</staticFileDir>    
 	<mqDiskDir>/tmp/zbus</mqDiskDir>   
