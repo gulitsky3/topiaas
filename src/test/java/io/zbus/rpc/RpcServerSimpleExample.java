@@ -57,8 +57,8 @@ public class RpcServerSimpleExample {
 		
 		RpcServer rpcServer = new RpcServer(); 
 		rpcServer.setRpcProcessor(p); 
-		rpcServer.setChannel("temp");
-		rpcServer.setRouteDisabled(true);
+		//rpcServer.setChannel("temp");
+		//rpcServer.setRouteDisabled(true);
 		
 		rpcServer.setMqServerAddress("localhost:15555");
 		rpcServer.setMq("/"); 
