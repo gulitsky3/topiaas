@@ -541,15 +541,17 @@ public class RpcProcessor {
 		String urlSuffixParamValue = null;
 		String urlSuffixParamName = null;
 		int lastIdx = routeUrlInfo.pathList.size()-1;
-		String lastRouteUrlPart = routeUrlInfo.pathList.get(lastIdx);
-		String lrup = lastRouteUrlPart;
-		if (lrup.startsWith("{") && lrup.endsWith(":**}")) {
-			urlSuffixParamName = lrup.substring(1, lrup.length()-4);
-			// 截断url
-			urlSuffixParamValue = String.join("/", reqUrlInfo.pathList.subList(lastIdx, reqUrlInfo.pathList.size()));
-			reqUrlInfo.pathList = reqUrlInfo.pathList.subList(0, lastIdx);
-			routeUrlInfo.pathList = routeUrlInfo.pathList.subList(0, lastIdx);
-		}
+        if (lastIdx < reqUrlInfo.pathList.size()) {
+            String lastRouteUrlPart = routeUrlInfo.pathList.get(lastIdx);
+            String lrup = lastRouteUrlPart;
+            if (lrup.startsWith("{") && lrup.endsWith(":**}")) {
+                urlSuffixParamName = lrup.substring(1, lrup.length() - 4);
+                // 截断url
+                urlSuffixParamValue = String.join("/", reqUrlInfo.pathList.subList(lastIdx, reqUrlInfo.pathList.size()));
+                reqUrlInfo.pathList = reqUrlInfo.pathList.subList(0, lastIdx);
+                routeUrlInfo.pathList = routeUrlInfo.pathList.subList(0, lastIdx);
+            }
+        }
 		// 匹配路径，要求分割部分数量一致
 		if (routeUrlInfo.pathList.size() != reqUrlInfo.pathList.size()) {
 			return false;
