@@ -67,7 +67,7 @@ public class StaticResource {
 			file = fullPath.getAbsolutePath();
 			tgtFile = fullPath;
 		}
-		if (!absoluteBasePath.toPath().startsWith(tgtFile.toPath())) {
+		if (!tgtFile.toPath().startsWith(absoluteBasePath.toPath())) {
 			res.setStatus(404);
 			res.setHeader(Http.CONTENT_TYPE, "text/plain; charset=utf8");
 			res.setBody(urlFile + " Not Found");
