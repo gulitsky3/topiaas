@@ -251,12 +251,11 @@ public class MqServerAdaptor extends ServerAdaptor {
 		if(mq == null) {
 			reply(req, 404, "MQ(" + mqName + ") Not Found", sess);
 			return false;
-		} 
+		}  
 		if(mq.channel(channelName) == null) { 
 			reply(req, 404, "Channel(" + channelName + ") Not Found", sess);
 			return false;
-		} 
-		
+		}  
 		return true;
 	}
 	
@@ -287,7 +286,7 @@ public class MqServerAdaptor extends ServerAdaptor {
 		String topic = (String)req.getHeader(Protocol.TOPIC);
 		sub.topics.clear();
 		if(topic != null) {
-			sub.topics.add(topic); 
+			sub.topics.add(topic); //Parse topic
 		}    
 		MessageQueue mq = mqManager.get(mqName);
 		messageDispatcher.dispatch(mq, channelName); 

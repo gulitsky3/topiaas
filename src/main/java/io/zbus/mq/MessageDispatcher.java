@@ -23,7 +23,7 @@ public class MessageDispatcher {
 	private Map<String, Session> sessionTable;
 	private Map<String, Long> loadbalanceTable = new ConcurrentHashMap<String, Long>(); // channel => index
 
-	private int batchReadSize = 10;
+	//private int batchReadSize = 10;
 	private ExecutorService dispatchRunner = Executors.newFixedThreadPool(64);
 
 	public MessageDispatcher(SubscriptionManager subscriptionManager, Map<String, Session> sessionTable) {
@@ -31,53 +31,66 @@ public class MessageDispatcher {
 		this.sessionTable = sessionTable;
 	}
 
-	public void dispatch(MessageQueue mq, String channel) {
-		dispatchRunner.submit(() -> {
+	public void dispatch(MessageQueue mq, String channel) {  
+		dispatchRunner.submit(() -> { 
 			dispatch0(mq, channel);
 		});
 	}
-
+ 
 	protected void dispatch0(MessageQueue mq, String channel) {
 		List<Subscription> subs = subscriptionManager.getSubscriptionList(mq.name(), channel);
 		if (subs == null || subs.size() == 0)
 			return;
 
-		synchronized (subs) {
+		synchronized (subs) { 
 			Long index = loadbalanceTable.get(channel);
 			if (index == null) {
 				index = 0L;
 			}
-			while (true) {
-				List<Message> data;
-				try {
-					data = mq.read(channel, batchReadSize);
-				} catch (IOException e) {
-					logger.error(e.getMessage(), e);
-					break;
+			
+			while(true) {
+				Message message = null;
+				int N = subs.size();
+				long max = index + N;
+				if(max < 0) {
+					index = 0L;
+					max = index + N;
 				}
-				for (Message message : data) {
-					String filter = (String) message.getHeader(Protocol.TOPIC);
-					int N = subs.size();
-					long max = index + N;
-					while (index < max) {
-						Subscription sub = subs.get((int) (index % N));
-						index++;
-						if (index < 0)
-							index = 0L;
-						if (sub.topics.isEmpty() || sub.topics.contains(filter)) {
-							Session sess = sessionTable.get(sub.clientId);
-							if (sess == null)
-								continue;
-							message.setHeader(Protocol.CHANNEL, channel); 
-							sess.write(message); 
+				boolean windowOpen = false;
+				while (index < max) {
+					Subscription sub = subs.get((int) (index % N));
+					loadbalanceTable.put(channel, ++index); 
+					
+					if(sub.window != null && sub.window <= 0) { 
+						continue;
+					} 
+					windowOpen = true;
+					
+					if(message == null) {
+						try {
+							message = mq.read(channel);
+						} catch (IOException e) {
+							logger.error(e.getMessage(), e);
 							break;
-						}
+						} 
 					}
-				}
-				if (data.size() < batchReadSize)
-					break;
-			}
-			loadbalanceTable.put(channel, index);
+					if(message == null) return;
+					
+					String filter = (String) message.getHeader(Protocol.TOPIC);
+					if (sub.topics.isEmpty() || sub.topics.contains(filter)) {
+						Session sess = sessionTable.get(sub.clientId);
+						if (sess == null) continue;
+						
+						message.setHeader(Protocol.CHANNEL, channel); 
+						if(sub.window != null) {
+							message.setHeader(Protocol.WINDOW, --sub.window);
+						}
+						sess.write(message);  
+						message = null;
+					}
+				} 
+				if(!windowOpen) break;
+			}  
 		}
 	}
 

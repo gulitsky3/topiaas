@@ -1,5 +1,6 @@
 package io.zbus.rpc;
 
+import java.io.File;
 import java.io.IOException;
 
 import io.zbus.kit.FileKit;
@@ -10,7 +11,7 @@ import io.zbus.transport.Message;
 import io.zbus.transport.http.Http;
 
 public class StaticResource {
-	private String basePath = ".";
+	private String basePath = "";
 	private FileKit fileKit = new FileKit();
 	
 	@RequestMapping(exclude=true)
@@ -27,7 +28,11 @@ public class StaticResource {
 		Message res = new Message();
 		
 		UrlInfo info = HttpKit.parseUrl(req.getUrl());
-		String file = basePath + info.urlPath;
+		String file = HttpKit.joinPath(basePath ,info.urlPath );
+		if(!new File(basePath).isAbsolute()) {
+			file = file.substring(1); //remove first /
+		} 
+		
 		String contentType = HttpKit.contentType(file);
 		if(contentType == null) {
 			contentType = "application/octet-stream";

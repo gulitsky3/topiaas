@@ -1,7 +1,6 @@
 package io.zbus.mq;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.zbus.transport.Message;
 
@@ -20,11 +19,8 @@ public class Sub {
 		
 		final String mq = "MyMQ", channel = "MyChannel", mqType = Protocol.MEMORY;
 		
-		AtomicInteger count = new AtomicInteger(0);  
-		client.addMqHandler(mq, channel, data->{ 
-			if(count.getAndIncrement() % 10000 == 0) {
-				System.out.println(data); 
-			} 
+		client.addMqHandler(mq, channel, 4, data->{  
+			System.out.println(data);  
 		});  
 		
 		client.onOpen(()->{
@@ -40,6 +36,7 @@ public class Sub {
 			sub.setHeader("cmd", "sub"); //Subscribe on MQ/Channel
 			sub.setHeader("mq", mq); 
 			sub.setHeader("channel", channel);
+			sub.setHeader("window", 1);
 			client.invoke(sub, data->{
 				System.out.println(data);
 			});

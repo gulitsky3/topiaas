@@ -103,7 +103,7 @@ public class MqRpcServer implements Closeable {
 			Message sub = new Message();
 			sub.setHeader(Protocol.CMD, Protocol.SUB); // Subscribe on MQ/Channel
 			sub.setHeader(Protocol.MQ, mq);
-			sub.setHeader(Protocol.CHANNEL, channel);
+			sub.setHeader(Protocol.CHANNEL, channel); 
 			mqClient.invoke(sub, data -> {
 				logger.info(JsonKit.toJSONString(data));
 			});
