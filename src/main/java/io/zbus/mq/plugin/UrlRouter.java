@@ -9,12 +9,12 @@ import io.zbus.mq.MessageQueueManager;
  * @author leiming.hong Jul 9, 2018
  *
  */
-public interface UrlMqRouter {
+public interface UrlRouter {
 	/**
 	 * Dispatch request message by its URL
 	 * @param req message in request
 	 * @param sess where message from
-	 * @return true if message is handled well -- no need to do next, false otherwise.
+	 * @return mq name of matched from URL
 	 */
 	String match(MessageQueueManager mqManager, String url);
 }

@@ -28,21 +28,10 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	<bean id="sql" class="io.zbus.rpc.biz.DbExample"/>
 	
 	<bean id="example" class="io.zbus.rpc.biz.InterfaceExampleImpl"/>
-	<bean id="registerInterceptor" class="io.zbus.rpc.MyRegisterInterceptor"/> 
+	<bean id="registerInterceptor" class="io.zbus.rpc.MyRegisterInterceptor"/>  
 	
-	
-	<bean id="authFilter" class="io.zbus.rpc.RpcAuthFilter">
-		<constructor-arg>
-			<bean class="io.zbus.auth.XmlApiKeyProvider">
-				<constructor-arg value="rpc/auth.xml"/>
-			</bean> 
-		</constructor-arg>
-	</bean>
-	
-	<bean id="processor" class="io.zbus.rpc.RpcProcessor" >  
-		<!-- 
-		<property name="authFilter" ref="authFilter"/> 
-		 -->
+	<bean id="rpcProcessor" class="io.zbus.rpc.RpcProcessor" > 
+		<property name="docUrl" value="/"/>  
 		<property name="moduleTable">
 			<map>
 				<entry key="example" value-ref="example"/>
@@ -52,14 +41,22 @@ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 		</property>
 	</bean> 
 	
-	<bean class="io.zbus.rpc.RpcServer" init-method="start"> 
-		<property name="port" value="8080" />
-		<!-- 
-		<property name="certFile" value="ssl/zbus.crt"/>
-		<property name="keyFile" value="ssl/zbus.key"/>
-		--> 
-		<property name="onStart" ref="registerInterceptor"/> 
-		<property name="processor" ref="processor"/> 
+	
+	<bean id="mqServer" class="io.zbus.mq.MqServer">
+		<constructor-arg>
+			<bean class="io.zbus.mq.MqServerConfig">
+				<property name="publicServer">  
+					<bean class="io.zbus.mq.MqServerConfig.ServerConfig">
+						<property name="address" value="0.0.0.0:15555"></property>
+					</bean>
+				</property> 
+			</bean>
+		</constructor-arg>   
 	</bean> 
+	
+	<bean class="io.zbus.rpc.RpcServer" init-method="start"> 
+		<property name="mqServer" ref="mqServer"/>  <!-- embed RpcServer in MqServer -->
+		<property name="rpcProcessor" ref="rpcProcessor"/>
+	</bean>  
 	
 </beans>

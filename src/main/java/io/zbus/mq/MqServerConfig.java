@@ -11,7 +11,7 @@ import io.zbus.auth.DefaultAuth;
 import io.zbus.auth.RequestAuth;
 import io.zbus.auth.XmlApiKeyProvider;
 import io.zbus.kit.ConfigKit.XmlConfig;
-import io.zbus.mq.plugin.UrlMqRouter;
+import io.zbus.mq.plugin.UrlRouter;
 
 public class MqServerConfig extends XmlConfig { 
 	public ServerConfig publicServer;
@@ -28,11 +28,11 @@ public class MqServerConfig extends XmlConfig {
 	/**
 	 * URL mappting to MQ, nullable to default
 	 */
-	public UrlMqRouter urlMqRouter;       
+	public UrlRouter urlRouter;       
 	/**
 	 * In URL match, match rpc first over MQ, default to false
 	 */
-	public boolean urlMatchLocalRpcFirst = false; 
+	public boolean urlMatchLocalFirst = false; 
 	public boolean verbose = true;  
 	/**
 	 * File cached for FileKit to load static files
@@ -175,20 +175,20 @@ public class MqServerConfig extends XmlConfig {
 		this.mqDbPassword = mqDbPassword;
 	}
 
-	public UrlMqRouter getUrlMqRouter() {
-		return urlMqRouter;
+	public UrlRouter getUrlMqRouter() {
+		return urlRouter;
 	}
 
-	public void setUrlMqRouter(UrlMqRouter urlMqRouter) {
-		this.urlMqRouter = urlMqRouter;
+	public void setUrlRouter(UrlRouter urlRouter) {
+		this.urlRouter = urlRouter;
 	}
 
-	public boolean isUrlMatchLocalRpcFirst() {
-		return urlMatchLocalRpcFirst;
+	public boolean isUrlMatchLocalFirst() {
+		return urlMatchLocalFirst;
 	}
 
-	public void setUrlMatchLocalRpcFirst(boolean urlMatchLocalRpcFirst) {
-		this.urlMatchLocalRpcFirst = urlMatchLocalRpcFirst;
+	public void setUrlMatchLocalFirst(boolean urlMatchLocalFirst) {
+		this.urlMatchLocalFirst = urlMatchLocalFirst;
 	}
 
 	public boolean isFileCacheEnabled() {
@@ -197,10 +197,7 @@ public class MqServerConfig extends XmlConfig {
 
 	public void setFileCacheEnabled(boolean fileCacheEnabled) {
 		this.fileCacheEnabled = fileCacheEnabled;
-	}
-
-
-
+	} 
 
 	public static class ServerConfig{
 		public String address;

@@ -22,9 +22,11 @@ public class RpcServer implements Closeable {
 	private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
 	private MqServer mqServer; //InProc or Embedded
+	
 	private String mqServerAddress;
 	private String mq;
 	private String mqType = Protocol.MEMORY;
+	private Integer mqMask;
 	private String channel;
 	private boolean authEnabled = false;
 	private String apiKey = "";
@@ -70,20 +72,17 @@ public class RpcServer implements Closeable {
 			this.rpcProcessor.setRootUrl(HttpKit.joinPath("/", this.mq));
 			this.rpcProcessor.mountDoc();
 		}
+		
 		if(mqServer != null) {  
 			if(!mqServer.isStarted()) {
 				mqServer.start();
 			} 
-		}  
-		
-		//embedded in MqServer
-		if(mqServer != null && mq == null) { 
-			mqServer.setRpcProcessor(rpcProcessor);
-			if(!mqServer.isStarted()) {
-				mqServer.start();
+			//embedded in MqServer
+			if(mq == null) {
+				mqServer.setRpcProcessor(rpcProcessor); 
+				return;
 			}
-			return;
-		}  
+		}   
 		
 		//Inproc or remote MqServer
 		for(int i=0;i<clientCount;i++) {
@@ -145,6 +144,7 @@ public class RpcServer implements Closeable {
 			Message req = new Message();
 			req.setHeader(Protocol.CMD, Protocol.CREATE); // create MQ/Channel
 			req.setHeader(Protocol.MQ, mq);
+			req.setHeader(Protocol.MQ_MASK, mqMask);
 			req.setHeader(Protocol.MQ_TYPE, mqType);
 			req.setHeader(Protocol.CHANNEL, channel); 
 			Message res = mqClient.invoke(req);
