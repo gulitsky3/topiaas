@@ -869,6 +869,10 @@ public class RpcProcessor {
 		return res;
 	} 
 	
+	public Map<String, List<MethodInstance>> getUrlPath2MethodTable() {
+		return urlPath2MethodTable;
+	}
+	
 	public static class MethodInstance {
 		public RpcMethod info = new RpcMethod();    
 		
