@@ -345,7 +345,10 @@ public class RpcProcessor {
 		try {  
 			if (req == null) {
 				req = new Message();  
-			}   
+			}
+			if (this.threadContextEnabled) {
+				InvocationContext.set(req, response);
+			}
 			
 			if(beforeFilter != null) {
 				boolean next = beforeFilter.doFilter(req, response, null);
@@ -523,6 +526,12 @@ public class RpcProcessor {
 	 * GET,/api/{module}/filters/{?filter_paths:**}
 	 */
 	private static boolean matchDynamicPath(Message req, String routeKey) {
+		if (routeKey == null || (routeKey = routeKey.trim()).length() == 0) {
+			return false;
+		}
+		if (!routeKey.contains("{") || !routeKey.contains("}")) {
+			return false;
+		}
 		routeKey = routeKey.replace("?", "~");
 		String reqMethod = req.getMethod();
 		String[] split1 = routeKey.split(",");
@@ -614,7 +623,7 @@ public class RpcProcessor {
 					matched = e; 
 				}
 			} else {
-				boolean bool = matchDynamicPath(req, key);
+				boolean bool = matchDynamicPath(req, e.getKey());
 				if (bool) {
 					matched = e;
 					break;
@@ -813,9 +822,6 @@ public class RpcProcessor {
 	 
 	private void invoke(Message req, Message response) {   
 		try {    
-			if(threadContextEnabled) {
-				InvocationContext.set(req, response);
-			}
 			invoke0(req, response);
 		} catch (Throwable e) {  
 			logger.info(e.getMessage(), e); //no need to print

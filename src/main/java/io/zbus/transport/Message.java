@@ -106,7 +106,7 @@ public class Message {
 	}  
 	
 	public String getUrl(){
-		if(urlInfo == null) return this.url;
+		if(urlInfo == null || urlInfo.urlPath == null) return this.url;// 当 url=/ 时 urlInfo != null 会存在问题 by vivi
 		return String.format("%s?%s", urlInfo.urlPath, getQueryString()); 
 	} 
 	
