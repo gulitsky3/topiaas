@@ -35,7 +35,7 @@ public abstract class AbastractClient implements Closeable {
 	protected int reconnectDelay = 3000; // 3s
 
 	protected Map<String, AbastractClient.RequestContext> callbackTable = new ConcurrentHashMap<>(); // id->context
-	protected ScheduledExecutorService heartbeator;
+	protected ScheduledExecutorService runner = Executors.newScheduledThreadPool(4);
 
 	public AbastractClient() {
 		onMessage = msg -> {
@@ -70,13 +70,10 @@ public abstract class AbastractClient implements Closeable {
 	}
 
 	public synchronized void heartbeat(long interval, TimeUnit timeUnit, AbastractClient.MessageBuilder builder) {
-		if (heartbeator == null) {
-			heartbeator = Executors.newSingleThreadScheduledExecutor();
-			heartbeator.scheduleAtFixedRate(() -> {
-				Map<String, Object> msg = builder.build();
-				sendMessage(msg);
-			}, interval, interval, timeUnit);
-		}
+		runner.scheduleAtFixedRate(() -> {
+			Map<String, Object> msg = builder.build();
+			sendMessage(msg);
+		}, interval, interval, timeUnit); 
 	}
 
 	@Override
@@ -84,8 +81,8 @@ public abstract class AbastractClient implements Closeable {
 		onClose = null;
 		onError = null;
 
-		if (heartbeator != null) {
-			heartbeator.shutdown();
+		if (runner != null) {
+			runner.shutdown();
 		}
 	}
 
@@ -149,7 +146,7 @@ public abstract class AbastractClient implements Closeable {
 				Integer status = (Integer) response.get(Protocol.STATUS);
 				if (status != null && status != 200) {
 					if (ctx.onError != null) {
-						ctx.onError.handle(new RuntimeException((String) response.get(Protocol.BODY)));
+						ctx.onError.handle(new InvokeException((String) response.get(Protocol.BODY)));
 					} else {
 						logger.error(JsonKit.toJSONString(response));
 					}

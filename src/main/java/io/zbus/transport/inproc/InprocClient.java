@@ -37,7 +37,13 @@ public class InprocClient extends AbastractClient implements Session {
 		try {
 			ioAdaptor.sessionCreated(this);
 			if(onOpen != null) {
-				onOpen.handle();
+				runner.submit(()->{
+					try {
+						onOpen.handle();
+					} catch (Exception e) {
+						logger.error(e.getMessage(), e);
+					}
+				});
 			} 
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);

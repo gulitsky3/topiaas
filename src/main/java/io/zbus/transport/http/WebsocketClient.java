@@ -137,11 +137,13 @@ public class WebsocketClient extends AbastractClient {
 					cachedSendingMessages.clear();
 				} 
 				if(onOpen != null){
-					try {
-						onOpen.handle();
-					} catch (Exception e) {
-						logger.error(e.getMessage(), e);
-					}
+					runner.submit(()->{
+						try {
+							onOpen.handle();
+						} catch (Exception e) {
+							logger.error(e.getMessage(), e);
+						}
+					});
 				}
 			}
 

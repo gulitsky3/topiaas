@@ -1,0 +1,47 @@
+package io.zbus.mq;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class Pub { 
+	
+	public static MqClient buildInproClient() {
+		MqServer server = new MqServer(new MqServerConfig());
+		return new MqClient(server);
+	}
+	
+	@SuppressWarnings("resource")
+	public static void main(String[] args) throws Exception {   
+		MqClient client = new MqClient("localhost:15555"); 
+		
+		//MqClient client = buildInproClient();
+		
+		client.heartbeat(30, TimeUnit.SECONDS); 
+		final String mq = "MyMQ", mqType = Protocol.MEMORY;
+		
+		//1) Create MQ if necessary
+		Map<String, Object> req = new HashMap<>();
+		req.put("cmd", "create");  //Create
+		req.put("mq", mq); 
+		req.put("mqType", mqType); //disk|memory|db
+		
+		client.invoke(req);
+		
+		AtomicInteger count = new AtomicInteger(0);  
+		for (int i = 0; i < 100000; i++) {   
+			//2) Publish Message
+			Map<String, Object> msg = new HashMap<>();
+			msg.put("cmd", "pub");  //Publish
+			msg.put("mq", mq);
+			msg.put("body", i);    //set business data in body
+			
+			client.invoke(msg, res->{ //async call
+				if(count.getAndIncrement() % 10000 == 0) {
+					System.out.println(res); 
+				}
+			});
+		}  
+	}
+}
