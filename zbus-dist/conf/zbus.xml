@@ -51,15 +51,15 @@
 	</cors>
 	
 	
-	<!-- HTTP 代理--> 
+	<!-- HTTP 代理 
 	<httpProxy>
 		<proxy>
-			<urlPrefix>/f5</urlPrefix>
-			<urlRewrite></urlRewrite>
-			<backend>http://mw.cmft.com</backend>
+			<urlPrefix>/nb/</urlPrefix>
+			<urlRewrite>/</urlRewrite>
+			<backend>http://localhost:8888</backend>
 		</proxy>
 	</httpProxy>
- 	
+ 	-->
 	 
  	
  	<staticFileDir cached="false">../static</staticFileDir>     
