@@ -145,20 +145,13 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 		if (req == null) {
 			MsgKit.reply(req, 400, "json format required", sess); 
 			return;
-		}   
-		attachInfo(req, sess);  
+		}    
 		
 		String cmd = req.getHeader(Protocol.CMD); 
 		
 		if(Protocol.PING.equals(cmd)) {
 			return;
-		}
-		
-		if(config.verbose) { 
-			String type = "<Request>";
-			if(Protocol.ROUTE.equals(cmd)) type = "<Response>";
-			logger.info(type + " " + sess.remoteAddress() + ": " + req); 
-		}  
+		} 
 		
 		if(cmd == null) { //Special case for favicon
 			if(req.getBody() == null && "/favicon.ico".equals(req.getUrl())) {
@@ -166,16 +159,24 @@ public class MqServerAdaptor extends ServerAdaptor implements Cloneable {
 				sess.write(res);
 				return;
 			} 
-		}
+		}  
 		
-		//check integrity 
+		//Nothing should change on message before check integrity!!
 		if(requestAuth != null) {
 			AuthResult authResult = requestAuth.auth(req);
 			if(!authResult.success) {
 				MsgKit.reply(req, 403, authResult.message, sess); 
 				return; 
 			}
-		}   
+		}  
+		
+		attachInfo(req, sess);
+		
+		if(config.verbose) { 
+			String type = "<Request>";
+			if(Protocol.ROUTE.equals(cmd)) type = "<Response>";
+			logger.info(type + " " + sess.remoteAddress() + ": " + req); 
+		}  
 		
 		for(Filter filter : this.filterList) {
 			boolean next = filter.doFilter(req, res);
